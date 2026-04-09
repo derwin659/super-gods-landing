@@ -1,4 +1,149 @@
-export default function SuperGodsLandingPage() {
+import { Routes, Route, Link } from 'react-router-dom';
+
+function SupportPage() {
+  return (
+    <div className="min-h-screen bg-neutral-950 px-6 py-16 text-white">
+      <div className="mx-auto max-w-4xl rounded-[28px] border border-white/10 bg-white/5 p-8">
+        <h1 className="text-4xl font-black text-amber-400">Soporte Super Gods App</h1>
+        <p className="mt-4 text-white/70">
+          Si necesitas ayuda con tu cuenta, suscripción, reservas, caja o cualquier función
+          de la app, contáctanos por estos medios.
+        </p>
+
+        <div className="mt-8 space-y-4 text-white/80">
+          <p><strong>WhatsApp:</strong> +51 958 062 847</p>
+          <p><strong>Correo:</strong> derwinnieves659@gmail.com</p>
+          <p><strong>Horario:</strong> Lunes a sábado de 9:00 a. m. a 6:00 p. m.</p>
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-white/10 bg-neutral-900 p-5">
+          <h2 className="text-xl font-bold">Formulario de contacto</h2>
+          <p className="mt-2 text-white/65">
+            Por ahora puedes contactarnos directamente por WhatsApp o correo indicando:
+            nombre, barbería, teléfono y el detalle de tu solicitud.
+          </p>
+        </div>
+
+        <Link
+          to="/"
+          className="mt-8 inline-block rounded-2xl bg-amber-400 px-5 py-3 font-bold text-neutral-950"
+        >
+          Volver al inicio
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function PrivacyPage() {
+  return (
+    <div className="min-h-screen bg-neutral-950 px-6 py-16 text-white">
+      <div className="mx-auto max-w-4xl rounded-[28px] border border-white/10 bg-white/5 p-8">
+        <h1 className="text-4xl font-black text-amber-400">Política de Privacidad</h1>
+        <p className="mt-4 text-white/70"><strong>Última actualización:</strong> 2026</p>
+
+        <div className="mt-8 space-y-6 text-white/75 leading-8">
+          <div>
+            <h2 className="text-xl font-bold text-white">1. Información que recopilamos</h2>
+            <p>
+              Podemos recopilar nombre, teléfono, correo electrónico, datos de barbería,
+              reservas, historial de servicios, información operativa y otros datos necesarios
+              para brindar el servicio.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold text-white">2. Cómo usamos la información</h2>
+            <p>
+              Usamos la información para operar la plataforma, gestionar reservas, caja,
+              clientes, soporte técnico, mejoras del servicio y cumplimiento legal.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold text-white">3. Compartición de datos</h2>
+            <p>
+              No vendemos datos personales. Podemos compartir información con proveedores
+              tecnológicos que nos ayudan a operar la plataforma bajo medidas razonables de seguridad.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold text-white">4. Conservación y seguridad</h2>
+            <p>
+              Aplicamos medidas razonables para proteger la información y conservarla durante
+              el tiempo necesario para prestar el servicio y cumplir obligaciones legales.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold text-white">5. Derechos del usuario</h2>
+            <p>
+              Puedes solicitar acceso, corrección o eliminación de tus datos escribiéndonos a
+              derwinnieves659@gmail.com.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold text-white">6. Contacto</h2>
+            <p>
+              Para cualquier consulta sobre privacidad, escríbenos a derwinnieves659@gmail.com.
+            </p>
+          </div>
+        </div>
+
+        <Link
+          to="/"
+          className="mt-8 inline-block rounded-2xl bg-amber-400 px-5 py-3 font-bold text-neutral-950"
+        >
+          Volver al inicio
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function DataChoicesPage() {
+  return (
+    <div className="min-h-screen bg-neutral-950 px-6 py-16 text-white">
+      <div className="mx-auto max-w-4xl rounded-[28px] border border-white/10 bg-white/5 p-8">
+        <h1 className="text-4xl font-black text-amber-400">Opciones de Privacidad y Datos</h1>
+        <p className="mt-4 text-white/70">
+          Desde esta página puedes solicitar acciones relacionadas con tus datos personales
+          en Super Gods App.
+        </p>
+
+        <div className="mt-8 rounded-2xl border border-white/10 bg-neutral-900 p-6">
+          <h2 className="text-xl font-bold">Solicitudes disponibles</h2>
+          <ul className="mt-4 list-inside list-disc space-y-2 text-white/75">
+            <li>Solicitar acceso a tus datos</li>
+            <li>Solicitar corrección de datos</li>
+            <li>Solicitar eliminación de cuenta</li>
+            <li>Solicitar eliminación de datos personales</li>
+          </ul>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-neutral-900 p-6">
+          <h2 className="text-xl font-bold">Cómo solicitarlo</h2>
+          <p className="mt-3 text-white/70">
+            Escríbenos a <strong>derwinnieves659@gmail.com</strong> o por WhatsApp al +51958062847, indicando
+            tu solicitud y los datos de tu cuenta. Por seguridad, podremos pedir validación
+            de identidad antes de procesarla.
+          </p>
+        </div>
+
+        <Link
+          to="/"
+          className="mt-8 inline-block rounded-2xl bg-amber-400 px-5 py-3 font-bold text-neutral-950"
+        >
+          Volver al inicio
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function SuperGodsLandingPage() {
   const playStoreUrl =
     'https://play.google.com/store/apps/details?id=com.gods.barberia';
   const appStoreUrl = '#';
@@ -538,5 +683,16 @@ export default function SuperGodsLandingPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<SuperGodsLandingPage />} />
+      <Route path="/soporte" element={<SupportPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/datos" element={<DataChoicesPage />} />
+    </Routes>
   );
 }
