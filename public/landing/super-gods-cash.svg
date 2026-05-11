@@ -1,0 +1,36 @@
+<svg width="1100" height="760" viewBox="0 0 1100 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1100" height="760" rx="44" fill="#F8FAFC"></rect>
+  <rect x="56" y="54" width="988" height="652" rx="42" fill="white"></rect>
+  <text x="96" y="122" fill="#0F172A" font-size="38" font-weight="900" font-family="Arial">Caja e inventario por sede</text>
+  <text x="96" y="158" fill="#64748B" font-size="18" font-weight="700" font-family="Arial">Controla ingresos, gastos, pagos mixtos, productos y stock por sucursal.</text>
+
+  <rect x="96" y="210" width="280" height="150" rx="30" fill="#0F2A5F"></rect>
+  <text x="126" y="255" fill="#DBEAFE" font-size="15" font-weight="900" font-family="Arial">TOTAL EN CAJA</text>
+  <text x="126" y="312" fill="white" font-size="46" font-weight="900" font-family="Arial">S/ 1,240</text>
+
+  <rect x="410" y="210" width="280" height="150" rx="30" fill="#EFF6FF"></rect>
+  <text x="440" y="255" fill="#2563EB" font-size="15" font-weight="900" font-family="Arial">YAPE / PLIN</text>
+  <text x="440" y="312" fill="#0F172A" font-size="46" font-weight="900" font-family="Arial">S/ 520</text>
+
+  <rect x="724" y="210" width="280" height="150" rx="30" fill="#DCFCE7"></rect>
+  <text x="754" y="255" fill="#15803D" font-size="15" font-weight="900" font-family="Arial">EFECTIVO</text>
+  <text x="754" y="312" fill="#0F172A" font-size="46" font-weight="900" font-family="Arial">S/ 720</text>
+
+  <rect x="96" y="410" width="430" height="230" rx="34" fill="#F1F5F9"></rect>
+  <text x="126" y="458" fill="#0F172A" font-size="24" font-weight="900" font-family="Arial">Movimientos</text>
+  <rect x="126" y="488" width="340" height="42" rx="16" fill="white"></rect>
+  <text x="148" y="515" fill="#0F172A" font-size="15" font-weight="800" font-family="Arial">Venta · Corte + barba</text>
+  <text x="400" y="515" fill="#16A34A" font-size="15" font-weight="900" font-family="Arial">+S/ 40</text>
+  <rect x="126" y="546" width="340" height="42" rx="16" fill="white"></rect>
+  <text x="148" y="573" fill="#0F172A" font-size="15" font-weight="800" font-family="Arial">Gasto · Productos</text>
+  <text x="400" y="573" fill="#EF4444" font-size="15" font-weight="900" font-family="Arial">-S/ 80</text>
+
+  <rect x="574" y="410" width="430" height="230" rx="34" fill="#F1F5F9"></rect>
+  <text x="604" y="458" fill="#0F172A" font-size="24" font-weight="900" font-family="Arial">Inventario</text>
+  <rect x="604" y="488" width="340" height="42" rx="16" fill="white"></rect>
+  <text x="626" y="515" fill="#0F172A" font-size="15" font-weight="800" font-family="Arial">Cera premium</text>
+  <text x="858" y="515" fill="#2563EB" font-size="15" font-weight="900" font-family="Arial">18 und.</text>
+  <rect x="604" y="546" width="340" height="42" rx="16" fill="white"></rect>
+  <text x="626" y="573" fill="#0F172A" font-size="15" font-weight="800" font-family="Arial">Shampoo profesional</text>
+  <text x="858" y="573" fill="#2563EB" font-size="15" font-weight="900" font-family="Arial">9 und.</text>
+</svg>

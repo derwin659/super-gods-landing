@@ -1,0 +1,41 @@
+<svg width="900" height="760" viewBox="0 0 900 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="760" rx="44" fill="#EFF6FF"></rect>
+  <rect x="300" y="40" width="300" height="680" rx="52" fill="#0F172A"></rect>
+  <rect x="322" y="68" width="256" height="624" rx="38" fill="#F8FAFC"></rect>
+  <rect x="360" y="92" width="180" height="22" rx="11" fill="#0F172A"></rect>
+  <text x="352" y="160" fill="#0F172A" font-size="24" font-weight="900" font-family="Arial">Reserva tu cita</text>
+  <text x="352" y="188" fill="#64748B" font-size="14" font-weight="700" font-family="Arial">Barbería Gods · Cusco</text>
+
+  <rect x="352" y="222" width="196" height="92" rx="24" fill="white"></rect>
+  <circle cx="392" cy="268" r="24" fill="#DBEAFE"></circle>
+  <text x="430" y="260" fill="#0F172A" font-size="16" font-weight="900" font-family="Arial">Fade clásico</text>
+  <text x="430" y="284" fill="#64748B" font-size="14" font-weight="700" font-family="Arial">S/ 25 · 35 min</text>
+
+  <rect x="352" y="330" width="196" height="92" rx="24" fill="white"></rect>
+  <circle cx="392" cy="376" r="24" fill="#DCFCE7"></circle>
+  <text x="430" y="368" fill="#0F172A" font-size="16" font-weight="900" font-family="Arial">Corte + barba</text>
+  <text x="430" y="392" fill="#64748B" font-size="14" font-weight="700" font-family="Arial">S/ 40 · 50 min</text>
+
+  <text x="352" y="470" fill="#0F172A" font-size="20" font-weight="900" font-family="Arial">Elige horario</text>
+  <rect x="352" y="494" width="58" height="44" rx="16" fill="#0F2A5F"></rect>
+  <text x="366" y="522" fill="white" font-size="14" font-weight="900" font-family="Arial">10:00</text>
+  <rect x="422" y="494" width="58" height="44" rx="16" fill="white"></rect>
+  <text x="436" y="522" fill="#0F172A" font-size="14" font-weight="900" font-family="Arial">10:30</text>
+  <rect x="492" y="494" width="58" height="44" rx="16" fill="white"></rect>
+  <text x="506" y="522" fill="#0F172A" font-size="14" font-weight="900" font-family="Arial">11:00</text>
+
+  <rect x="352" y="580" width="196" height="58" rx="22" fill="#0F2A5F"></rect>
+  <text x="396" y="616" fill="white" font-size="16" font-weight="900" font-family="Arial">Reservar ahora</text>
+
+  <circle cx="148" cy="188" r="56" fill="#0F2A5F"></circle>
+  <text x="119" y="208" fill="white" font-size="54" font-weight="900" font-family="Arial">📅</text>
+  <text x="86" y="278" fill="#0F172A" font-size="30" font-weight="900" font-family="Arial">App cliente</text>
+  <text x="72" y="314" fill="#64748B" font-size="17" font-weight="700" font-family="Arial">Reservas online, pagos</text>
+  <text x="96" y="338" fill="#64748B" font-size="17" font-weight="700" font-family="Arial">iniciales y puntos</text>
+
+  <circle cx="742" cy="188" r="56" fill="#22C55E"></circle>
+  <text x="714" y="208" fill="white" font-size="52" font-weight="900" font-family="Arial">⭐</text>
+  <text x="665" y="278" fill="#0F172A" font-size="30" font-weight="900" font-family="Arial">Fidelización</text>
+  <text x="640" y="314" fill="#64748B" font-size="17" font-weight="700" font-family="Arial">Puntos, premios y</text>
+  <text x="662" y="338" fill="#64748B" font-size="17" font-weight="700" font-family="Arial">promociones</text>
+</svg>

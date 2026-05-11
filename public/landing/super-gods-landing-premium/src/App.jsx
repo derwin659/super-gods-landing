@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 import { AuthProvider } from './context/AuthContext';
@@ -451,37 +450,46 @@ function PublicHomePage() {
         </section>
 
         <section id="contacto" className="px-4 py-20">
-  <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[42px] bg-white shadow-[0_30px_90px_rgba(15,23,42,0.12)] lg:grid-cols-[0.92fr_1.08fr]">
-    <div className="relative bg-slate-950 p-8 text-white md:p-12">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#2563EB_0,transparent_36%),radial-gradient(circle_at_90%_20%,rgba(34,197,94,0.20),transparent_30%)]" />
+          <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[42px] bg-white shadow-[0_30px_90px_rgba(15,23,42,0.12)] lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="relative bg-slate-950 p-8 text-white md:p-12">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#2563EB_0,transparent_36%)]" />
+              <div className="relative flex h-full flex-col justify-between">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-200">Demo gratis</p>
+                  <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] md:text-6xl">Mira cómo Super Gods puede funcionar en tu barbería</h2>
+                  <p className="mt-5 text-lg font-medium leading-8 text-blue-100">Te ayudamos a crear tu cuenta de prueba, configurar servicios, barberos, horarios y empezar a operar.</p>
+                </div>
+                <div className="mt-10 grid gap-4">
+                  <InfoLine text="Demo personalizada por WhatsApp o llamada." />
+                  <InfoLine text="Prueba gratis por 7 días." />
+                  <InfoLine text="Soporte inicial para configurar tu barbería." />
+                </div>
+              </div>
+            </div>
 
-      <div className="relative flex h-full flex-col justify-between">
-        <div>
-          <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-200">
-            Demo personalizada
-          </p>
-
-          <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] md:text-6xl">
-            Cuéntanos cómo trabaja tu barbería y te mostramos el plan ideal
-          </h2>
-
-          <p className="mt-5 text-lg font-medium leading-8 text-blue-100">
-            Completa unos datos rápidos y te llevamos a WhatsApp con un mensaje listo. Así podemos ayudarte más rápido y mostrarte exactamente lo que necesitas.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-4">
-          <InfoLine text="Demo personalizada según tu tipo de negocio." />
-          <InfoLine text="Prueba gratis por 7 días." />
-          <InfoLine text="Soporte inicial para configurar sedes, barberos, servicios y horarios." />
-          <InfoLine text="Acceso desde Android, iPhone y panel web." />
-        </div>
-      </div>
-    </div>
-
-    <ContactLeadBox whatsappNumber={WHATSAPP_NUMBER} />
-  </div>
-</section>
+            <div className="p-8 md:p-12">
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Contacto</p>
+              <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-5xl">Solicita tu demo</h2>
+              <p className="mt-4 font-medium leading-7 text-slate-600">Elige una opción para continuar. Puedes pedir demo o ingresar al panel si ya tienes cuenta.</p>
+              <div className="mt-8 grid gap-4">
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-3xl bg-[#0F2A5F] p-5 text-white transition hover:-translate-y-1 hover:bg-[#123A84]">
+                  <div>
+                    <p className="text-lg font-black">Quiero una demo gratis</p>
+                    <p className="mt-1 text-sm font-medium text-blue-100">Te llevamos a WhatsApp con un mensaje listo.</p>
+                  </div>
+                  <span className="text-2xl">→</span>
+                </a>
+                <a href="/login" className="flex items-center justify-between rounded-3xl border border-slate-200 bg-slate-50 p-5 text-slate-950 transition hover:-translate-y-1 hover:border-blue-600">
+                  <div>
+                    <p className="text-lg font-black">Ya tengo cuenta</p>
+                    <p className="mt-1 text-sm font-medium text-slate-500">Iniciar sesión como dueño, admin o super admin.</p>
+                  </div>
+                  <span className="text-2xl">→</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <section className="px-4 pb-20">
           <div className="mx-auto max-w-7xl rounded-[40px] bg-slate-950 px-8 py-14 text-center text-white shadow-[0_35px_100px_rgba(15,23,42,0.25)]">
@@ -560,234 +568,6 @@ function InfoLine({ text }) {
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-400 text-sm font-black text-slate-950">✓</span>
       <p className="font-bold leading-7 text-blue-100">{text}</p>
     </div>
-  );
-}
-function ContactLeadBox({ whatsappNumber }) {
-  const [lead, setLead] = useState({
-    nombre: '',
-    negocio: '',
-    tipoNegocio: 'Barbería',
-    ciudad: '',
-    whatsapp: '',
-    profesionales: '',
-    sedes: '',
-    objetivo: '',
-    mensaje: '',
-  });
-
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-
-    setLead((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const whatsappText = encodeURIComponent(
-    `Hola, quiero una demo gratis de Super Gods App.\n\n` +
-      `Nombre: ${lead.nombre || '___'}\n` +
-      `Negocio: ${lead.negocio || '___'}\n` +
-      `Tipo de negocio: ${lead.tipoNegocio || '___'}\n` +
-      `Ciudad / país: ${lead.ciudad || '___'}\n` +
-      `WhatsApp: ${lead.whatsapp || '___'}\n` +
-      `Profesionales: ${lead.profesionales || '___'}\n` +
-      `Sedes: ${lead.sedes || '___'}\n` +
-      `Quiero mejorar: ${lead.objetivo || '___'}\n` +
-      `Mensaje: ${lead.mensaje || '___'}`
-  );
-
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappText}`;
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="p-8 md:p-12">
-      <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">
-        Solicita información
-      </p>
-
-      <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-5xl">
-        Agenda tu demo gratis
-      </h2>
-
-      <p className="mt-4 font-medium leading-7 text-slate-600">
-        Responde estas preguntas y te enviaremos una atención más precisa por WhatsApp.
-      </p>
-
-      <div className="mt-8 grid gap-5">
-        <div className="grid gap-5 md:grid-cols-2">
-          <LandingInput
-            label="Nombre del dueño"
-            name="nombre"
-            value={lead.nombre}
-            onChange={handleChange}
-            placeholder="Ej: Pedro"
-          />
-
-          <LandingInput
-            label="Nombre del negocio"
-            name="negocio"
-            value={lead.negocio}
-            onChange={handleChange}
-            placeholder="Ej: Barbería Kings"
-          />
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2">
-          <LandingSelect
-            label="Tipo de negocio"
-            name="tipoNegocio"
-            value={lead.tipoNegocio}
-            onChange={handleChange}
-            options={[
-              'Barbería',
-              'Salón de belleza',
-              'Centro de estética',
-              'Salón de uñas',
-              'Spa',
-              'Otro',
-            ]}
-          />
-
-          <LandingInput
-            label="Ciudad / país"
-            name="ciudad"
-            value={lead.ciudad}
-            onChange={handleChange}
-            placeholder="Ej: Lima, Perú"
-          />
-        </div>
-
-        <LandingInput
-          label="WhatsApp"
-          name="whatsapp"
-          value={lead.whatsapp}
-          onChange={handleChange}
-          placeholder="Ej: 987654321"
-        />
-
-        <div className="grid gap-5 md:grid-cols-2">
-          <LandingSelect
-            label="Cantidad de profesionales"
-            name="profesionales"
-            value={lead.profesionales}
-            onChange={handleChange}
-            options={[
-              '1 profesional',
-              '2 profesionales',
-              '3 a 5 profesionales',
-              '6 a 10 profesionales',
-              'Más de 10 profesionales',
-            ]}
-          />
-
-          <LandingSelect
-            label="Cantidad de sedes"
-            name="sedes"
-            value={lead.sedes}
-            onChange={handleChange}
-            options={[
-              '1 sede',
-              '2 sedes',
-              '3 sedes',
-              'Más de 3 sedes',
-            ]}
-          />
-        </div>
-
-        <LandingSelect
-          label="¿Qué quieres mejorar primero?"
-          name="objetivo"
-          value={lead.objetivo}
-          onChange={handleChange}
-          options={[
-            'Ordenar reservas',
-            'Controlar caja',
-            'Fidelizar clientes con puntos',
-            'Crear promociones y premios',
-            'Controlar barberos y pagos',
-            'Controlar productos e inventario',
-            'Ver reportes del negocio',
-            'Probar Super Gods completo',
-          ]}
-        />
-
-        <label className="grid gap-2">
-          <span className="text-sm font-black text-slate-900">
-            Mensaje opcional
-          </span>
-
-          <textarea
-            name="mensaje"
-            value={lead.mensaje}
-            onChange={handleChange}
-            rows={4}
-            placeholder="Ej: Quiero probar la app para mi barbería esta semana."
-            className="resize-none rounded-2xl border border-slate-200 bg-white px-4 py-4 text-base font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-          />
-        </label>
-      </div>
-
-      <button
-        type="submit"
-        className="mt-8 w-full rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]"
-      >
-        Enviar solicitud por WhatsApp
-      </button>
-
-      <a
-        href="/login"
-        className="mt-4 flex w-full justify-center rounded-2xl border border-slate-200 bg-slate-50 px-7 py-4 text-base font-black text-slate-950 transition hover:border-blue-600 hover:text-blue-700"
-      >
-        Ya tengo cuenta, iniciar sesión
-      </a>
-
-      <p className="mt-4 text-center text-xs font-semibold leading-5 text-slate-500">
-        No necesitas tarjeta para solicitar una demo. Primero vemos si Super Gods se adapta a tu barbería.
-      </p>
-    </form>
-  );
-}
-
-function LandingInput({ label, name, value, onChange, placeholder }) {
-  return (
-    <label className="grid gap-2">
-      <span className="text-sm font-black text-slate-900">{label}</span>
-
-      <input
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-      />
-    </label>
-  );
-}
-
-function LandingSelect({ label, name, value, onChange, options }) {
-  return (
-    <label className="grid gap-2">
-      <span className="text-sm font-black text-slate-900">{label}</span>
-
-      <select
-        name={name}
-        value={value}
-        onChange={onChange}
-        className="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-      >
-        <option value="">Seleccionar</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }
 

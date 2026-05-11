@@ -1,0 +1,306 @@
+import { apiRequest } from './apiClient';
+
+function toQuery(params = {}) {
+  const search = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') {
+      search.append(key, String(value));
+    }
+  });
+
+  const query = search.toString();
+  return query ? `?${query}` : '';
+}
+
+function extractList(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.content)) return data.content;
+  if (Array.isArray(data?.customers)) return data.customers;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.rows)) return data.rows;
+
+  return [];
+}
+
+function toNumber(value, fallback = 0) {
+  if (value === null || value === undefined || value === '') return fallback;
+
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+function text(value, fallback = '') {
+  if (value === null || value === undefined) return fallback;
+  return String(value);
+}
+
+function normalizeCustomer(raw = {}) {
+  const name =
+    raw.nombreCompleto ??
+    raw.fullName ??
+    raw.name ??
+    raw.nombre ??
+    [raw.nombres, raw.apellidos].filter(Boolean).join(' ') ??
+    'Cliente';
+
+  return {
+    id: toNumber(raw.customerId ?? raw.id),
+    nombres: text(raw.nombres ?? raw.nombre ?? raw.firstName ?? name, 'Cliente'),
+    apellidos: text(raw.apellidos ?? raw.lastName ?? ''),
+    nombreCompleto: text(name, 'Cliente').trim() || 'Cliente',
+    telefono: text(raw.telefono ?? raw.phone ?? raw.phoneNumber ?? ''),
+    email: text(raw.email ?? raw.correo ?? ''),
+    puntosDisponibles: toNumber(
+      raw.puntosDisponibles ??
+        raw.pointsAvailable ??
+        raw.loyaltyPoints ??
+        raw.puntos ??
+        raw.availablePoints
+    ),
+    puntosAcumulados: toNumber(
+      raw.puntosAcumulados ??
+        raw.pointsEarned ??
+        raw.totalPoints ??
+        raw.accumulatedPoints
+    ),
+    visitas: toNumber(raw.visitas ?? raw.visitCount ?? raw.totalVisits),
+    ultimaVisita: text(raw.ultimaVisita ?? raw.lastVisitDate ?? raw.lastVisit ?? ''),
+    ultimoServicio: text(raw.ultimoServicio ?? raw.lastServiceName ?? ''),
+    ultimoBarbero: text(raw.ultimoBarbero ?? raw.lastBarberName ?? ''),
+    imageUrl: text(
+      raw.imageUrl ??
+        raw.imagenUrl ??
+        raw.photoUrl ??
+        raw.fotoUrl ??
+        raw.avatarUrl ??
+        ''
+    ),
+    raw,
+  };
+}
+
+function normalizeHistoryItemDetail(raw = {}) {
+  return {
+    id: toNumber(raw.id ?? raw.saleItemId ?? raw.itemId),
+    nombre: text(
+      raw.nombre ??
+        raw.name ??
+        raw.servicio ??
+        raw.serviceName ??
+        raw.producto ??
+        raw.productName ??
+        'Item'
+    ),
+    tipo: text(
+      raw.tipo ??
+        raw.type ??
+        (raw.productId !== null && raw.productId !== undefined ? 'PRODUCT' : 'SERVICE'),
+      'SERVICE'
+    ),
+    cantidad: toNumber(raw.cantidad ?? raw.quantity, 1),
+    precioUnitario: toNumber(raw.precioUnitario ?? raw.unitPrice ?? raw.price),
+    subtotal: toNumber(raw.subtotal ?? raw.total ?? raw.amount),
+    barbero: text(raw.barbero ?? raw.barberName ?? raw.barber ?? 'Sin asignar'),
+    barberPhotoUrl: text(
+      raw.barberPhotoUrl ??
+        raw.barberoFotoUrl ??
+        raw.barberImageUrl ??
+        raw.photoUrl ??
+        raw.fotoUrl ??
+        ''
+    ),
+    raw,
+  };
+}
+
+function normalizeHistoryItem(raw = {}) {
+  const rawItems =
+    raw.items ?? raw.detalles ?? raw.servicios ?? raw.saleItems ?? raw.details ?? [];
+
+  const items = Array.isArray(rawItems)
+    ? rawItems.map((item) => normalizeHistoryItemDetail(item))
+    : [];
+
+  return {
+    id: toNumber(raw.id ?? raw.historyId ?? raw.saleId ?? raw.appointmentId),
+    fecha: text(raw.fecha ?? raw.date ?? raw.createdAt ?? raw.fechaCreacion ?? ''),
+    servicio: text(raw.servicio ?? raw.serviceName ?? raw.service ?? raw.corte ?? 'Servicio'),
+    barbero: text(raw.barbero ?? raw.barberName ?? raw.barber ?? 'Sin asignar'),
+    barberPhotoUrl: text(
+      raw.barberPhotoUrl ??
+        raw.barberoFotoUrl ??
+        raw.barberImageUrl ??
+        raw.photoUrl ??
+        raw.fotoUrl ??
+        ''
+    ),
+    observacion: text(raw.observacion ?? raw.observaciones ?? raw.notes ?? raw.nota ?? ''),
+    monto: toNumber(raw.monto ?? raw.total ?? raw.amount ?? raw.precio),
+    puntos: toNumber(raw.puntos ?? raw.points),
+    tipo: text(raw.tipo ?? raw.type ?? 'HISTORIAL'),
+    imageUrl: text(raw.imageUrl ?? raw.imagenUrl ?? ''),
+    items,
+    raw,
+  };
+}
+
+async function tryRequest(path, options) {
+  try {
+    return await apiRequest(path, options);
+  } catch (error) {
+    return { __error: error };
+  }
+}
+
+export async function getOwnerCustomers({ query = '', limit = 50 } = {}) {
+  const q = String(query || '').trim();
+
+  const first = await tryRequest(
+    `/api/owner/customers${toQuery({
+      q: q.length >= 2 ? q : '',
+      limit,
+    })}`
+  );
+
+  if (!first.__error) {
+    return extractList(first).map(normalizeCustomer);
+  }
+
+  const second = await tryRequest(`/api/customers${toQuery({ limit })}`);
+
+  if (!second.__error) {
+    return extractList(second).map(normalizeCustomer);
+  }
+
+  return [];
+}
+
+export async function searchOwnerCustomers(query) {
+  return getOwnerCustomers({ query, limit: 20 });
+}
+
+export async function createOwnerCustomer({
+  nombres,
+  apellidos = null,
+  telefono,
+  email = null,
+}) {
+  const data = await apiRequest('/api/customers/quick', {
+    method: 'POST',
+    body: JSON.stringify({
+      nombres: String(nombres || '').trim(),
+      apellidos:
+        apellidos && String(apellidos).trim()
+          ? String(apellidos).trim()
+          : null,
+      telefono: String(telefono || '').replace(/[^0-9]/g, ''),
+      email:
+        email && String(email).trim()
+          ? String(email).trim()
+          : null,
+    }),
+  });
+
+  return normalizeCustomer(data);
+}
+
+export async function updateOwnerCustomer({
+  customerId,
+  nombres = null,
+  apellidos = null,
+  telefono = null,
+  email = null,
+}) {
+  const payload = {
+    nombres,
+    apellidos,
+    telefono:
+      telefono !== null && telefono !== undefined
+        ? String(telefono).replace(/[^0-9]/g, '')
+        : null,
+    email,
+  };
+
+  const first = await tryRequest(`/api/owner/customers/${customerId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+
+  if (!first.__error) return normalizeCustomer(first);
+
+  const second = await tryRequest(`/api/customers/${customerId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+
+  if (!second.__error) return normalizeCustomer(second);
+
+  throw first.__error || second.__error || new Error('No se pudo actualizar el cliente.');
+}
+
+export async function getOwnerCustomerDetail(customerId) {
+  const first = await tryRequest(`/api/owner/customers/${customerId}`);
+
+  if (!first.__error) return normalizeCustomer(first);
+
+  const second = await tryRequest(`/api/customers/${customerId}`);
+
+  if (!second.__error) return normalizeCustomer(second);
+
+  return null;
+}
+
+export async function getOwnerCustomerHistory(customerId) {
+  const endpoints = [
+    `/api/owner/customers/${customerId}/history${toQuery({ limit: 10 })}`,
+    `/api/owner/customers/${customerId}/cuts`,
+    `/api/owner/customer-cut-history${toQuery({ customerId })}`,
+    `/api/customer-cut-history${toQuery({ customerId })}`,
+    `/api/owner/cash-sales/customer/${customerId}`,
+  ];
+
+  for (const endpoint of endpoints) {
+    const data = await tryRequest(endpoint);
+
+    if (!data.__error) {
+      return extractList(data).map(normalizeHistoryItem);
+    }
+  }
+
+  return [];
+}
+
+export async function getOwnerCustomerLoyalty(customerId) {
+  const endpoints = [
+    `/api/owner/customers/${customerId}/loyalty`,
+    `/api/owner/loyalty/customers/${customerId}`,
+    `/api/loyalty/customers/${customerId}`,
+  ];
+
+  for (const endpoint of endpoints) {
+    const data = await tryRequest(endpoint);
+
+    if (!data.__error) {
+      return {
+        puntosDisponibles: toNumber(
+          data.puntosDisponibles ??
+            data.pointsAvailable ??
+            data.availablePoints ??
+            data.puntos
+        ),
+        puntosAcumulados: toNumber(
+          data.puntosAcumulados ??
+            data.pointsEarned ??
+            data.totalPoints ??
+            data.accumulatedPoints
+        ),
+        raw: data,
+      };
+    }
+  }
+
+  return null;
+}
