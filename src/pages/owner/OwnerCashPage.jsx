@@ -149,6 +149,36 @@ function toDateInputValue(date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+
+function buildLocalSaleDateForBackend(dateValue) {
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(now.getDate() - 30);
+
+  const todayValue = toDateInputValue(now);
+  const minValue = toDateInputValue(thirtyDaysAgo);
+  let selected = String(dateValue || todayValue).trim();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(selected)) {
+    selected = todayValue;
+  }
+
+  if (selected > todayValue) selected = todayValue;
+  if (selected < minValue) selected = minValue;
+
+  const hh = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+
+  return `${selected}T${hh}:${min}:${ss}`;
+}
+
+function saleDateInputMinValue() {
+  const date = new Date();
+  date.setDate(date.getDate() - 30);
+  return toDateInputValue(date);
+}
+
 function saleIdOf(sale) {
   return sale?.saleId ?? sale?.id ?? sale?.sale_id;
 }
@@ -1170,6 +1200,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSa
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [discount, setDiscount] = useState('0');
   const [cashReceived, setCashReceived] = useState('0');
+  const [saleDate, setSaleDate] = useState(toDateInputValue(new Date()));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -1378,7 +1409,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSa
         branchId: branch.id,
         customerId: appointment.customerId || null,
         appointmentId: appointment.appointmentId || null,
-        saleDate: null,
+        saleDate: buildLocalSaleDateForBackend(saleDate),
         metodoPago: paymentMethod,
         discount: discountNumber,
         cashReceived: paymentMethod === 'CASH' ? received : total,
@@ -1506,6 +1537,23 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSa
               </div>
 
               <div className="mt-4 space-y-4">
+                <label className="block">
+                  <span className="text-sm font-black text-neutral-700">Fecha de venta</span>
+                  <input
+                    type="date"
+                    value={saleDate}
+                    min={saleDateInputMinValue()}
+                    max={toDateInputValue(new Date())}
+                    onChange={(event) => setSaleDate(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-400"
+                  />
+                  {saleDate !== toDateInputValue(new Date()) && (
+                    <div className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+                      Esta cita se cobrará con fecha anterior para regularizar caja.
+                    </div>
+                  )}
+                </label>
+
                 <SelectField
                   label="Método de pago"
                   value={paymentMethod}
@@ -1616,6 +1664,7 @@ function SaleModal({ branch, cashRegister, onClose, onSaved }) {
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [discount, setDiscount] = useState('0');
   const [cashReceived, setCashReceived] = useState('0');
+  const [saleDate, setSaleDate] = useState(toDateInputValue(new Date()));
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1877,7 +1926,7 @@ function SaleModal({ branch, cashRegister, onClose, onSaved }) {
         branchId: branch.id,
         customerId: selectedCustomer?.id || null,
         appointmentId: null,
-        saleDate: null,
+        saleDate: buildLocalSaleDateForBackend(saleDate),
         metodoPago: paymentMethod,
         discount: discountNumber,
         cashReceived: paymentMethod === 'CASH' ? received : total,
@@ -2103,6 +2152,23 @@ function SaleModal({ branch, cashRegister, onClose, onSaved }) {
               </p>
 
               <div className="mt-5 space-y-4">
+                <label className="block">
+                  <span className="text-sm font-black text-neutral-700">Fecha de venta</span>
+                  <input
+                    type="date"
+                    value={saleDate}
+                    min={saleDateInputMinValue()}
+                    max={toDateInputValue(new Date())}
+                    onChange={(event) => setSaleDate(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-400"
+                  />
+                  {saleDate !== toDateInputValue(new Date()) && (
+                    <div className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+                      Esta venta se guardará con fecha anterior. Úsalo para regularizar ventas olvidadas.
+                    </div>
+                  )}
+                </label>
+
                 <SelectField
                   label="Método de pago"
                   value={paymentMethod}
