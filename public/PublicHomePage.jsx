@@ -159,22 +159,22 @@ export default function PublicHomePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <a
-              href="/login"
-              className="hidden rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-900 transition hover:border-blue-600 hover:text-blue-700 sm:inline-flex"
-            >
-              Iniciar sesión
-            </a>
+  <a
+    href="/login"
+    className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-black text-slate-900 transition hover:border-blue-600 hover:text-blue-700 sm:px-5 sm:text-sm"
+  >
+    Ingresar
+  </a>
 
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-2xl bg-[#0F2A5F] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84]"
-            >
-              Probar gratis
-            </a>
-          </div>
+  <a
+    href={whatsappUrl}
+    target="_blank"
+    rel="noreferrer"
+    className="rounded-2xl bg-[#0F2A5F] px-4 py-3 text-xs font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84] sm:px-5 sm:text-sm"
+  >
+    Probar gratis
+  </a>
+</div>
         </nav>
       </header>
 
