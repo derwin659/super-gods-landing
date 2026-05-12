@@ -29,81 +29,85 @@ export default function OwnerLayout() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFC_42%,#EEF2F7_100%)] text-neutral-950">
-      <aside className="fixed inset-y-0 left-0 hidden w-72 flex-col border-r border-white/10 bg-[linear-gradient(180deg,#050505_0%,#090909_50%,#111827_100%)] p-5 text-white shadow-[18px_0_60px_rgba(15,23,42,0.16)] lg:flex">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10">
-            <img
-              src="/logo-super-gods.png"
-              alt="Super Gods logo"
-              className="h-9 w-9 rounded-xl object-cover"
-            />
-          </div>
-
-          <div>
-            <div className="font-black tracking-[0.2em] text-amber-400">
-              SUPER GODS
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-80 flex-col border-r border-white/10 bg-[linear-gradient(180deg,#050505_0%,#090909_50%,#111827_100%)] text-white shadow-[18px_0_60px_rgba(15,23,42,0.16)] lg:flex">
+        <div className="flex h-full flex-col overflow-y-auto px-5 py-5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/35">
+          <div className="flex shrink-0 items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10">
+              <img
+                src="/logo-super-gods.png"
+                alt="Super Gods logo"
+                className="h-9 w-9 rounded-xl object-cover"
+              />
             </div>
-            <div className="text-xs font-medium text-white/45">
-              Panel Dueño
+
+            <div>
+              <div className="font-black tracking-[0.2em] text-amber-400">
+                SUPER GODS
+              </div>
+              <div className="text-xs font-medium text-white/45">
+                Panel Dueño
+              </div>
             </div>
           </div>
+
+          <div className="mt-8 shrink-0 rounded-[28px] border border-white/10 bg-white/[0.06] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
+            <div className="text-[11px] font-black uppercase tracking-[0.18em] text-white/35">
+              Barbería
+            </div>
+
+            <div className="mt-2 truncate text-lg font-black">
+              {session?.tenantName || 'Mi barbería'}
+            </div>
+
+            <div className="mt-2 flex items-center gap-2 text-xs text-white/50">
+              <span className="truncate">{session?.userName || 'Dueño'}</span>
+              <span className="h-1 w-1 shrink-0 rounded-full bg-white/30" />
+              <span>{session?.role || 'OWNER'}</span>
+            </div>
+          </div>
+
+          <div className="mt-8 h-px shrink-0 bg-white/10" />
+
+          <nav className="mt-6 grid shrink-0 gap-2 pb-4">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition ${
+                    isActive
+                      ? 'bg-amber-400 text-neutral-950 shadow-[0_14px_32px_rgba(251,191,36,0.22)]'
+                      : 'text-white/68 hover:bg-white/10 hover:text-white'
+                  }`
+                }
+              >
+                <span className="w-6 text-center text-base">{item.icon}</span>
+                <span className="truncate">{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="mt-auto shrink-0 rounded-[24px] border border-amber-400/15 bg-amber-400/10 p-4">
+            <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-300">
+              Super Gods Web
+            </div>
+
+            <p className="mt-2 text-xs leading-5 text-white/50">
+              Panel premium para controlar tu barbería desde computadora.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-5 w-full shrink-0 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-black text-white/70 transition hover:bg-white/10 hover:text-white"
+          >
+            Cerrar sesión
+          </button>
         </div>
-
-        <div className="mt-8 rounded-[28px] border border-white/10 bg-white/[0.06] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
-          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-white/35">
-            Barbería
-          </div>
-
-          <div className="mt-2 text-lg font-black">
-            {session?.tenantName || 'Mi barbería'}
-          </div>
-
-          <div className="mt-2 flex items-center gap-2 text-xs text-white/50">
-            <span>{session?.userName || 'Dueño'}</span>
-            <span className="h-1 w-1 rounded-full bg-white/30" />
-            <span>{session?.role || 'OWNER'}</span>
-          </div>
-        </div>
-
-        <nav className="mt-8 flex-1 space-y-2 overflow-y-auto pb-4 pr-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition ${
-                  isActive
-                    ? 'bg-amber-400 text-neutral-950 shadow-[0_14px_32px_rgba(251,191,36,0.22)]'
-                    : 'text-white/68 hover:bg-white/10 hover:text-white'
-                }`
-              }
-            >
-              <span className="text-base">{item.icon}</span>
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="mt-5 rounded-[24px] border border-amber-400/15 bg-amber-400/10 p-4">
-          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-300">
-            Super Gods Web
-          </div>
-
-          <p className="mt-2 text-xs leading-5 text-white/50">
-            Panel premium para controlar tu barbería desde computadora.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="mt-5 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-black text-white/70 transition hover:bg-white/10 hover:text-white"
-        >
-          Cerrar sesión
-        </button>
       </aside>
 
-      <main className="lg:pl-72">
+      <main className="min-h-screen lg:pl-80">
         <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white/90 px-5 py-4 shadow-sm backdrop-blur-xl lg:px-8">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -135,7 +139,7 @@ export default function OwnerLayout() {
           </div>
         </header>
 
-        <div className="p-5 lg:p-8">
+        <div className="max-w-full overflow-x-hidden p-5 lg:p-8">
           <Outlet />
         </div>
       </main>
