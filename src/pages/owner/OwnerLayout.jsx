@@ -29,7 +29,7 @@ export default function OwnerLayout() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFC_42%,#EEF2F7_100%)] text-neutral-950">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-80 flex-col border-r border-white/10 bg-[linear-gradient(180deg,#050505_0%,#090909_50%,#111827_100%)] text-white shadow-[18px_0_60px_rgba(15,23,42,0.16)] lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 flex w-80 flex-col border-r border-white/10 bg-[linear-gradient(180deg,#050505_0%,#090909_50%,#111827_100%)] text-white shadow-[18px_0_60px_rgba(15,23,42,0.16)] lg:flex">
         <div className="flex h-full flex-col overflow-y-auto px-5 py-5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/35">
           <div className="flex shrink-0 items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10">
@@ -107,7 +107,7 @@ export default function OwnerLayout() {
         </div>
       </aside>
 
-      <main className="min-h-screen lg:pl-80">
+      <main className="min-h-screen pl-80">
         <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white/90 px-5 py-4 shadow-sm backdrop-blur-xl lg:px-8">
           <div className="flex items-center justify-between gap-4">
             <div>
