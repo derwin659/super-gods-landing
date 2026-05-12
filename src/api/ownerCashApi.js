@@ -255,20 +255,30 @@ export async function updateCashSale({
   total = 0,
   cashReceived = 0,
   changeAmount = 0,
+  payments,
 }) {
+  const payload = {
+    customerId,
+    metodoPago,
+    subtotal: Number(subtotal || 0),
+    discount: Number(discount || 0),
+    total: Number(total || 0),
+    cashReceived: Number(cashReceived || 0),
+    changeAmount: Number(changeAmount || 0),
+  };
+
+  if (Array.isArray(payments)) {
+    payload.payments = payments.map((payment) => ({
+      method: payment.method,
+      amount: Number(payment.amount || 0),
+    }));
+  }
+
   return apiRequest(
     `/api/owner/cash-sales/${saleId}${toQuery({ branchId })}`,
     {
       method: 'PUT',
-      body: JSON.stringify({
-        customerId,
-        metodoPago,
-        subtotal: Number(subtotal || 0),
-        discount: Number(discount || 0),
-        total: Number(total || 0),
-        cashReceived: Number(cashReceived || 0),
-        changeAmount: Number(changeAmount || 0),
-      }),
+      body: JSON.stringify(payload),
     }
   );
 }
@@ -340,10 +350,19 @@ export async function getCashServices() {
         name: String(item.nombre ?? item.name ?? item.serviceName ?? 'Servicio'),
         price: toNumber(item.precio ?? item.price ?? item.amount),
         durationMinutes: toNumber(
-          item.duracionMinutos ?? item.durationMinutes ?? item.duration ?? item.minutos,
+          item.duracionMinutos ??
+            item.durationMinutes ??
+            item.duration ??
+            item.minutos,
           30
         ),
-        imageUrl: String(item.imageUrl ?? item.imagenUrl ?? item.photoUrl ?? item.fotoUrl ?? ''),
+        imageUrl: String(
+          item.imageUrl ??
+            item.imagenUrl ??
+            item.photoUrl ??
+            item.fotoUrl ??
+            ''
+        ),
       }))
       .filter((item) => item.id > 0);
   } catch (firstError) {
@@ -356,10 +375,19 @@ export async function getCashServices() {
           name: String(item.nombre ?? item.name ?? item.serviceName ?? 'Servicio'),
           price: toNumber(item.precio ?? item.price ?? item.amount),
           durationMinutes: toNumber(
-            item.duracionMinutos ?? item.durationMinutes ?? item.duration ?? item.minutos,
+            item.duracionMinutos ??
+              item.durationMinutes ??
+              item.duration ??
+              item.minutos,
             30
           ),
-          imageUrl: String(item.imageUrl ?? item.imagenUrl ?? item.photoUrl ?? item.fotoUrl ?? ''),
+          imageUrl: String(
+            item.imageUrl ??
+              item.imagenUrl ??
+              item.photoUrl ??
+              item.fotoUrl ??
+              ''
+          ),
         }))
         .filter((item) => item.id > 0);
     } catch {
@@ -375,10 +403,38 @@ export async function getCashProducts(branchId) {
     .map((item) => ({
       id: toNumber(item.id ?? item.productId),
       name: String(item.nombre ?? item.name ?? item.productName ?? 'Producto'),
-      price: toNumber(item.precioVenta ?? item.salePrice ?? item.price ?? item.precio),
+      price: toNumber(
+        item.precioVenta ?? item.salePrice ?? item.price ?? item.precio
+      ),
       stock: toNumber(item.stockActual ?? item.stock ?? item.currentStock),
-      imageUrl: String(item.imageUrl ?? item.imagenUrl ?? item.photoUrl ?? item.fotoUrl ?? ''),
+      imageUrl: String(
+        item.imageUrl ?? item.imagenUrl ?? item.photoUrl ?? item.fotoUrl ?? ''
+      ),
       active: item.activo !== false && item.active !== false,
     }))
     .filter((item) => item.id > 0 && item.active);
+}
+
+export async function getOwnerPaymentMethods(branchId) {
+  const data = await apiRequest(
+    `/api/owner/payment-methods${toQuery({ branchId })}`
+  );
+
+  const methods = extractList(data);
+
+  return methods
+    .map((item) => ({
+      id: Number(item.id ?? item.paymentMethodId ?? 0),
+      code: String(item.code ?? item.method ?? '').trim().toUpperCase(),
+      label: String(
+        item.displayName ?? item.name ?? item.label ?? item.code ?? 'Método'
+      ),
+      displayName: String(
+        item.displayName ?? item.name ?? item.label ?? item.code ?? 'Método'
+      ),
+      countryCode: String(item.countryCode ?? ''),
+      active: item.active !== false,
+      sortOrder: Number(item.sortOrder ?? 0),
+    }))
+    .filter((item) => item.code && item.active);
 }

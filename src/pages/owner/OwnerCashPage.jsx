@@ -13,6 +13,7 @@ import {
   getCashMovements,
   getCurrentCashRegister,
   getOwnerBranches,
+  getOwnerPaymentMethods,
   getSalesByCashRegister,
   getTodayCashSales,
   openCashRegister,
@@ -65,6 +66,8 @@ function methodLabel(value) {
     PLIN: 'Plin',
     CARD: 'Tarjeta',
     TRANSFER: 'Transferencia',
+    MIXED: 'Pago mixto',
+    DEPOSIT_APPLIED: 'Inicial aplicado',
     FREE: 'Gratis',
     NEQUI: 'Nequi',
     DAVIPLATA: 'Daviplata',
@@ -74,6 +77,205 @@ function methodLabel(value) {
   };
 
   return labels[code] || code || 'Otro';
+}
+
+function parseMoneyInput(value) {
+  const parsed = Number(String(value ?? '').replace(',', '.'));
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function roundMoney(value) {
+  return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+}
+
+function createPaymentDraft(method = 'CASH', amount = 0) {
+  return {
+    key: `payment-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    method,
+    amount: Number(amount || 0).toFixed(2),
+  };
+}
+
+function salePaymentsOf(sale) {
+  const raw = Array.isArray(sale?.payments)
+    ? sale.payments
+    : Array.isArray(sale?.salePayments)
+      ? sale.salePayments
+      : [];
+
+  return raw
+    .map((payment) => ({
+      method: payment?.method ?? payment?.paymentMethod ?? payment?.metodoPago,
+      amount: Number(payment?.amount ?? payment?.totalAmount ?? 0),
+    }))
+    .filter((payment) => payment.method && payment.amount > 0);
+}
+
+function salePaymentSummary(sale) {
+  const payments = salePaymentsOf(sale);
+
+  if (payments.length === 0) {
+    return methodLabel(sale?.metodoPago);
+  }
+
+  return payments
+    .map((payment) => `${methodLabel(payment.method)} ${formatMoney(payment.amount)}`)
+    .join(' + ');
+}
+
+const DEFAULT_PAYMENT_METHODS = [
+  { code: 'CASH', label: 'Efectivo', icon: '💵', helper: 'Efectivo físico' },
+  { code: 'YAPE', label: 'Yape', icon: '🟣', helper: 'Pago digital' },
+  { code: 'PLIN', label: 'Plin', icon: '🔵', helper: 'Pago digital' },
+  { code: 'CARD', label: 'Tarjeta', icon: '💳', helper: 'Tarjeta / POS' },
+  { code: 'TRANSFER', label: 'Transferencia', icon: '🏦', helper: 'Transferencias' },
+];
+
+const BASE_PAYMENT_METHODS = [
+  { code: 'CASH', label: 'Efectivo', icon: '💵', helper: 'Efectivo físico' },
+  { code: 'CARD', label: 'Tarjeta', icon: '💳', helper: 'Tarjeta / POS' },
+  { code: 'TRANSFER', label: 'Transferencia', icon: '🏦', helper: 'Transferencias' },
+];
+
+const METHOD_ICON_BY_CODE = {
+  CASH: '💵',
+  YAPE: '🟣',
+  PLIN: '🔵',
+  CARD: '💳',
+  TRANSFER: '🏦',
+  NEQUI: '🟢',
+  DAVIPLATA: '🔴',
+  PAGO_MOVIL: '📲',
+  ZELLE: '💸',
+  QR: '▣',
+};
+
+function normalizePaymentMethodOptions(methods = []) {
+  const source = Array.isArray(methods) && methods.length > 0 ? methods : DEFAULT_PAYMENT_METHODS;
+  const map = new Map();
+
+  source.forEach((item) => {
+    const code = normalizeMethod(item?.code ?? item?.method ?? item?.paymentMethod ?? item?.value);
+    if (!code || code === 'MIXED' || code === 'FREE' || code === 'DEPOSIT_APPLIED') return;
+
+    const label = String(item?.displayName ?? item?.label ?? item?.name ?? methodLabel(code)).trim();
+    map.set(code, {
+      code,
+      label: label || methodLabel(code),
+      icon: item?.icon || METHOD_ICON_BY_CODE[code] || '•',
+      helper: item?.helper || (code === 'CASH' ? 'Efectivo físico' : 'Método configurado'),
+    });
+  });
+
+  if (map.size === 0) {
+    DEFAULT_PAYMENT_METHODS.forEach((method) => map.set(method.code, method));
+  }
+
+  return Array.from(map.values());
+}
+
+function paymentSelectOptions(methods = []) {
+  return normalizePaymentMethodOptions(methods).map((method) => ({
+    value: method.code,
+    label: method.label,
+  }));
+}
+
+function paymentLabelFromOptions(methods = [], code) {
+  const normalized = normalizeMethod(code);
+  return normalizePaymentMethodOptions(methods).find((method) => method.code === normalized)?.label || methodLabel(normalized);
+}
+
+function defaultExtraPaymentMethod(methods = []) {
+  const options = normalizePaymentMethodOptions(methods);
+  return options.find((method) => method.code !== 'CASH')?.code || 'CARD';
+}
+
+function summaryMethodOf(item) {
+  return normalizeMethod(item?.paymentMethod ?? item?.method ?? item?.metodoPago ?? item?.code);
+}
+
+function summaryAmountOf(item) {
+  return Number(item?.totalAmount ?? item?.amount ?? item?.total ?? 0);
+}
+
+function summaryCountOf(item) {
+  return Number(item?.count ?? item?.quantity ?? item?.operations ?? 0);
+}
+
+function buildPaymentMethodRows(salesSummary = [], balanceSummary = [], configuredMethods = DEFAULT_PAYMENT_METHODS) {
+  const codes = [];
+
+  function addCode(code) {
+    const normalized = normalizeMethod(code);
+    if (!normalized || normalized === 'FREE' || normalized === 'DEPOSIT_APPLIED') return;
+    if (!codes.includes(normalized)) codes.push(normalized);
+  }
+
+  const methodOptions = normalizePaymentMethodOptions(configuredMethods);
+  methodOptions.forEach((method) => addCode(method.code));
+  salesSummary.forEach((item) => addCode(summaryMethodOf(item)));
+  balanceSummary.forEach((item) => addCode(summaryMethodOf(item)));
+
+  return codes.map((code) => {
+    const base = methodOptions.find((method) => method.code === code);
+    const salesItem = salesSummary.find((item) => summaryMethodOf(item) === code);
+    const balanceItem = balanceSummary.find((item) => summaryMethodOf(item) === code);
+
+    return {
+      code,
+      label: base?.label || methodLabel(code),
+      icon: base?.icon || '•',
+      helper: base?.helper || 'Método configurado',
+      salesAmount: summaryAmountOf(salesItem),
+      balanceAmount: balanceItem ? summaryAmountOf(balanceItem) : summaryAmountOf(salesItem),
+      count: summaryCountOf(salesItem || balanceItem),
+    };
+  });
+}
+
+function PaymentMethodCard({ method }) {
+  const isCash = method.code === 'CASH';
+  const balance = Number(method.balanceAmount || 0);
+  const sales = Number(method.salesAmount || 0);
+
+  return (
+    <div className={`rounded-[26px] border p-5 shadow-[0_12px_32px_rgba(15,23,42,0.045)] ${
+      isCash
+        ? 'border-emerald-200 bg-emerald-50'
+        : 'border-neutral-200 bg-white'
+    }`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.16em] text-neutral-500">
+            {method.label || methodLabel(method.code)}
+          </div>
+          <div className={`mt-2 text-2xl font-black ${amountClassByValue(balance)}`}>
+            {formatMoney(balance)}
+          </div>
+        </div>
+
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-xl shadow-sm">
+          {method.icon}
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold">
+        <div className="rounded-2xl bg-white/80 px-3 py-2">
+          <div className="text-neutral-400">Vendido</div>
+          <div className="mt-1 text-neutral-950">{formatMoney(sales)}</div>
+        </div>
+        <div className="rounded-2xl bg-white/80 px-3 py-2">
+          <div className="text-neutral-400">Operaciones</div>
+          <div className="mt-1 text-neutral-950">{method.count || 0}</div>
+        </div>
+      </div>
+
+      <div className="mt-3 text-xs font-semibold text-neutral-500">
+        {isCash ? 'Saldo físico esperado con apertura y movimientos.' : method.helper}
+      </div>
+    </div>
+  );
 }
 
 function movementTypeLabel(type) {
@@ -171,6 +373,30 @@ function buildLocalSaleDateForBackend(dateValue) {
   const ss = String(now.getSeconds()).padStart(2, '0');
 
   return `${selected}T${hh}:${min}:${ss}`;
+}
+
+
+function appointmentNumber(...values) {
+  for (const value of values) {
+    const number = Number(value ?? 0);
+    if (!Number.isNaN(number) && number > 0) return number;
+  }
+  return 0;
+}
+
+function normalizeDepositStatus(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+function isDepositApproved(value) {
+  const status = normalizeDepositStatus(value);
+  return (
+    status === 'PAID' ||
+    status === 'VALIDADO' ||
+    status === 'VALIDATED' ||
+    status === 'APPROVED' ||
+    status === 'APROBADO'
+  );
 }
 
 function saleDateInputMinValue() {
@@ -436,13 +662,13 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
   );
 }
 
-function MovementModal({ branch, cashRegister, onClose, onSaved }) {
+function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
   const [type, setType] = useState('EXPENSE');
   const [amount, setAmount] = useState('');
   const [concept, setConcept] = useState('Gasto general');
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('CASH');
-  const [fromPaymentMethod, setFromPaymentMethod] = useState('YAPE');
+  const [fromPaymentMethod, setFromPaymentMethod] = useState(defaultExtraPaymentMethod(paymentMethods));
   const [toPaymentMethod, setToPaymentMethod] = useState('CASH');
 
   const [barbers, setBarbers] = useState([]);
@@ -490,7 +716,7 @@ function MovementModal({ branch, cashRegister, onClose, onSaved }) {
     ],
   };
 
-  const paymentMethods = ['CASH', 'YAPE', 'PLIN', 'TRANSFER', 'CARD'];
+  const paymentOptions = paymentSelectOptions(paymentMethods);
 
   const needsBarber = type === 'ADVANCE_BARBER' || type === 'PAYMENT_BARBER';
   const isTransfer = type === 'PAYMENT_METHOD_TRANSFER';
@@ -523,7 +749,7 @@ function MovementModal({ branch, cashRegister, onClose, onSaved }) {
     }
 
     if (nextType === 'PAYMENT_METHOD_TRANSFER') {
-      setFromPaymentMethod('YAPE');
+      setFromPaymentMethod(defaultExtraPaymentMethod(paymentMethods));
       setToPaymentMethod('CASH');
     }
   }
@@ -641,20 +867,14 @@ function MovementModal({ branch, cashRegister, onClose, onSaved }) {
               label="Desde"
               value={fromPaymentMethod}
               onChange={setFromPaymentMethod}
-              options={paymentMethods.map((item) => ({
-                value: item,
-                label: methodLabel(item),
-              }))}
+              options={paymentOptions}
             />
 
             <SelectField
               label="Hacia"
               value={toPaymentMethod}
               onChange={setToPaymentMethod}
-              options={paymentMethods.map((item) => ({
-                value: item,
-                label: methodLabel(item),
-              }))}
+              options={paymentOptions}
             />
           </div>
         ) : (
@@ -662,10 +882,7 @@ function MovementModal({ branch, cashRegister, onClose, onSaved }) {
             label={type === 'INCOME' ? 'Método de ingreso' : 'Método de salida'}
             value={paymentMethod}
             onChange={setPaymentMethod}
-            options={paymentMethods.map((item) => ({
-              value: item,
-              label: methodLabel(item),
-            }))}
+            options={paymentOptions}
           />
         )}
 
@@ -699,7 +916,7 @@ function MovementModal({ branch, cashRegister, onClose, onSaved }) {
   );
 }
 
-function BarberPaymentModal({ branch, cashRegister, onClose, onSaved }) {
+function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
   const today = new Date();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(today.getDate() - 6);
@@ -718,7 +935,7 @@ function BarberPaymentModal({ branch, cashRegister, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const paymentMethods = ['CASH', 'YAPE', 'PLIN', 'TRANSFER', 'CARD'];
+  const paymentOptions = paymentSelectOptions(paymentMethods);
 
   useEffect(() => {
     async function loadBarbers() {
@@ -903,10 +1120,7 @@ function BarberPaymentModal({ branch, cashRegister, onClose, onSaved }) {
           label="Método de pago"
           value={paymentMethod}
           onChange={setPaymentMethod}
-          options={paymentMethods.map((item) => ({
-            value: item,
-            label: methodLabel(item),
-          }))}
+          options={paymentOptions}
         />
 
         <TextAreaField
@@ -944,7 +1158,7 @@ function MiniPreviewItem({ label, value, strong = false }) {
   );
 }
 
-function SalesSection({ sales, onEdit, onDelete }) {
+function SalesSection({ sales, onView, onEdit, onDelete }) {
   return (
     <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -1003,8 +1217,13 @@ function SalesSection({ sales, onEdit, onDelete }) {
                     {saleBarberName(sale)}
                   </td>
 
-                  <td className="px-5 py-5 font-bold text-neutral-700">
-                    {methodLabel(sale.metodoPago)}
+                  <td className="px-5 py-5">
+                    <div className="font-black text-neutral-800">
+                      {methodLabel(sale.metodoPago)}
+                    </div>
+                    <div className="mt-1 max-w-[240px] text-xs font-bold leading-5 text-neutral-500">
+                      {salePaymentSummary(sale)}
+                    </div>
                   </td>
 
                   <td className="px-5 py-5 font-black text-emerald-700">
@@ -1016,7 +1235,13 @@ function SalesSection({ sales, onEdit, onDelete }) {
                   </td>
 
                   <td className="px-5 py-5">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <button
+                        onClick={() => onView(sale)}
+                        className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 hover:bg-emerald-100"
+                      >
+                        Ver detalle
+                      </button>
                       <button
                         onClick={() => onEdit(sale)}
                         className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-black text-neutral-700 hover:bg-neutral-50"
@@ -1041,17 +1266,259 @@ function SalesSection({ sales, onEdit, onDelete }) {
   );
 }
 
-function EditSaleModal({ branch, sale, onClose, onSaved }) {
-  const [metodoPago, setMetodoPago] = useState(normalizeMethod(sale?.metodoPago || 'CASH'));
+
+function saleItemsOf(sale) {
+  return Array.isArray(sale?.items)
+    ? sale.items
+    : Array.isArray(sale?.saleItems)
+      ? sale.saleItems
+      : [];
+}
+
+function saleItemName(item) {
+  return String(
+    item?.serviceName ??
+      item?.serviceNombre ??
+      item?.productName ??
+      item?.nombreItem ??
+      item?.name ??
+      'Item'
+  );
+}
+
+function saleItemTypeLabel(item) {
+  if (item?.productId || item?.productName) return 'Producto';
+  return 'Servicio';
+}
+
+function saleItemBarberName(item) {
+  return String(
+    item?.barberUserName ??
+      item?.barberName ??
+      item?.barbero ??
+      '-'
+  );
+}
+
+function saleItemQuantity(item) {
+  return Number(item?.cantidad ?? item?.quantity ?? 1) || 1;
+}
+
+function saleItemUnitPrice(item) {
+  return Number(item?.precioUnitario ?? item?.unitPrice ?? 0) || 0;
+}
+
+function saleItemTotal(item) {
+  const direct = Number(item?.subtotal ?? item?.total ?? 0);
+  if (direct > 0) return direct;
+  return saleItemQuantity(item) * saleItemUnitPrice(item);
+}
+
+function DetailMetric({ label, value, tone = 'default', helper }) {
+  const styles = {
+    default: 'border-neutral-200 bg-white text-neutral-950',
+    gold: 'border-amber-200 bg-amber-50 text-amber-800',
+    green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    red: 'border-red-200 bg-red-50 text-red-800',
+    dark: 'border-neutral-900 bg-neutral-950 text-white',
+  };
+
+  return (
+    <div className={`rounded-[22px] border p-4 ${styles[tone] || styles.default}`}>
+      <div className={tone === 'dark' ? 'text-xs font-black uppercase tracking-[0.14em] text-white/45' : 'text-xs font-black uppercase tracking-[0.14em] text-neutral-500'}>
+        {label}
+      </div>
+      <div className={tone === 'dark' ? 'mt-2 text-xl font-black text-white' : 'mt-2 text-xl font-black'}>
+        {value}
+      </div>
+      {helper && (
+        <div className={tone === 'dark' ? 'mt-1 text-xs font-bold text-white/45' : 'mt-1 text-xs font-bold text-neutral-500'}>
+          {helper}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SaleDetailModal({ sale, onClose }) {
+  const payments = salePaymentsOf(sale);
+  const items = saleItemsOf(sale);
+  const subtotal = Number(sale?.subtotal ?? 0);
+  const discount = Number(sale?.discount ?? 0);
+  const tipAmount = Number(sale?.tipAmount ?? 0);
+  const total = Number(sale?.total ?? 0);
+  const cashReceived = Number(sale?.cashReceived ?? 0);
+  const changeAmount = Number(sale?.changeAmount ?? 0);
+  const saleId = saleIdOf(sale);
+
+  return (
+    <ModalShell
+      title={`Detalle de venta #${saleId || '-'}`}
+      subtitle={sale?.customerName || 'Cliente ocasional'}
+      onClose={onClose}
+      maxWidth="max-w-5xl"
+    >
+      <div className="space-y-5">
+        <div className="rounded-[28px] border border-neutral-200 bg-[linear-gradient(135deg,#F8FAFC_0%,#FFFFFF_70%)] p-5">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <DetailMetric label="Cliente" value={sale?.customerName || 'Cliente ocasional'} helper={sale?.customerId ? `ID cliente: ${sale.customerId}` : 'Sin cliente registrado'} />
+            <DetailMetric label="Barbero" value={saleBarberName(sale)} helper="Principal o primer item" />
+            <DetailMetric label="Fecha" value={formatDateTime(saleDateOf(sale))} helper="Fecha de venta" />
+            <DetailMetric label="Método" value={methodLabel(sale?.metodoPago)} helper={payments.length > 1 ? 'Pago mixto' : 'Pago único'} tone={payments.length > 1 ? 'gold' : 'default'} />
+          </div>
+        </div>
+
+        <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.045)]">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
+                  Items vendidos
+                </div>
+                <div className="mt-1 text-sm font-bold text-neutral-500">
+                  Servicios y productos incluidos en esta venta.
+                </div>
+              </div>
+              <div className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-black text-neutral-600">
+                {items.length} item{items.length === 1 ? '' : 's'}
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {items.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-5 text-sm font-bold text-neutral-500">
+                  Esta venta no trajo detalle de items en la respuesta.
+                </div>
+              ) : (
+                items.map((item, index) => (
+                  <div key={`${saleItemName(item)}-${index}`} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="truncate text-base font-black text-neutral-950">
+                          {saleItemName(item)}
+                        </div>
+                        <div className="mt-1 text-xs font-bold text-neutral-500">
+                          {saleItemTypeLabel(item)} · Barbero: {saleItemBarberName(item)}
+                        </div>
+                      </div>
+
+                      <div className="text-left sm:text-right">
+                        <div className="text-base font-black text-neutral-950">
+                          {formatMoney(saleItemTotal(item))}
+                        </div>
+                        <div className="mt-1 text-xs font-bold text-neutral-500">
+                          {saleItemQuantity(item)} x {formatMoney(saleItemUnitPrice(item))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            <div className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.045)]">
+              <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
+                Métodos de pago
+              </div>
+              <div className="mt-4 space-y-3">
+                {payments.length === 0 ? (
+                  <div className="rounded-2xl bg-neutral-50 p-4 text-sm font-bold text-neutral-500">
+                    {methodLabel(sale?.metodoPago)} · {formatMoney(total)}
+                  </div>
+                ) : (
+                  payments.map((payment, index) => (
+                    <div key={`${payment.method}-${index}`} className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4">
+                      <div>
+                        <div className="font-black text-neutral-950">
+                          {methodLabel(payment.method)}
+                        </div>
+                        <div className="text-xs font-bold text-neutral-500">
+                          Método {index + 1}
+                        </div>
+                      </div>
+                      <div className="text-lg font-black text-emerald-700">
+                        {formatMoney(payment.amount)}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.045)]">
+              <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
+                Resumen económico
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <DetailMetric label="Subtotal" value={formatMoney(subtotal)} />
+                <DetailMetric label="Descuento" value={formatMoney(discount)} tone={discount > 0 ? 'red' : 'default'} />
+                <DetailMetric label="Propina" value={formatMoney(tipAmount)} tone={tipAmount > 0 ? 'green' : 'default'} helper={sale?.tipBarberUserName ? `Para ${sale.tipBarberUserName}` : null} />
+                <DetailMetric label="Total" value={formatMoney(total)} tone="dark" />
+                <DetailMetric label="Recibido" value={formatMoney(cashReceived)} helper="Solo efectivo recibido" />
+                <DetailMetric label="Vuelto" value={formatMoney(changeAmount)} tone={changeAmount > 0 ? 'green' : 'default'} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
+  const salePayments = salePaymentsOf(sale).filter(
+    (payment) => normalizeMethod(payment.method) !== 'DEPOSIT_APPLIED'
+  );
+
+  const initialPayments = salePayments.length > 0
+    ? salePayments.map((payment) => createPaymentDraft(normalizeMethod(payment.method), payment.amount))
+    : [createPaymentDraft(normalizeMethod(sale?.metodoPago || 'CASH'), Number(sale?.total || 0))];
+
   const [subtotal, setSubtotal] = useState(String(Number(sale?.subtotal ?? sale?.total ?? 0).toFixed(2)));
   const [discount, setDiscount] = useState(String(Number(sale?.discount ?? 0).toFixed(2)));
   const [total, setTotal] = useState(String(Number(sale?.total ?? 0).toFixed(2)));
   const [cashReceived, setCashReceived] = useState(String(Number(sale?.cashReceived ?? sale?.total ?? 0).toFixed(2)));
-  const [changeAmount, setChangeAmount] = useState(String(Number(sale?.changeAmount ?? 0).toFixed(2)));
+  const [payments, setPayments] = useState(initialPayments);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const paymentMethods = ['CASH', 'YAPE', 'PLIN', 'TRANSFER', 'CARD'];
+  const paymentOptions = paymentSelectOptions(paymentMethods);
+
+  const totalNumber = roundMoney(parseMoneyInput(total));
+  const paymentPayloads = payments
+    .map((payment) => ({
+      method: normalizeMethod(payment.method),
+      amount: roundMoney(parseMoneyInput(payment.amount)),
+    }))
+    .filter((payment) => payment.amount > 0);
+
+  const paymentsTotal = roundMoney(paymentPayloads.reduce((sum, payment) => sum + payment.amount, 0));
+  const remainingPayment = roundMoney(totalNumber - paymentsTotal);
+  const cashPaymentAmount = roundMoney(
+    paymentPayloads
+      .filter((payment) => normalizeMethod(payment.method) === 'CASH')
+      .reduce((sum, payment) => sum + payment.amount, 0)
+  );
+  const cashReceivedNumber = roundMoney(parseMoneyInput(cashReceived));
+  const changeAmount = cashPaymentAmount > 0
+    ? roundMoney(Math.max(0, cashReceivedNumber - cashPaymentAmount))
+    : 0;
+
+  function updatePayment(index, patch) {
+    setPayments((prev) => prev.map((payment, currentIndex) => (
+      currentIndex === index ? { ...payment, ...patch } : payment
+    )));
+  }
+
+  function addPaymentMethod() {
+    setPayments((prev) => [...prev, createPaymentDraft(defaultExtraPaymentMethod(paymentMethods), 0)]);
+  }
+
+  function removePaymentMethod(index) {
+    setPayments((prev) => prev.filter((_, currentIndex) => currentIndex !== index));
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -1063,6 +1530,36 @@ function EditSaleModal({ branch, sale, onClose, onSaved }) {
       return;
     }
 
+    if (totalNumber < 0) {
+      setErrorMsg('El total no puede ser negativo.');
+      return;
+    }
+
+    if (totalNumber > 0 && paymentPayloads.length === 0) {
+      setErrorMsg('Agrega al menos un método de pago.');
+      return;
+    }
+
+    if (Math.abs(remainingPayment) > 0.009) {
+      setErrorMsg(
+        remainingPayment > 0
+          ? `Falta cobrar ${formatMoney(remainingPayment)}.`
+          : `Los pagos superan el total por ${formatMoney(Math.abs(remainingPayment))}.`
+      );
+      return;
+    }
+
+    if (cashPaymentAmount > 0 && cashReceivedNumber + 0.009 < cashPaymentAmount) {
+      setErrorMsg('El efectivo recibido no puede ser menor al monto pagado en efectivo.');
+      return;
+    }
+
+    const mainPaymentMethod = totalNumber === 0
+      ? 'FREE'
+      : paymentPayloads.length > 1
+        ? 'MIXED'
+        : paymentPayloads[0]?.method || 'CASH';
+
     setSaving(true);
 
     try {
@@ -1070,12 +1567,13 @@ function EditSaleModal({ branch, sale, onClose, onSaved }) {
         branchId: branch.id,
         saleId,
         customerId: sale.customerId ?? null,
-        metodoPago,
-        subtotal: Number(String(subtotal).replace(',', '.')),
-        discount: Number(String(discount).replace(',', '.')),
-        total: Number(String(total).replace(',', '.')),
-        cashReceived: Number(String(cashReceived).replace(',', '.')),
-        changeAmount: Number(String(changeAmount).replace(',', '.')),
+        metodoPago: mainPaymentMethod,
+        subtotal: parseMoneyInput(subtotal),
+        discount: parseMoneyInput(discount),
+        total: totalNumber,
+        cashReceived: cashPaymentAmount > 0 ? cashReceivedNumber : totalNumber,
+        changeAmount,
+        payments: totalNumber === 0 ? [] : paymentPayloads,
       });
 
       onSaved();
@@ -1087,28 +1585,94 @@ function EditSaleModal({ branch, sale, onClose, onSaved }) {
   }
 
   return (
-    <ModalShell title="Editar venta" subtitle={branch?.name || 'Sede'} onClose={onClose}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <SelectField
-          label="Método de pago"
-          value={metodoPago}
-          onChange={setMetodoPago}
-          options={paymentMethods.map((item) => ({
-            value: item,
-            label: methodLabel(item),
-          }))}
-        />
-
-        <div className="grid gap-3 sm:grid-cols-2">
+    <ModalShell title="Editar venta" subtitle={branch?.name || 'Sede'} onClose={onClose} maxWidth="max-w-5xl">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid gap-3 sm:grid-cols-3">
           <InputField label="Subtotal" value={subtotal} onChange={setSubtotal} type="number" step="0.01" prefix="S/" />
           <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix="S/" />
           <InputField label="Total" value={total} onChange={setTotal} type="number" step="0.01" prefix="S/" />
-          <InputField label="Recibido" value={cashReceived} onChange={setCashReceived} type="number" step="0.01" prefix="S/" />
-          <InputField label="Vuelto" value={changeAmount} onChange={setChangeAmount} type="number" step="0.01" prefix="S/" />
+        </div>
+
+        <div className="rounded-[28px] border border-neutral-200 bg-white p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.20em] text-amber-600">
+                Métodos de pago
+              </div>
+              <p className="mt-1 text-sm font-semibold text-neutral-500">
+                Puedes editar pagos mixtos sin afectar Flutter. La suma debe coincidir con el total.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={addPaymentMethod}
+              className="rounded-2xl border border-neutral-200 bg-neutral-950 px-4 py-3 text-sm font-black text-white transition hover:scale-[1.01]"
+            >
+              + Agregar método
+            </button>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {payments.map((payment, index) => (
+              <div key={payment.key} className="rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
+                <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+                  <SelectField
+                    label={`Método ${index + 1}`}
+                    value={payment.method}
+                    onChange={(value) => updatePayment(index, { method: value })}
+                    options={paymentOptions}
+                  />
+
+                  <InputField
+                    label="Monto"
+                    value={payment.amount}
+                    onChange={(value) => updatePayment(index, { amount: value })}
+                    type="number"
+                    step="0.01"
+                    prefix="S/"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => removePaymentMethod(index)}
+                    disabled={payments.length <= 1}
+                    className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {cashPaymentAmount > 0 && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <InputField
+                label="Efectivo recibido"
+                value={cashReceived}
+                onChange={setCashReceived}
+                type="number"
+                step="0.01"
+                prefix="S/"
+              />
+              <StatCard title="Vuelto" value={formatMoney(changeAmount)} tone={changeAmount > 0 ? 'green' : 'default'} />
+            </div>
+          )}
+
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <StatCard title="Total venta" value={formatMoney(totalNumber)} />
+            <StatCard title="Pagado" value={formatMoney(paymentsTotal)} tone={Math.abs(remainingPayment) <= 0.009 ? 'green' : 'gold'} />
+            <StatCard
+              title={remainingPayment >= 0 ? 'Falta' : 'Sobra'}
+              value={formatMoney(Math.abs(remainingPayment))}
+              tone={Math.abs(remainingPayment) <= 0.009 ? 'green' : 'red'}
+            />
+          </div>
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-          Este ajuste modifica la venta registrada. Después de guardar se refrescará la caja.
+          Este ajuste modifica la venta registrada. Si envías métodos de pago, el backend reemplazará los pagos anteriores de esta venta.
         </div>
 
         {errorMsg && <ErrorBox message={errorMsg} />}
@@ -1188,7 +1752,7 @@ function AppointmentSaleBanner({ appointment, isOpen, onOpenSale, onDismiss }) {
   );
 }
 
-function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSaved }) {
+function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -1197,19 +1761,51 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSa
   const [selectedBarberId, setSelectedBarberId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState('1');
+  const [customerName, setCustomerName] = useState(appointment?.customerName || '');
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerResults, setCustomerResults] = useState([]);
+  const [customerSearching, setCustomerSearching] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [discount, setDiscount] = useState('0');
+  const [tipAmount, setTipAmount] = useState('0');
+  const [tipBarberUserId, setTipBarberUserId] = useState('');
   const [cashReceived, setCashReceived] = useState('0');
   const [saleDate, setSaleDate] = useState(toDateInputValue(new Date()));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const paymentMethods = ['CASH', 'YAPE', 'PLIN', 'TRANSFER', 'CARD'];
+  const paymentOptions = paymentSelectOptions(paymentMethods);
 
   const subtotal = items.reduce((sum, item) => sum + itemSubtotal(item), 0);
   const discountNumber = Number(String(discount).replace(',', '.')) || 0;
-  const total = Math.max(0, subtotal - discountNumber);
+
+  const appointmentDiscount = appointmentNumber(
+    appointment?.discountAmount,
+    appointment?.promotionDiscount,
+    appointment?.descuento,
+    appointment?.descuentoPromocion
+  );
+
+  const depositAmount = appointmentNumber(
+    appointment?.depositAmount,
+    appointment?.montoPagoInicial,
+    appointment?.initialPaymentAmount
+  );
+
+  const depositStatus = normalizeDepositStatus(
+    appointment?.depositStatus ||
+      appointment?.estadoPagoInicial ||
+      appointment?.depositValidationStatus
+  );
+
+  const totalDiscount = roundMoney(discountNumber + appointmentDiscount);
+  const totalBeforeDeposit = Math.max(0, roundMoney(subtotal - totalDiscount));
+  const depositApplied = isDepositApproved(depositStatus)
+    ? Math.min(depositAmount, totalBeforeDeposit)
+    : 0;
+  const amountToCollectNow = Math.max(0, roundMoney(totalBeforeDeposit - depositApplied));
+  const total = totalBeforeDeposit;
 
   useEffect(() => {
     async function loadCatalogs() {
@@ -1316,9 +1912,9 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSa
 
   useEffect(() => {
     if (paymentMethod !== 'CASH') {
-      setCashReceived(String(total.toFixed(2)));
+      setCashReceived(String(amountToCollectNow.toFixed(2)));
     }
-  }, [paymentMethod, total]);
+  }, [paymentMethod, amountToCollectNow]);
 
   function addServiceItem() {
     const service = services.find((item) => String(item.id) === String(selectedServiceId));
@@ -1397,8 +1993,8 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSa
     }
 
     const received = Number(String(cashReceived).replace(',', '.')) || 0;
-    if (paymentMethod === 'CASH' && received + 0.009 < total) {
-      setErrorMsg('El efectivo recibido no puede ser menor al total.');
+    if (paymentMethod === 'CASH' && received + 0.009 < amountToCollectNow) {
+      setErrorMsg('El efectivo recibido no puede ser menor al saldo pendiente.');
       return;
     }
 
@@ -1410,10 +2006,13 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSa
         customerId: appointment.customerId || null,
         appointmentId: appointment.appointmentId || null,
         saleDate: buildLocalSaleDateForBackend(saleDate),
-        metodoPago: paymentMethod,
+        metodoPago: amountToCollectNow <= 0 ? 'FREE' : paymentMethod,
         discount: discountNumber,
-        cashReceived: paymentMethod === 'CASH' ? received : total,
-        payments: paymentMethod === 'FREE' ? [] : [{ method: paymentMethod, amount: total }],
+        cashReceived: paymentMethod === 'CASH' ? received : amountToCollectNow,
+        payments:
+          amountToCollectNow <= 0
+            ? []
+            : [{ method: paymentMethod, amount: amountToCollectNow }],
         items: items.map((item) => ({
           serviceId: item.serviceId,
           productId: item.productId,
@@ -1433,7 +2032,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSa
   }
 
   const change = paymentMethod === 'CASH'
-    ? Math.max(0, (Number(String(cashReceived).replace(',', '.')) || 0) - total)
+    ? Math.max(0, (Number(String(cashReceived).replace(',', '.')) || 0) - amountToCollectNow)
     : 0;
 
   return (
@@ -1558,10 +2157,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSa
                   label="Método de pago"
                   value={paymentMethod}
                   onChange={setPaymentMethod}
-                  options={paymentMethods.map((method) => ({
-                    value: method,
-                    label: methodLabel(method),
-                  }))}
+                  options={paymentOptions}
                 />
                 <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix="S/" />
                 <InputField label="Recibido" value={cashReceived} onChange={setCashReceived} type="number" step="0.01" prefix="S/" />
@@ -1622,11 +2218,17 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSa
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-5">
             <StatCard title="Subtotal" value={formatMoney(subtotal)} />
-            <StatCard title="Descuento" value={formatMoney(discountNumber)} />
-            <StatCard title="Total" value={formatMoney(total)} tone="gold" />
+            <StatCard title="Descuento" value={formatMoney(totalDiscount)} helper={appointmentDiscount > 0 ? `Incluye promo/cita ${formatMoney(appointmentDiscount)}` : null} />
+            <StatCard title="Total venta" value={formatMoney(total)} tone="gold" />
+            <StatCard title="Inicial aplicado" value={formatMoney(depositApplied)} tone={depositApplied > 0 ? 'green' : 'default'} />
+            <StatCard title="Saldo a cobrar" value={formatMoney(amountToCollectNow)} tone="dark" />
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
             <StatCard title="Vuelto" value={formatMoney(change)} tone={change > 0 ? 'green' : 'default'} />
+            <StatCard title="Pago final" value={amountToCollectNow <= 0 ? 'Cubierto con inicial' : paymentLabelFromOptions(paymentMethods, paymentMethod)} helper="El backend completará la venta con DEPOSIT_APPLIED si corresponde." />
           </div>
 
           {errorMsg && <ErrorBox message={errorMsg} />}
@@ -1644,7 +2246,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, onClose, onSa
 }
 
 
-function SaleModal({ branch, cashRegister, onClose, onSaved }) {
+function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -1663,20 +2265,45 @@ function SaleModal({ branch, cashRegister, onClose, onSaved }) {
   const [creatingCustomer, setCreatingCustomer] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [discount, setDiscount] = useState('0');
+  const [tipAmount, setTipAmount] = useState('0');
+  const [tipBarberUserId, setTipBarberUserId] = useState('');
   const [cashReceived, setCashReceived] = useState('0');
   const [saleDate, setSaleDate] = useState(toDateInputValue(new Date()));
+  const [payments, setPayments] = useState([createPaymentDraft('CASH', 0)]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const paymentMethods = ['CASH', 'YAPE', 'PLIN', 'TRANSFER', 'CARD'];
+  const paymentOptions = paymentSelectOptions(paymentMethods);
 
   const subtotal = items.reduce((sum, item) => sum + itemSubtotal(item), 0);
   const discountNumber = Number(String(discount).replace(',', '.')) || 0;
-  const total = Math.max(0, subtotal - discountNumber);
-  const received = Number(String(cashReceived).replace(',', '.')) || 0;
-  const change = paymentMethod === 'CASH' ? Math.max(0, received - total) : 0;
+  const tipNumber = Math.max(0, parseMoneyInput(tipAmount));
+  const firstServiceBarberId = items.find((item) => item.type === 'service' && item.barberUserId)?.barberUserId || selectedBarberId || '';
+  const effectiveTipBarberUserId = tipNumber > 0
+    ? (Number(tipBarberUserId || firstServiceBarberId || 0) || null)
+    : null;
+  const total = Math.max(0, subtotal + tipNumber - discountNumber);
+  const paymentPayloads = payments
+    .map((payment) => ({
+      method: normalizeMethod(payment.method),
+      amount: roundMoney(parseMoneyInput(payment.amount)),
+    }))
+    .filter((payment) => payment.method && payment.amount > 0);
+  const paymentsTotal = roundMoney(paymentPayloads.reduce((sum, payment) => sum + payment.amount, 0));
+  const remainingPayment = roundMoney(total - paymentsTotal);
+  const hasMixedPayment = paymentPayloads.length > 1;
+  const primaryPaymentMethod = total === 0
+    ? 'FREE'
+    : hasMixedPayment
+      ? 'MIXED'
+      : paymentPayloads[0]?.method || paymentMethod || 'CASH';
+  const cashPaymentTotal = roundMoney(paymentPayloads
+    .filter((payment) => normalizeMethod(payment.method) === 'CASH')
+    .reduce((sum, payment) => sum + payment.amount, 0));
+  const received = parseMoneyInput(cashReceived);
+  const change = cashPaymentTotal > 0 ? Math.max(0, roundMoney(received - cashPaymentTotal)) : 0;
 
   useEffect(() => {
     async function loadCatalogs() {
@@ -1796,10 +2423,39 @@ function SaleModal({ branch, cashRegister, onClose, onSaved }) {
   }
 
   useEffect(() => {
-    if (paymentMethod !== 'CASH') {
-      setCashReceived(String(total.toFixed(2)));
+    setPayments((prev) => {
+      if (prev.length !== 1) return prev;
+      return [{ ...prev[0], amount: total.toFixed(2) }];
+    });
+  }, [total]);
+
+  useEffect(() => {
+    if (cashPaymentTotal > 0 && received + 0.009 < cashPaymentTotal) {
+      setCashReceived(cashPaymentTotal.toFixed(2));
     }
-  }, [paymentMethod, total]);
+  }, [cashPaymentTotal]);
+
+  function updatePayment(index, field, value) {
+    setPayments((prev) => prev.map((payment, i) => (
+      i === index ? { ...payment, [field]: value } : payment
+    )));
+
+    if (field === 'method' && index === 0) {
+      setPaymentMethod(value);
+    }
+  }
+
+  function addPaymentMethod() {
+    const nextAmount = remainingPayment > 0 ? remainingPayment : 0;
+    setPayments((prev) => [...prev, createPaymentDraft(defaultExtraPaymentMethod(paymentMethods), nextAmount)]);
+  }
+
+  function removePaymentMethod(index) {
+    setPayments((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
+  }
 
   function currentBarber() {
     return barbers.find((item) => String(item.id) === String(selectedBarberId));
@@ -1902,8 +2558,24 @@ function SaleModal({ branch, cashRegister, onClose, onSaved }) {
       return;
     }
 
-    if (paymentMethod === 'CASH' && received + 0.009 < total) {
-      setErrorMsg('El efectivo recibido no puede ser menor al total.');
+    if (tipNumber > 0 && !effectiveTipBarberUserId) {
+      setErrorMsg('Para registrar propina, selecciona el barbero que la recibirá o agrega un servicio con barbero.');
+      return;
+    }
+
+    if (total > 0 && paymentPayloads.length === 0) {
+      setErrorMsg('Agrega al menos un método de pago.');
+      return;
+    }
+
+    if (Math.abs(remainingPayment) > 0.009) {
+      const label = remainingPayment > 0 ? 'Falta' : 'Sobra';
+      setErrorMsg(`${label} ${formatMoney(Math.abs(remainingPayment))} para completar el total.`);
+      return;
+    }
+
+    if (cashPaymentTotal > 0 && received + 0.009 < cashPaymentTotal) {
+      setErrorMsg('El efectivo recibido no puede ser menor al monto pagado en efectivo.');
       return;
     }
 
@@ -1927,10 +2599,12 @@ function SaleModal({ branch, cashRegister, onClose, onSaved }) {
         customerId: selectedCustomer?.id || null,
         appointmentId: null,
         saleDate: buildLocalSaleDateForBackend(saleDate),
-        metodoPago: paymentMethod,
+        metodoPago: primaryPaymentMethod,
         discount: discountNumber,
-        cashReceived: paymentMethod === 'CASH' ? received : total,
-        payments: [{ method: paymentMethod, amount: total }],
+        cashReceived: cashPaymentTotal > 0 ? received : total,
+        tipAmount: tipNumber,
+        tipBarberUserId: effectiveTipBarberUserId,
+        payments: total === 0 ? [] : paymentPayloads,
         cutType: hasHaircut ? 'Corte registrado en caja web' : null,
         cutDetail: hasHaircut ? 'Venta registrada desde panel web' : null,
         cutObservations: selectedCustomer ? null : (customerName.trim() ? `Referencia: ${customerName.trim()}` : null),
@@ -2169,23 +2843,134 @@ function SaleModal({ branch, cashRegister, onClose, onSaved }) {
                   )}
                 </label>
 
-                <SelectField
-                  label="Método de pago"
-                  value={paymentMethod}
-                  onChange={setPaymentMethod}
-                  options={paymentMethods.map((method) => ({
-                    value: method,
-                    label: methodLabel(method),
-                  }))}
-                />
-
                 <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix="S/" />
-                <InputField label="Recibido" value={cashReceived} onChange={setCashReceived} type="number" step="0.01" prefix="S/" />
+
+                <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+                    Propina para barbero
+                  </div>
+                  <p className="mt-2 text-xs font-bold leading-5 text-emerald-800">
+                    La propina se suma al total cobrado y aparecerá en el cálculo de pago al barbero.
+                  </p>
+
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <InputField
+                      label="Monto de propina"
+                      value={tipAmount}
+                      onChange={setTipAmount}
+                      type="number"
+                      step="0.01"
+                      prefix="S/"
+                    />
+
+                    <SelectField
+                      label="Barbero que recibe la propina"
+                      value={tipBarberUserId || String(firstServiceBarberId || '')}
+                      onChange={setTipBarberUserId}
+                      options={[
+                        { value: '', label: 'Selecciona barbero' },
+                        ...barbers.map((barber) => ({
+                          value: String(barber.id),
+                          label: barber.name,
+                        })),
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-600">
+                        Métodos de pago
+                      </div>
+                      <div className="mt-2 text-sm font-bold leading-5 text-neutral-500">
+                        Divide el cobro entre los métodos configurados para este negocio.
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={addPaymentMethod}
+                      className="rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white transition hover:scale-[1.01] sm:shrink-0"
+                    >
+                      + Agregar método
+                    </button>
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    {payments.map((payment, index) => (
+                      <div
+                        key={payment.key}
+                        className="rounded-[22px] border border-neutral-200 bg-neutral-50 p-4"
+                      >
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div className="text-xs font-black uppercase tracking-[0.16em] text-neutral-500">
+                            {index === 0 ? 'Método principal' : `Método ${index + 1}`}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => removePaymentMethod(index)}
+                            disabled={payments.length <= 1}
+                            className="rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-black text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            Quitar
+                          </button>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-[1fr_1fr]">
+                          <SelectField
+                            label="Método"
+                            value={payment.method}
+                            onChange={(value) => updatePayment(index, 'method', value)}
+                            options={paymentOptions}
+                          />
+
+                          <InputField
+                            label="Monto"
+                            value={payment.amount}
+                            onChange={(value) => updatePayment(index, 'amount', value)}
+                            type="number"
+                            step="0.01"
+                            prefix="S/"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className={`mt-5 rounded-[22px] border px-4 py-4 text-sm font-black ${
+                    Math.abs(remainingPayment) <= 0.009
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : remainingPayment > 0
+                        ? 'border-amber-200 bg-amber-50 text-amber-700'
+                        : 'border-red-200 bg-red-50 text-red-700'
+                  }`}>
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <span>Pagado: {formatMoney(paymentsTotal)}</span>
+                      <span>{Math.abs(remainingPayment) <= 0.009 ? 'Pago completo' : remainingPayment > 0 ? `Falta ${formatMoney(remainingPayment)}` : `Sobra ${formatMoney(Math.abs(remainingPayment))}`}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {cashPaymentTotal > 0 && (
+                  <InputField
+                    label={`Efectivo recibido para ${formatMoney(cashPaymentTotal)}`}
+                    value={cashReceived}
+                    onChange={setCashReceived}
+                    type="number"
+                    step="0.01"
+                    prefix="S/"
+                  />
+                )}
               </div>
 
               <div className="mt-5 grid gap-3">
                 <StatCard title="Subtotal" value={formatMoney(subtotal)} />
                 <StatCard title="Descuento" value={formatMoney(discountNumber)} />
+                <StatCard title="Propina" value={formatMoney(tipNumber)} tone={tipNumber > 0 ? 'green' : 'default'} />
+                <StatCard title="Pagado" value={formatMoney(paymentsTotal)} tone={Math.abs(remainingPayment) <= 0.009 ? 'green' : 'gold'} />
                 <StatCard title="Vuelto" value={formatMoney(change)} tone={change > 0 ? 'green' : 'default'} />
               </div>
             </div>
@@ -2385,18 +3170,27 @@ function paymentTotalFrom(cash, key) {
   }, 0);
 }
 
-function HistorySummaryCard({ items }) {
+function HistorySummaryCard({ items, paymentMethods = DEFAULT_PAYMENT_METHODS }) {
   const totals = items.reduce(
     (acc, cash) => {
       acc.sales += Number(cash.salesTotal || 0);
       acc.income += Number(cash.movementsIncome || 0);
       acc.expense += Number(cash.movementsExpense || 0);
       acc.expected += Number(cash.closingAmountExpected || 0);
-      acc.cash += paymentTotalFrom(cash, 'CASH');
-      acc.yape += paymentTotalFrom(cash, 'YAPE');
-      acc.plin += paymentTotalFrom(cash, 'PLIN');
-      acc.card += paymentTotalFrom(cash, 'CARD');
-      acc.transfer += paymentTotalFrom(cash, 'TRANSFER');
+
+      const source = Array.isArray(cash?.paymentMethodBalances) && cash.paymentMethodBalances.length > 0
+        ? cash.paymentMethodBalances
+        : cash?.paymentMethodsSummary || [];
+
+      source.forEach((item) => {
+        const code = summaryMethodOf(item);
+        if (!code || code === 'FREE' || code === 'DEPOSIT_APPLIED') return;
+        const current = acc.methods.get(code) || { code, totalAmount: 0, count: 0 };
+        current.totalAmount += summaryAmountOf(item);
+        current.count += summaryCountOf(item);
+        acc.methods.set(code, current);
+      });
+
       return acc;
     },
     {
@@ -2404,15 +3198,24 @@ function HistorySummaryCard({ items }) {
       income: 0,
       expense: 0,
       expected: 0,
-      cash: 0,
-      yape: 0,
-      plin: 0,
-      card: 0,
-      transfer: 0,
+      methods: new Map(),
     }
   );
 
   const net = totals.sales + totals.income - totals.expense;
+  const methodRows = buildPaymentMethodRows(
+    Array.from(totals.methods.values()).map((item) => ({
+      paymentMethod: item.code,
+      totalAmount: item.totalAmount,
+      count: item.count,
+    })),
+    Array.from(totals.methods.values()).map((item) => ({
+      paymentMethod: item.code,
+      totalAmount: item.totalAmount,
+      count: item.count,
+    })),
+    paymentMethods
+  );
 
   return (
     <div className="rounded-[30px] border border-amber-200 bg-[linear-gradient(135deg,#FFFBEB_0%,#FFFFFF_68%)] p-5 shadow-[0_16px_38px_rgba(15,23,42,0.045)]">
@@ -2445,11 +3248,13 @@ function HistorySummaryCard({ items }) {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <HistoryPaymentPill label="Efectivo" value={totals.cash} />
-          <HistoryPaymentPill label="Yape" value={totals.yape} />
-          <HistoryPaymentPill label="Plin" value={totals.plin} />
-          <HistoryPaymentPill label="Tarjeta" value={totals.card} />
-          <HistoryPaymentPill label="Transferencia" value={totals.transfer} />
+          {methodRows.map((method) => (
+            <HistoryPaymentPill
+              key={method.code}
+              label={method.label || methodLabel(method.code)}
+              value={method.balanceAmount}
+            />
+          ))}
         </div>
       </div>
     </div>
@@ -2487,8 +3292,9 @@ function HistoryPaymentPill({ label, value }) {
   );
 }
 
-function HistoryDetailModal({ branch, cash, onClose }) {
+function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, onClose }) {
   const [sales, setSales] = useState([]);
+  const [paymentMethods] = useState(initialPaymentMethods);
   const [loadingSales, setLoadingSales] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -2560,7 +3366,7 @@ function HistoryDetailModal({ branch, cash, onClose }) {
                   className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4"
                 >
                   <div className="text-sm font-black text-neutral-950">
-                    {methodLabel(payment.paymentMethod)}
+                    {paymentLabelFromOptions(paymentMethods, payment.paymentMethod)}
                   </div>
                   <div className="mt-1 text-xs text-neutral-500">
                     {payment.count || 0} operación(es)
@@ -2682,7 +3488,7 @@ function HistoryDetailModal({ branch, cash, onClose }) {
   );
 }
 
-function CashHistoryModal({ branch, onClose }) {
+function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose }) {
   const today = new Date();
   const fromDefault = new Date();
   fromDefault.setDate(today.getDate() - 30);
@@ -2734,7 +3540,7 @@ function CashHistoryModal({ branch, onClose }) {
           </div>
 
           {!loading && !errorMsg && items.length > 0 && (
-            <HistorySummaryCard items={items} />
+            <HistorySummaryCard items={items} paymentMethods={paymentMethods} />
           )}
 
           {loading ? (
@@ -2794,6 +3600,7 @@ function CashHistoryModal({ branch, onClose }) {
         <HistoryDetailModal
           branch={branch}
           cash={selectedCash}
+          paymentMethods={paymentMethods}
           onClose={() => setSelectedCash(null)}
         />
       )}
@@ -2808,6 +3615,7 @@ export default function OwnerCashPage() {
   const [cashRegister, setCashRegister] = useState(null);
   const [movements, setMovements] = useState([]);
   const [sales, setSales] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState(DEFAULT_PAYMENT_METHODS);
 
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [loadingCash, setLoadingCash] = useState(false);
@@ -2821,6 +3629,7 @@ export default function OwnerCashPage() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showBarberPaymentModal, setShowBarberPaymentModal] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
+  const [viewingSale, setViewingSale] = useState(null);
   const [pendingAppointment, setPendingAppointment] = useState(null);
   const [showAppointmentSaleModal, setShowAppointmentSaleModal] = useState(false);
 
@@ -2843,6 +3652,20 @@ export default function OwnerCashPage() {
       setErrorMsg(error.message || 'No se pudieron cargar las sedes.');
     } finally {
       setLoadingBranches(false);
+    }
+  }
+
+  async function loadPaymentMethods(branchId = selectedBranchId) {
+    if (!branchId) {
+        setPaymentMethods(DEFAULT_PAYMENT_METHODS);
+      return;
+    }
+
+    try {
+      const data = await getOwnerPaymentMethods(branchId);
+      setPaymentMethods(normalizePaymentMethodOptions(data));
+    } catch {
+        setPaymentMethods(DEFAULT_PAYMENT_METHODS);
     }
   }
 
@@ -2898,6 +3721,7 @@ export default function OwnerCashPage() {
 
   useEffect(() => {
     if (selectedBranchId) {
+      loadPaymentMethods(selectedBranchId);
       loadCash(selectedBranchId);
     }
   }, [selectedBranchId]);
@@ -2932,17 +3756,28 @@ export default function OwnerCashPage() {
 
   const isOpen = String(cashRegister?.status || '').toUpperCase() === 'OPEN';
 
-  const paymentsSource =
-    Array.isArray(cashRegister?.paymentMethodBalances) && cashRegister.paymentMethodBalances.length > 0
-      ? cashRegister.paymentMethodBalances
-      : Array.isArray(cashRegister?.paymentMethodsSummary)
-        ? cashRegister.paymentMethodsSummary
-        : [];
+  const paymentSalesSource = Array.isArray(cashRegister?.paymentMethodsSummary)
+    ? cashRegister.paymentMethodsSummary
+    : [];
+
+  const paymentBalanceSource = Array.isArray(cashRegister?.paymentMethodBalances)
+    ? cashRegister.paymentMethodBalances
+    : [];
+
+  const paymentRows = buildPaymentMethodRows(paymentSalesSource, paymentBalanceSource, paymentMethods);
+  const cashRow = paymentRows.find((item) => item.code === 'CASH');
+  const digitalBalance = paymentRows
+    .filter((item) => item.code !== 'CASH')
+    .reduce((sum, item) => sum + Number(item.balanceAmount || 0), 0);
+  const digitalSales = paymentRows
+    .filter((item) => item.code !== 'CASH')
+    .reduce((sum, item) => sum + Number(item.salesAmount || 0), 0);
 
   const expected = Number(cashRegister?.closingAmountExpected || 0);
   const openingAmount = Number(cashRegister?.openingAmount || 0);
   const salesTotal = Number(cashRegister?.salesTotal || 0);
-  const cashSalesTotal = Number(cashRegister?.cashSalesTotal || 0);
+  const cashSalesTotal = Number(cashRow?.salesAmount ?? cashRegister?.cashSalesTotal ?? 0);
+  const cashBalance = Number(cashRow?.balanceAmount ?? expected);
   const income = Number(cashRegister?.movementsIncome || 0);
   const expense = Number(cashRegister?.movementsExpense || 0);
 
@@ -3114,17 +3949,51 @@ export default function OwnerCashPage() {
       ) : (
         <>
           <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-            <StatCard title="Apertura" value={formatMoney(openingAmount)} helper="Monto inicial" />
+            <StatCard title="Apertura" value={formatMoney(openingAmount)} helper="Fondo inicial de efectivo" />
             <StatCard title="Ventas total" value={formatMoney(salesTotal)} helper="Todos los métodos" tone="gold" />
-            <StatCard title="Ventas efectivo" value={formatMoney(cashSalesTotal)} helper="Solo efectivo" />
-            <StatCard title="Ingresos" value={formatMoney(income)} helper="Ingresos manuales" tone="green" />
+            <StatCard title="Efectivo físico" value={formatMoney(cashBalance)} helper="Saldo esperado en caja" tone={balanceTone(cashBalance)} />
+            <StatCard title="Digital disponible" value={formatMoney(digitalBalance)} helper="Métodos digitales configurados" />
             <StatCard
-  title="Esperado"
-  value={formatMoney(expected)}
-  helper={expected < 0 ? 'Caja física en negativo' : 'Caja física esperada'}
-  tone={balanceTone(expected)}
-/>
-</section>
+              title="Esperado"
+              value={formatMoney(expected)}
+              helper={expected < 0 ? 'Caja física en negativo' : 'Caja física esperada'}
+              tone={balanceTone(expected)}
+            />
+          </section>
+
+          <section className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
+                  Conciliación por método
+                </div>
+                <h3 className="mt-2 text-2xl font-black text-neutral-950">
+                  Dinero esperado por método de pago
+                </h3>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-500">
+                  El efectivo incluye apertura, ventas en efectivo, ingresos, gastos, pagos a barberos y traslados.
+                  Los métodos digitales muestran el saldo disponible después de movimientos.
+                </p>
+              </div>
+
+              <div className="grid gap-2 text-sm sm:grid-cols-2">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                  <div className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Efectivo vendido</div>
+                  <div className="mt-1 text-lg font-black text-emerald-800">{formatMoney(cashSalesTotal)}</div>
+                </div>
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3">
+                  <div className="text-xs font-black uppercase tracking-[0.16em] text-blue-700">Digital vendido</div>
+                  <div className="mt-1 text-lg font-black text-blue-800">{formatMoney(digitalSales)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              {paymentRows.map((method) => (
+                <PaymentMethodCard key={method.code} method={method} />
+              ))}
+            </div>
+          </section>
 
 <CashNegativeAlert
   expected={expected}
@@ -3135,62 +4004,49 @@ export default function OwnerCashPage() {
 <section className="grid gap-5 xl:grid-cols-[0.78fr_1.22fr]">
             <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
               <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
-                Métodos de pago
+                Caja física
               </div>
 
               <h3 className="mt-2 text-2xl font-black text-neutral-950">
-              Saldo actual por método de pago
+                Fórmula del efectivo esperado
               </h3>
-              <div className="mt-5 rounded-[24px] border border-amber-200 bg-amber-50 p-4">
-  <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
-    Fórmula de caja física
-  </div>
 
-  <div className="mt-2 text-sm font-black text-neutral-950">
-    {formatMoney(cashSalesTotal)} - {formatMoney(expense)} = {formatMoney(expected)}
-  </div>
+              <p className="mt-1 text-sm leading-6 text-neutral-500">
+                Este cálculo te dice cuánto dinero físico deberías tener en la caja.
+              </p>
 
-  <div className="mt-1 text-xs text-neutral-500">
-    Ventas en efectivo menos salidas registradas.
-  </div>
-</div>
               <div className="mt-5 space-y-3">
-                {paymentsSource.length === 0 ? (
-                  <div className="rounded-2xl bg-neutral-50 p-4 text-sm font-bold text-neutral-500">
-                    Sin pagos registrados aún.
+                <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+                    Entrada de efectivo
                   </div>
-                ) : (
-                  paymentsSource.map((payment) => (
-                    <div
-                      key={`${payment.paymentMethod}-${payment.totalAmount}`}
-                      className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4"
-                    >
-                      <div>
-                        <div className="font-black text-neutral-950">
-                          {methodLabel(payment.paymentMethod)}
-                        </div>
-                        <div className="text-xs text-neutral-500">
-                          {payment.count || 0} operación(es)
-                        </div>
-                      </div>
-
-                      <div className={`text-lg font-black ${amountClassByValue(payment.totalAmount)}`}>
-  {formatMoney(payment.totalAmount)}
-</div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="mt-5 rounded-[24px] border border-red-100 bg-red-50 p-4">
-                <div className="text-sm font-black text-red-700">
-                  Salidas / gastos
+                  <div className="mt-2 text-sm font-black text-neutral-950">
+                    Apertura {formatMoney(openingAmount)} + ventas efectivo {formatMoney(cashSalesTotal)} + ingresos {formatMoney(income)}
+                  </div>
                 </div>
-                <div className="mt-2 text-2xl font-black text-red-700">
-                  {formatMoney(expense)}
+
+                <div className="rounded-[24px] border border-red-100 bg-red-50 p-4">
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-red-700">
+                    Salidas de efectivo
+                  </div>
+                  <div className="mt-2 text-2xl font-black text-red-700">
+                    {formatMoney(expense)}
+                  </div>
+                  <div className="mt-1 text-xs text-red-500">
+                    Gastos, adelantos, pagos de barbero y salidas registradas.
+                  </div>
                 </div>
-                <div className="mt-1 text-xs text-red-500">
-                Gastos, adelantos, pagos de barbero y salidas registradas.
+
+                <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-4">
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+                    Resultado esperado
+                  </div>
+                  <div className="mt-2 text-xl font-black text-neutral-950">
+                    {formatMoney(expected)}
+                  </div>
+                  <div className="mt-1 text-xs text-neutral-500">
+                    Si el monto físico contado no coincide, revisa movimientos o pagos registrados con método incorrecto.
+                  </div>
                 </div>
               </div>
             </div>
@@ -3277,6 +4133,7 @@ export default function OwnerCashPage() {
 
           <SalesSection
             sales={sales}
+            onView={(sale) => setViewingSale(sale)}
             onEdit={(sale) => setEditingSale(sale)}
             onDelete={handleDeleteSale}
           />
@@ -3309,6 +4166,7 @@ export default function OwnerCashPage() {
       {showHistoryModal && selectedBranch && (
         <CashHistoryModal
           branch={selectedBranch}
+          paymentMethods={paymentMethods}
           onClose={() => setShowHistoryModal(false)}
         />
       )}
@@ -3317,6 +4175,7 @@ export default function OwnerCashPage() {
         <SaleModal
           branch={selectedBranch}
           cashRegister={cashRegister}
+          paymentMethods={paymentMethods}
           onClose={() => setShowSaleModal(false)}
           onSaved={async () => {
             setShowSaleModal(false);
@@ -3329,6 +4188,7 @@ export default function OwnerCashPage() {
         <MovementModal
           branch={selectedBranch}
           cashRegister={cashRegister}
+          paymentMethods={paymentMethods}
           onClose={() => setShowMovementModal(false)}
           onSaved={() => {
             setShowMovementModal(false);
@@ -3341,6 +4201,7 @@ export default function OwnerCashPage() {
         <BarberPaymentModal
           branch={selectedBranch}
           cashRegister={cashRegister}
+          paymentMethods={paymentMethods}
           onClose={() => setShowBarberPaymentModal(false)}
           onSaved={() => {
             setShowBarberPaymentModal(false);
@@ -3354,6 +4215,7 @@ export default function OwnerCashPage() {
           branch={selectedBranch}
           cashRegister={cashRegister}
           appointment={pendingAppointment}
+          paymentMethods={paymentMethods}
           onClose={() => setShowAppointmentSaleModal(false)}
           onSaved={() => {
             setShowAppointmentSaleModal(false);
@@ -3363,10 +4225,19 @@ export default function OwnerCashPage() {
         />
       )}
 
+
+      {viewingSale && (
+        <SaleDetailModal
+          sale={viewingSale}
+          onClose={() => setViewingSale(null)}
+        />
+      )}
+
       {editingSale && selectedBranch && (
         <EditSaleModal
           branch={selectedBranch}
           sale={editingSale}
+          paymentMethods={paymentMethods}
           onClose={() => setEditingSale(null)}
           onSaved={() => {
             setEditingSale(null);

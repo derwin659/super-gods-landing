@@ -136,6 +136,44 @@ export function normalizeAgendaItem(raw = {}) {
       raw.notaPagoInicial ??
       raw.note ??
       '',
+
+    paymentInitialValidated:
+      toBool(raw.pagoInicialValidado ?? raw.paymentInitialValidated),
+
+    priceService: toNumber(
+      raw.precioServicio ??
+        raw.servicePrice ??
+        raw.priceService ??
+        raw.originalAmount ??
+        raw.totalAmount
+    ),
+
+    promotionTitle:
+      raw.promotionTitle ??
+      raw.tituloPromocion ??
+      raw.promoTitle ??
+      '',
+
+    originalAmount: toNumber(
+      raw.originalAmount ??
+        raw.montoOriginal ??
+        raw.precioOriginal ??
+        raw.precioServicio
+    ),
+
+    discountAmount: toNumber(
+      raw.discountAmount ??
+        raw.montoDescuento ??
+        raw.descuentoPromocion ??
+        raw.promotionDiscount
+    ),
+
+    totalAmount: toNumber(
+      raw.totalAmount ??
+        raw.montoTotal ??
+        raw.precioFinal ??
+        raw.precioServicio
+    ),
   };
 }
 
@@ -164,9 +202,12 @@ export async function validateAppointmentDeposit({
   appointmentId,
   approved,
   note,
+  branchId = null,
 }) {
   return apiRequest(
-    `/api/owner/appointments/${appointmentId}/deposit/validate`,
+    `/api/owner/agenda/appointments/${appointmentId}/deposit/validate${toQuery({
+      branchId,
+    })}`,
     {
       method: 'POST',
       body: JSON.stringify({
@@ -355,6 +396,7 @@ function appointmentPayload({
   customerId,
   serviceId,
   barberUserId,
+  branchId,
   fecha,
   horaInicio,
   horaFin = null,
@@ -372,116 +414,59 @@ function appointmentPayload({
     customerId,
     serviceId,
     barberUserId,
+    branchId,
     fecha,
     horaInicio,
     horaFin,
     estado,
     notas,
     depositRequired: Boolean(depositRequired),
-    depositAmount: depositRequired ? Number(depositAmount || 0) : 0,
-    depositMethodCode: depositRequired ? depositMethodCode : null,
-    depositMethodName: depositRequired ? depositMethodName : null,
-    depositOperationCode: depositRequired ? depositOperationCode : null,
-    depositEvidenceUrl: depositRequired ? depositEvidenceUrl : null,
-    depositNote: depositRequired ? depositNote : null,
+    depositAmount: Number(depositAmount || 0),
+    depositMethodCode,
+    depositMethodName,
+    depositOperationCode,
+    depositEvidenceUrl,
+    depositNote,
   };
 }
 
-export async function createOwnerAppointment({
-  branchId,
-  customerId,
-  serviceId,
-  barberUserId,
-  fecha,
-  horaInicio,
-  horaFin = null,
-  notas = null,
-  depositRequired = false,
-  depositAmount = 0,
-  depositMethodCode = null,
-  depositMethodName = null,
-  depositOperationCode = null,
-  depositEvidenceUrl = null,
-  depositNote = null,
-}) {
-  return apiRequest(
-    `/api/owner/agenda/appointments${toQuery({ branchId })}`,
+export async function createOwnerAppointment(payload) {
+  const data = await apiRequest(
+    `/api/owner/agenda/appointments${toQuery({
+      branchId: payload.branchId,
+    })}`,
     {
       method: 'POST',
-      body: JSON.stringify({
-        branchId,
-        ...appointmentPayload({
-          customerId,
-          serviceId,
-          barberUserId,
-          fecha,
-          horaInicio,
-          horaFin,
-          notas,
-          depositRequired,
-          depositAmount,
-          depositMethodCode,
-          depositMethodName,
-          depositOperationCode,
-          depositEvidenceUrl,
-          depositNote,
-        }),
-      }),
+      body: JSON.stringify(appointmentPayload(payload)),
     }
   );
+
+  return normalizeAgendaItem(data);
 }
 
-export async function updateOwnerAppointment({
-  branchId,
-  appointmentId,
-  customerId,
-  serviceId,
-  barberUserId,
-  fecha,
-  horaInicio,
-  horaFin = null,
-  estado = null,
-  notas = null,
-  depositRequired = false,
-  depositAmount = 0,
-  depositMethodCode = null,
-  depositMethodName = null,
-  depositOperationCode = null,
-  depositEvidenceUrl = null,
-  depositNote = null,
-}) {
-  return apiRequest(
-    `/api/owner/agenda/appointments/${appointmentId}${toQuery({ branchId })}`,
+export async function updateOwnerAppointment(payload) {
+  const data = await apiRequest(
+    `/api/owner/agenda/appointments/${payload.appointmentId}${toQuery({
+      branchId: payload.branchId,
+    })}`,
     {
       method: 'PUT',
-      body: JSON.stringify(
-        appointmentPayload({
-          customerId,
-          serviceId,
-          barberUserId,
-          fecha,
-          horaInicio,
-          horaFin,
-          estado,
-          notas,
-          depositRequired,
-          depositAmount,
-          depositMethodCode,
-          depositMethodName,
-          depositOperationCode,
-          depositEvidenceUrl,
-          depositNote,
-        })
-      ),
+      body: JSON.stringify(appointmentPayload(payload)),
     }
   );
+
+  return normalizeAgendaItem(data);
 }
 
-export async function cancelOwnerAppointment({ branchId, appointmentId }) {
-  return apiRequest(
-    `/api/owner/agenda/appointments/${appointmentId}${toQuery({ branchId })}`,
+export async function cancelOwnerAppointment({ appointmentId, branchId }) {
+  const data = await apiRequest(
+    `/api/owner/agenda/appointments/${appointmentId}${toQuery({
+      branchId,
+    })}`,
     {
       method: 'DELETE',
     }
   );
+
+  return normalizeAgendaItem(data);
 }

@@ -381,6 +381,7 @@ function AppointmentCard({
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <InfoLine label="Servicio" value={item.servicio} />
+            <InfoLine label="Precio" value={formatMoney(item.totalAmount || item.remainingAmount || item.depositAmount || 0)} />
             <InfoLine label="Barbero" value={item.barbero} />
             <InfoLine label="Teléfono" value={item.telefono || '-'} />
             <InfoLine label="Sede" value={item.branchId ? `ID ${item.branchId}` : '-'} />
@@ -1383,6 +1384,7 @@ export default function OwnerAgendaPage() {
     try {
       await validateAppointmentDeposit({
         appointmentId: item.appointmentId,
+        branchId: item.branchId || selectedBranchId,
         approved,
         note: approved
           ? 'Pago validado correctamente desde agenda web'
@@ -1413,6 +1415,10 @@ export default function OwnerAgendaPage() {
       depositAmount: item.depositAmount,
       remainingAmount: item.remainingAmount,
       depositStatus: item.depositStatus,
+      promotionTitle: item.promotionTitle,
+      originalAmount: item.originalAmount,
+      discountAmount: item.discountAmount,
+      totalAmount: item.totalAmount,
     };
 
     window.sessionStorage.setItem(
