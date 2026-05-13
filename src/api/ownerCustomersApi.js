@@ -304,3 +304,46 @@ export async function getOwnerCustomerLoyalty(customerId) {
 
   return null;
 }
+
+function normalizeInactiveCustomer(raw = {}) {
+    return {
+      id: toNumber(raw.customerId ?? raw.id),
+      customerId: toNumber(raw.customerId ?? raw.id),
+      nombre: text(raw.nombre ?? raw.name ?? raw.nombreCompleto ?? 'Cliente'),
+      telefono: text(raw.telefono ?? raw.phone ?? raw.phoneNumber ?? ''),
+      ultimaVisita: text(raw.ultimaVisita ?? raw.lastVisit ?? raw.lastVisitDate ?? ''),
+      raw,
+    };
+  }
+  
+  export async function getInactiveOwnerCustomers(days = 30) {
+    const data = await apiRequest(
+      `/api/owner/customers/inactive${toQuery({ days })}`
+    );
+  
+    return extractList(data).map(normalizeInactiveCustomer);
+  }
+  
+  export function buildCustomerWhatsappUrl({
+    telefono,
+    nombre,
+    businessName = 'tu barbería',
+    message = '',
+  }) {
+    const cleanPhone = String(telefono || '').replace(/[^0-9]/g, '');
+  
+    if (!cleanPhone) return '';
+  
+    const phoneWithCountry = cleanPhone.startsWith('51')
+      ? cleanPhone
+      : `51${cleanPhone}`;
+  
+    const text = encodeURIComponent(
+      message ||
+        `Hola ${nombre || ''} 👋 somos ${businessName}.\n\n` +
+          `Hace tiempo no te vemos por aquí y queríamos invitarte a volver.\n\n` +
+          `Tenemos una atención especial para ti esta semana. Puedes reservar tu cita cuando gustes.`
+    );
+  
+    return `https://wa.me/${phoneWithCountry}?text=${text}`;
+  }

@@ -18,7 +18,6 @@ import { getOwnerBranches } from '../../api/ownerCashApi';
 import {
   getBarberDetail,
   getBarberSummary,
-  getBranchDetail,
   getDailySales,
   getPaymentSummary,
   getProfitabilityReport,
@@ -91,14 +90,6 @@ function methodLabel(value) {
 
 function n(value) {
   return Number(value || 0);
-}
-
-function getBranchIdentifier(branch) {
-  return branch?.id ?? branch?.branchId ?? branch?.sucursalId;
-}
-
-function getBranchDisplayName(branch) {
-  return branch?.name || branch?.nombre || branch?.branchName || `Sede ${getBranchIdentifier(branch) || '-'}`;
 }
 
 function ErrorBox({ message }) {
@@ -416,258 +407,6 @@ function BarberDetailModal({ barber, loading, errorMsg, items, onClose }) {
   );
 }
 
-
-function BranchComparisonSection({ branchReports, loading, onOpenDetail }) {
-  const orderedReports = [...branchReports].sort((a, b) => n(b.totalSales) - n(a.totalSales));
-  const totalSales = orderedReports.reduce((sum, item) => sum + n(item.totalSales), 0);
-  const totalCount = orderedReports.reduce((sum, item) => sum + n(item.totalSalesCount), 0);
-
-  return (
-    <section className="rounded-[30px] border border-neutral-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.05)]">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
-            Sedes
-          </div>
-          <h3 className="mt-2 text-xl font-black text-neutral-950">
-            Comparativo por sede
-          </h3>
-          <p className="mt-1 text-sm text-neutral-500">
-            Compara ventas, ticket promedio, barberos activos y desempeño por sucursal.
-          </p>
-        </div>
-
-        <div className="rounded-2xl bg-neutral-100 px-4 py-3 text-sm font-black text-neutral-700">
-          {orderedReports.length} sede{orderedReports.length === 1 ? '' : 's'} · {formatMoney(totalSales)} · {totalCount} venta{totalCount === 1 ? '' : 's'}
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {[1, 2, 3].map((item) => (
-            <div key={item} className="h-52 animate-pulse rounded-[28px] bg-neutral-100" />
-          ))}
-        </div>
-      ) : orderedReports.length === 0 ? (
-        <div className="mt-5 rounded-[24px] border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center text-sm font-bold text-neutral-400">
-          No hay información por sede para el rango seleccionado.
-        </div>
-      ) : (
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {orderedReports.map((branch, index) => {
-            const participation = totalSales > 0 ? (n(branch.totalSales) / totalSales) * 100 : 0;
-
-            return (
-              <div
-                key={branch.branchId || branch.branchName || index}
-                className="rounded-[28px] border border-neutral-200 bg-neutral-50 p-5 transition hover:-translate-y-0.5 hover:border-amber-200 hover:bg-white hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[11px] font-black uppercase tracking-[0.16em] text-amber-600">
-                      Sede #{index + 1}
-                    </div>
-                    <h4 className="mt-2 text-xl font-black text-neutral-950">
-                      {branch.branchName || 'Sede'}
-                    </h4>
-                  </div>
-
-                  <div className="rounded-full bg-white px-3 py-1 text-xs font-black text-neutral-500 shadow-sm">
-                    {formatPercent(participation)}
-                  </div>
-                </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-white p-4 shadow-sm">
-                    <div className="text-xs font-bold text-neutral-500">Ventas</div>
-                    <div className="mt-1 text-lg font-black text-neutral-950">{formatMoney(branch.totalSales)}</div>
-                  </div>
-
-                  <div className="rounded-2xl bg-white p-4 shadow-sm">
-                    <div className="text-xs font-bold text-neutral-500">Cantidad</div>
-                    <div className="mt-1 text-lg font-black text-neutral-950">{n(branch.totalSalesCount)}</div>
-                  </div>
-
-                  <div className="rounded-2xl bg-white p-4 shadow-sm">
-                    <div className="text-xs font-bold text-neutral-500">Ticket</div>
-                    <div className="mt-1 text-lg font-black text-neutral-950">{formatMoney(branch.averageTicket)}</div>
-                  </div>
-
-                  <div className="rounded-2xl bg-white p-4 shadow-sm">
-                    <div className="text-xs font-bold text-neutral-500">Barberos</div>
-                    <div className="mt-1 text-lg font-black text-neutral-950">{n(branch.activeBarbers)}</div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onOpenDetail(branch)}
-                  className="mt-5 w-full rounded-2xl bg-neutral-950 px-4 py-3 text-sm font-black text-white transition hover:bg-amber-500 hover:text-neutral-950"
-                >
-                  Ver detalle de sede
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function BranchDetailModal({ branch, onClose }) {
-  const payment = branch?.paymentSummary || {};
-  const paymentRows = [
-    ['Efectivo', payment.cash],
-    ['Yape', payment.yape],
-    ['Plin', payment.plin],
-    ['Tarjeta', payment.card],
-    ['Transferencia', payment.transfer],
-  ];
-
-  const barbers = Array.isArray(branch?.barbers) ? branch.barbers : [];
-  const services = Array.isArray(branch?.topServices) ? branch.topServices : [];
-  const daily = Array.isArray(branch?.dailySales) ? branch.dailySales : [];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/60 px-4 py-8 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full max-w-6xl overflow-auto rounded-[34px] border border-white/10 bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.35)]">
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
-              Detalle por sede
-            </div>
-            <h2 className="mt-1 text-2xl font-black text-neutral-950">
-              {branch?.branchName || 'Sede'}
-            </h2>
-            <p className="mt-1 text-sm text-neutral-500">
-              Ventas, métodos de pago, barberos y servicios dentro del rango seleccionado.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-black text-neutral-700 hover:bg-neutral-100"
-          >
-            Cerrar
-          </button>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="Ventas" value={formatMoney(branch?.totalSales)} helper={`${n(branch?.totalSalesCount)} ventas`} tone="dark" />
-          <StatCard title="Ticket promedio" value={formatMoney(branch?.averageTicket)} helper="Promedio por venta" />
-          <StatCard title="Barberos activos" value={n(branch?.activeBarbers)} helper="Con producción" tone="gold" />
-          <StatCard title="Total métodos" value={formatMoney(payment.total)} helper="Pagos registrados" tone="green" />
-        </div>
-
-        <div className="mt-5 grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
-          <div className="rounded-[28px] border border-neutral-200 bg-neutral-50 p-5">
-            <h3 className="text-lg font-black text-neutral-950">Métodos de pago</h3>
-            <div className="mt-4 grid gap-3">
-              {paymentRows.map(([label, value]) => (
-                <div key={label} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
-                  <span className="text-sm font-bold text-neutral-600">{label}</span>
-                  <span className="font-black text-neutral-950">{formatMoney(value)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-[28px] border border-neutral-200 bg-white p-5">
-            <h3 className="text-lg font-black text-neutral-950">Ventas por día</h3>
-            <div className="mt-4 h-64">
-              {daily.length === 0 ? (
-                <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-neutral-300 text-sm font-bold text-neutral-400">
-                  Sin ventas diarias.
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={daily.map((item) => ({ date: shortDate(item.date), ventas: n(item.totalSales) }))}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => formatMoney(value)} />
-                    <Line type="monotone" dataKey="ventas" stroke="#111827" strokeWidth={3} dot={{ r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 grid gap-5 xl:grid-cols-2">
-          <div className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white">
-            <div className="border-b border-neutral-100 p-5">
-              <h3 className="text-lg font-black text-neutral-950">Barberos de la sede</h3>
-              <p className="mt-1 text-sm text-neutral-500">Producción por profesional.</p>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-left text-sm">
-                <thead className="bg-neutral-50 text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
-                  <tr>
-                    <th className="px-4 py-4">Barbero</th>
-                    <th className="px-4 py-4 text-right">Ventas</th>
-                    <th className="px-4 py-4 text-right">Cantidad</th>
-                    <th className="px-4 py-4 text-right">Ticket</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100">
-                  {barbers.length === 0 ? (
-                    <tr><td colSpan="4" className="px-4 py-8 text-center font-bold text-neutral-400">Sin barberos en este rango.</td></tr>
-                  ) : (
-                    barbers.map((barber) => (
-                      <tr key={barber.barberId || barber.barberName}>
-                        <td className="px-4 py-4 font-black text-neutral-950">{barber.barberName || 'Barbero'}</td>
-                        <td className="px-4 py-4 text-right font-black text-neutral-950">{formatMoney(barber.totalSales)}</td>
-                        <td className="px-4 py-4 text-right font-bold text-neutral-600">{n(barber.salesCount)}</td>
-                        <td className="px-4 py-4 text-right font-bold text-neutral-600">{formatMoney(barber.averageTicket)}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white">
-            <div className="border-b border-neutral-100 p-5">
-              <h3 className="text-lg font-black text-neutral-950">Servicios top</h3>
-              <p className="mt-1 text-sm text-neutral-500">Servicios o productos con mayor movimiento.</p>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-left text-sm">
-                <thead className="bg-neutral-50 text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
-                  <tr>
-                    <th className="px-4 py-4">Servicio / producto</th>
-                    <th className="px-4 py-4 text-right">Cantidad</th>
-                    <th className="px-4 py-4 text-right">Ventas</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100">
-                  {services.length === 0 ? (
-                    <tr><td colSpan="3" className="px-4 py-8 text-center font-bold text-neutral-400">Sin servicios en este rango.</td></tr>
-                  ) : (
-                    services.map((service) => (
-                      <tr key={service.serviceName}>
-                        <td className="px-4 py-4 font-black text-neutral-950">{service.serviceName || 'Servicio'}</td>
-                        <td className="px-4 py-4 text-right font-bold text-neutral-600">{n(service.timesSold)}</td>
-                        <td className="px-4 py-4 text-right font-black text-neutral-950">{formatMoney(service.totalAmount)}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function OwnerReportsPage() {
   const [branches, setBranches] = useState([]);
   const [branchId, setBranchId] = useState('');
@@ -680,7 +419,6 @@ export default function OwnerReportsPage() {
   const [dailySales, setDailySales] = useState([]);
   const [topServices, setTopServices] = useState([]);
   const [paymentSummary, setPaymentSummary] = useState(null);
-  const [branchReports, setBranchReports] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [branchesLoading, setBranchesLoading] = useState(true);
@@ -690,7 +428,6 @@ export default function OwnerReportsPage() {
   const [barberDetail, setBarberDetail] = useState([]);
   const [barberDetailLoading, setBarberDetailLoading] = useState(false);
   const [barberDetailError, setBarberDetailError] = useState('');
-  const [selectedBranchReport, setSelectedBranchReport] = useState(null);
 
   const query = useMemo(() => {
     return {
@@ -713,37 +450,6 @@ export default function OwnerReportsPage() {
     }
   }
 
-
-  async function loadBranchReportsForRange() {
-    const targetBranches = branchId
-      ? branches.filter((branch) => String(getBranchIdentifier(branch)) === String(branchId))
-      : branches;
-
-    if (!targetBranches.length) return [];
-
-    const results = await Promise.allSettled(
-      targetBranches
-        .filter((branch) => getBranchIdentifier(branch) != null)
-        .map(async (branch) => {
-          const detail = await getBranchDetail({
-            branchId: getBranchIdentifier(branch),
-            from,
-            to,
-          });
-
-          return {
-            ...detail,
-            branchId: getBranchIdentifier(branch),
-            branchName: getBranchDisplayName(branch),
-          };
-        })
-    );
-
-    return results
-      .filter((result) => result.status === 'fulfilled')
-      .map((result) => result.value);
-  }
-
   async function loadReports() {
     setLoading(true);
     setErrorMsg('');
@@ -756,7 +462,6 @@ export default function OwnerReportsPage() {
         dailyData,
         servicesData,
         paymentData,
-        branchReportsData,
       ] = await Promise.all([
         getProfitabilityReport(query),
         getSalesReport(query),
@@ -764,7 +469,6 @@ export default function OwnerReportsPage() {
         getDailySales(query),
         getTopServices(query),
         getPaymentSummary(query),
-        loadBranchReportsForRange(),
       ]);
 
       setProfitability(profitabilityData);
@@ -773,7 +477,6 @@ export default function OwnerReportsPage() {
       setDailySales(Array.isArray(dailyData) ? dailyData : []);
       setTopServices(Array.isArray(servicesData) ? servicesData : []);
       setPaymentSummary(paymentData);
-      setBranchReports(Array.isArray(branchReportsData) ? branchReportsData : []);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudieron cargar los reportes.');
       setProfitability(null);
@@ -782,7 +485,6 @@ export default function OwnerReportsPage() {
       setDailySales([]);
       setTopServices([]);
       setPaymentSummary(null);
-      setBranchReports([]);
     } finally {
       setLoading(false);
     }
@@ -794,9 +496,8 @@ export default function OwnerReportsPage() {
 
   useEffect(() => {
     if (!from || !to) return;
-    if (branchesLoading) return;
     loadReports();
-  }, [query, branchesLoading, branches]);
+  }, [query]);
 
   const totalBarberSales = useMemo(() => {
     return barbers.reduce((sum, item) => sum + n(item.totalSales), 0);
@@ -909,8 +610,8 @@ export default function OwnerReportsPage() {
   const branchOptions = [
     { value: '', label: branchesLoading ? 'Cargando sedes...' : 'Todas las sedes' },
     ...branches.map((branch) => ({
-      value: String(getBranchIdentifier(branch)),
-      label: getBranchDisplayName(branch),
+      value: String(branch.id),
+      label: branch.name || branch.nombre || `Sede ${branch.id}`,
     })),
   ];
 
@@ -1041,12 +742,6 @@ export default function OwnerReportsPage() {
           </section>
 
           <PaymentMethodSummaryCard paymentSummary={paymentSummary} />
-
-          <BranchComparisonSection
-            branchReports={branchReports}
-            loading={loading}
-            onOpenDetail={setSelectedBranchReport}
-          />
 
           <section className="grid gap-5 xl:grid-cols-2">
             <ChartCard
@@ -1245,13 +940,6 @@ export default function OwnerReportsPage() {
             </div>
           </section>
         </>
-      )}
-
-      {selectedBranchReport && (
-        <BranchDetailModal
-          branch={selectedBranchReport}
-          onClose={() => setSelectedBranchReport(null)}
-        />
       )}
 
       {selectedBarber && (

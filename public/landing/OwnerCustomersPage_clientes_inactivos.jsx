@@ -961,6 +961,15 @@ export default function OwnerCustomersPage() {
         <StatCard label="Puntos visibles" value={totalPoints} tone="gold" />
       </section>
 
+      <InactiveCustomersPanel
+        days={inactiveDays}
+        onDaysChange={setInactiveDays}
+        customers={inactiveCustomers}
+        loading={inactiveLoading}
+        errorMsg={inactiveErrorMsg}
+        onRefresh={() => loadInactiveCustomers(inactiveDays)}
+      />
+
       <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
@@ -980,17 +989,6 @@ export default function OwnerCustomersPage() {
           />
         </div>
       </section>
-
-      <InactiveCustomersPanel
-        days={inactiveDays}
-        onDaysChange={setInactiveDays}
-        customers={inactiveCustomers}
-        loading={inactiveLoading}
-        errorMsg={inactiveErrorMsg}
-        onRefresh={() => loadInactiveCustomers(inactiveDays)}
-      />
-
-     
 
       <ErrorBox message={errorMsg} />
 
