@@ -1807,6 +1807,18 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
   const amountToCollectNow = Math.max(0, roundMoney(totalBeforeDeposit - depositApplied));
   const total = totalBeforeDeposit;
 
+  const hasHaircut = items.some((item) => {
+    const name = String(item.name || '').toLowerCase();
+    return item.type === 'service' && (
+      name.includes('corte') ||
+      name.includes('fade') ||
+      name.includes('taper') ||
+      name.includes('degradado') ||
+      name.includes('clásico') ||
+      name.includes('clasico')
+    );
+  });
+
   useEffect(() => {
     async function loadCatalogs() {
       setLoading(true);
@@ -2013,6 +2025,13 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
           amountToCollectNow <= 0
             ? []
             : [{ method: paymentMethod, amount: amountToCollectNow }],
+        cutType: hasHaircut ? 'Corte registrado en agenda web' : null,
+        cutDetail: hasHaircut
+          ? `${appointment.serviceName || items.find((item) => item.type === 'service')?.name || 'Servicio de corte'} · ${appointment.barberName || items.find((item) => item.type === 'service')?.barberName || 'Barbero'}`
+          : null,
+        cutObservations: hasHaircut
+          ? `Atención finalizada desde agenda web${appointment.appointmentId ? ` · Cita #${appointment.appointmentId}` : ''}`
+          : null,
         items: items.map((item) => ({
           serviceId: item.serviceId,
           productId: item.productId,
