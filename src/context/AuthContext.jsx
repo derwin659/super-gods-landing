@@ -95,7 +95,7 @@ import {
     const cleanRole = String(role || '').toUpperCase();
   
     if (cleanRole === 'OWNER') return '/owner/dashboard';
-    if (cleanRole === 'ADMIN') return '/admin/dashboard';
+    if (cleanRole === 'ADMIN') return '/owner/dashboard';
     if (cleanRole === 'SUPER_ADMIN') return '/super-admin/dashboard';
   
     return '/login';

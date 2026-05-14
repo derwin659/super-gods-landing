@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { forgotPassword, resetPassword } from '../../api/authApi';
 import { useAuth } from '../../context/AuthContext';
 
 export default function LoginPage() {
@@ -12,19 +13,22 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [recoverOpen, setRecoverOpen] = useState(false);
 
   const modeInfo = useMemo(() => {
     if (mode === 'SUPER_ADMIN') {
       return {
         title: 'Modo Super Admin',
-        subtitle: 'Administra barberías, planes, suscripciones, pagos y operación general del SaaS.',
+        subtitle:
+          'Administra barberías, planes, suscripciones, pagos y operación general del SaaS.',
         badge: 'Control SaaS',
       };
     }
 
     return {
       title: 'Modo Dueño / Admin',
-      subtitle: 'Gestiona caja, ventas, agenda, clientes, barberos, productos, puntos y reportes.',
+      subtitle:
+        'Gestiona caja, ventas, agenda, clientes, barberos, productos, puntos y reportes.',
       badge: 'Panel de barbería',
     };
   }, [mode]);
@@ -171,9 +175,19 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="text-sm font-black text-slate-800">
-                  Contraseña
-                </label>
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-sm font-black text-slate-800">
+                    Contraseña
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => setRecoverOpen(true)}
+                    className="text-xs font-black text-blue-700 transition hover:text-[#0F2A5F]"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
 
                 <div className="mt-2 flex rounded-2xl border border-slate-200 bg-white transition focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100">
                   <input
@@ -228,6 +242,322 @@ export default function LoginPage() {
           </section>
         </div>
       </div>
+
+      {recoverOpen && (
+        <RecoverPasswordModal
+          initialEmail={email}
+          onClose={() => setRecoverOpen(false)}
+          onPasswordChanged={(newEmail) => {
+            setEmail(newEmail);
+            setPassword('');
+            setRecoverOpen(false);
+            setErrorMsg('Contraseña actualizada. Ingresa con tu nueva clave.');
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function RecoverPasswordModal({ initialEmail = '', onClose, onPasswordChanged }) {
+  const [step, setStep] = useState('send');
+  const [email, setEmail] = useState(initialEmail || '');
+  const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState({ type: '', text: '' });
+
+  async function handleSendCode(event) {
+    event.preventDefault();
+    setStatus({ type: '', text: '' });
+
+    const cleanEmail = email.trim();
+
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setStatus({ type: 'error', text: 'Ingresa un correo válido.' });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await forgotPassword(cleanEmail);
+
+      setStep('reset');
+      setStatus({
+        type: 'success',
+        text:
+          'Si el correo existe, te enviaremos un código de recuperación. Revisa tu bandeja de entrada.',
+      });
+    } catch (error) {
+      setStatus({
+        type: 'error',
+        text:
+          error?.message ||
+          'No se pudo enviar el código. Intenta nuevamente.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResetPassword(event) {
+    event.preventDefault();
+    setStatus({ type: '', text: '' });
+
+    const cleanEmail = email.trim();
+    const cleanCode = code.trim();
+    const cleanPassword = newPassword.trim();
+    const cleanConfirm = confirmPassword.trim();
+
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setStatus({ type: 'error', text: 'Ingresa un correo válido.' });
+      return;
+    }
+
+    if (!cleanCode) {
+      setStatus({ type: 'error', text: 'Ingresa el código recibido.' });
+      return;
+    }
+
+    if (cleanPassword.length < 6) {
+      setStatus({
+        type: 'error',
+        text: 'La nueva contraseña debe tener al menos 6 caracteres.',
+      });
+      return;
+    }
+
+    if (cleanPassword !== cleanConfirm) {
+      setStatus({
+        type: 'error',
+        text: 'La confirmación no coincide con la nueva contraseña.',
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await resetPassword({
+        email: cleanEmail,
+        code: cleanCode,
+        newPassword: cleanPassword,
+      });
+
+      onPasswordChanged(cleanEmail);
+    } catch (error) {
+      setStatus({
+        type: 'error',
+        text:
+          error?.message ||
+          'No se pudo actualizar la contraseña. Verifica el código.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 px-4 py-8 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-[34px] border border-white bg-white p-5 shadow-[0_35px_100px_rgba(15,23,42,0.35)]">
+        <div className="rounded-[28px] bg-gradient-to-br from-[#0F2A5F] to-[#07152F] p-6 text-white">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="inline-flex rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-blue-100">
+                Recuperar acceso
+              </div>
+
+              <h2 className="mt-4 text-2xl font-black tracking-[-0.03em]">
+                {step === 'send'
+                  ? '¿Olvidaste tu contraseña?'
+                  : 'Crea una nueva contraseña'}
+              </h2>
+
+              <p className="mt-3 text-sm font-medium leading-6 text-blue-100">
+                {step === 'send'
+                  ? 'Ingresa tu correo y te enviaremos un código de recuperación.'
+                  : 'Ingresa el código enviado a tu correo y define tu nueva clave.'}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-xl font-black text-white transition hover:bg-white/20"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        {step === 'send' ? (
+          <form onSubmit={handleSendCode} className="mt-5 space-y-4">
+            <LoginInput
+              label="Correo electrónico"
+              value={email}
+              onChange={setEmail}
+              type="email"
+              placeholder="correo@barberia.com"
+              autoComplete="email"
+            />
+
+            {status.text && <RecoverStatus status={status} />}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-2xl bg-[#0F2A5F] px-5 py-4 font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? 'Enviando código...' : 'Enviar código'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleResetPassword} className="mt-5 space-y-4">
+            <LoginInput
+              label="Correo electrónico"
+              value={email}
+              onChange={setEmail}
+              type="email"
+              placeholder="correo@barberia.com"
+              autoComplete="email"
+            />
+
+            <LoginInput
+              label="Código recibido"
+              value={code}
+              onChange={setCode}
+              type="text"
+              placeholder="Ej: 123456"
+              autoComplete="one-time-code"
+            />
+
+            <PasswordRecoveryInput
+              label="Nueva contraseña"
+              value={newPassword}
+              onChange={setNewPassword}
+              visible={showNewPassword}
+              onToggle={() => setShowNewPassword((prev) => !prev)}
+              placeholder="Mínimo 6 caracteres"
+            />
+
+            <PasswordRecoveryInput
+              label="Confirmar nueva contraseña"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              visible={showConfirmPassword}
+              onToggle={() => setShowConfirmPassword((prev) => !prev)}
+              placeholder="Repite tu nueva contraseña"
+            />
+
+            {status.text && <RecoverStatus status={status} />}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setStep('send');
+                  setStatus({ type: '', text: '' });
+                }}
+                disabled={loading}
+                className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 font-black text-slate-700 transition hover:border-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Enviar otro código
+              </button>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="rounded-2xl bg-[#0F2A5F] px-5 py-4 font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? 'Actualizando...' : 'Actualizar contraseña'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        <p className="mt-4 text-center text-xs font-semibold leading-5 text-slate-500">
+          El código de recuperación vence en pocos minutos. Si no lo recibes,
+          revisa spam o solicita uno nuevo.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function LoginInput({
+  label,
+  value,
+  onChange,
+  type,
+  placeholder,
+  autoComplete,
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-sm font-black text-slate-800">{label}</span>
+
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        type={type}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+      />
+    </label>
+  );
+}
+
+function PasswordRecoveryInput({
+  label,
+  value,
+  onChange,
+  visible,
+  onToggle,
+  placeholder,
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-sm font-black text-slate-800">{label}</span>
+
+      <div className="flex rounded-2xl border border-slate-200 bg-white transition focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100">
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          type={visible ? 'text' : 'password'}
+          placeholder={placeholder}
+          autoComplete="new-password"
+          className="w-full rounded-2xl bg-transparent px-4 py-4 text-slate-950 outline-none placeholder:text-slate-400"
+        />
+
+        <button
+          type="button"
+          onClick={onToggle}
+          className="px-4 text-sm font-black text-slate-500 transition hover:text-blue-700"
+        >
+          {visible ? 'Ocultar' : 'Ver'}
+        </button>
+      </div>
+    </label>
+  );
+}
+
+function RecoverStatus({ status }) {
+  return (
+    <div
+      className={`rounded-2xl border px-4 py-3 text-sm font-bold ${
+        status.type === 'success'
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+          : 'border-red-200 bg-red-50 text-red-700'
+      }`}
+    >
+      {status.text}
     </div>
   );
 }

@@ -1,43 +1,362 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  LayoutDashboard,
+  CalendarDays,
+  Banknote,
+  ChartNoAxesCombined,
+  UsersRound,
+  Star,
+  Gift,
+  Tags,
+  Scissors,
+  Package,
+  Store,
+  Clock3,
+  ReceiptText,
+  UserCog,
+  Settings,
+  ShieldCheck,
+  LogOut,
+  Menu,
+  X,
+  Sparkles,
+  ChevronRight,
+  Crown,
+} from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { getMyOwnerPermissions } from '../../api/ownerPermissionsApi';
 import { useAuth } from '../../context/AuthContext';
+import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
 
-const navItems = [
-  { to: '/owner/dashboard', label: 'Dashboard', icon: '📊' },
-  { to: '/owner/caja', label: 'Caja', icon: '💰' },
-  { to: '/owner/agenda', label: 'Agenda', icon: '📅' },
-  { to: '/owner/clientes', label: 'Clientes', icon: '👥' },
-  { to: '/owner/servicios', label: 'Servicios', icon: '✂️' },
-  { to: '/owner/barberos', label: 'Barberos', icon: '💈' },
-  { to: '/owner/horarios', label: 'Horarios', icon: '🕒' },
-  { to: '/owner/sedes', label: 'Sedes', icon: '🏪' },
-  { to: '/owner/productos', label: 'Productos', icon: '📦' },
-  { to: '/owner/premios', label: 'Premios', icon: '🎁' },
-  { to: '/owner/promociones', label: 'Promociones', icon: '🏷️' },
-  { to: '/owner/reservas-pagos', label: 'Reservas y pagos', icon: '🧾' },
-  { to: '/owner/reportes', label: 'Reportes', icon: '📈' },
-  { to: '/owner/configuracion', label: 'Configuración', icon: '⚙️' },
+const navGroups = [
+  {
+    title: 'Resumen',
+    subtitle: 'Vista general',
+    items: [
+      {
+        to: '/owner/dashboard',
+        label: 'Dashboard',
+        description: 'Panel principal',
+        icon: LayoutDashboard,
+        tone: {
+          soft: 'bg-amber-50 text-amber-700 ring-amber-100',
+          active: 'from-amber-500 to-yellow-400',
+          glow: 'shadow-amber-300/60',
+        },
+        permissions: [],
+      },
+    ],
+  },
+  {
+    title: 'Operación',
+    subtitle: 'Ventas, agenda y caja',
+    items: [
+      {
+        to: '/owner/caja',
+        label: 'Caja',
+        description: 'Ingresos y egresos',
+        icon: Banknote,
+        tone: {
+          soft: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+          active: 'from-emerald-500 to-green-400',
+          glow: 'shadow-emerald-300/60',
+        },
+        permissions: ['CASH_ACCESS'],
+      },
+      {
+        to: '/owner/agenda',
+        label: 'Agenda',
+        description: 'Reservas y atención',
+        icon: CalendarDays,
+        tone: {
+          soft: 'bg-sky-50 text-sky-700 ring-sky-100',
+          active: 'from-sky-500 to-blue-400',
+          glow: 'shadow-sky-300/60',
+        },
+        permissions: ['AGENDA_ACCESS'],
+      },
+      {
+        to: '/owner/reportes',
+        label: 'Reportes',
+        description: 'Utilidad y rendimiento',
+        icon: ChartNoAxesCombined,
+        tone: {
+          soft: 'bg-orange-50 text-orange-700 ring-orange-100',
+          active: 'from-orange-500 to-amber-400',
+          glow: 'shadow-orange-300/60',
+        },
+        permissions: ['REPORTS_ACCESS'],
+      },
+    ],
+  },
+  {
+    title: 'Clientes y fidelización',
+    subtitle: 'CRM, puntos y campañas',
+    items: [
+      {
+        to: '/owner/clientes',
+        label: 'Clientes',
+        description: 'Historial y datos',
+        icon: UsersRound,
+        tone: {
+          soft: 'bg-indigo-50 text-indigo-700 ring-indigo-100',
+          active: 'from-indigo-500 to-blue-400',
+          glow: 'shadow-indigo-300/60',
+        },
+        permissions: ['CUSTOMERS_ACCESS'],
+      },
+      {
+        to: '/owner/ajustar-puntos',
+        label: 'Ajustar puntos',
+        description: 'Sumar o descontar',
+        icon: Star,
+        tone: {
+          soft: 'bg-violet-50 text-violet-700 ring-violet-100',
+          active: 'from-violet-500 to-purple-400',
+          glow: 'shadow-violet-300/60',
+        },
+        permissions: ['CUSTOMERS_ACCESS'],
+      },
+      {
+        to: '/owner/premios',
+        label: 'Premios',
+        description: 'Recompensas',
+        icon: Gift,
+        tone: {
+          soft: 'bg-rose-50 text-rose-700 ring-rose-100',
+          active: 'from-rose-500 to-pink-400',
+          glow: 'shadow-rose-300/60',
+        },
+        permissions: ['CONFIG_REWARDS'],
+      },
+      {
+        to: '/owner/promociones',
+        label: 'Promociones',
+        description: 'Ofertas y descuentos',
+        icon: Tags,
+        tone: {
+          soft: 'bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-100',
+          active: 'from-fuchsia-500 to-purple-400',
+          glow: 'shadow-fuchsia-300/60',
+        },
+        permissions: ['CONFIG_PROMOTIONS'],
+      },
+    ],
+  },
+  {
+    title: 'Catálogo y equipo',
+    subtitle: 'Servicios, sedes y personal',
+    items: [
+      {
+        to: '/owner/servicios',
+        label: 'Servicios',
+        description: 'Cortes y precios',
+        icon: Scissors,
+        tone: {
+          soft: 'bg-cyan-50 text-cyan-700 ring-cyan-100',
+          active: 'from-cyan-500 to-sky-400',
+          glow: 'shadow-cyan-300/60',
+        },
+        permissions: ['CONFIG_SERVICES'],
+      },
+      {
+        to: '/owner/productos',
+        label: 'Productos',
+        description: 'Inventario',
+        icon: Package,
+        tone: {
+          soft: 'bg-lime-50 text-lime-700 ring-lime-100',
+          active: 'from-lime-500 to-emerald-400',
+          glow: 'shadow-lime-300/60',
+        },
+        permissions: ['CONFIG_PRODUCTS'],
+      },
+      {
+        to: '/owner/barberos',
+        label: 'Barberos',
+        description: 'Equipo de trabajo',
+        icon: ShieldCheck,
+        tone: {
+          soft: 'bg-red-50 text-red-700 ring-red-100',
+          active: 'from-red-500 to-orange-400',
+          glow: 'shadow-red-300/60',
+        },
+        permissions: ['CONFIG_BARBERS'],
+      },
+      {
+        to: '/owner/horarios',
+        label: 'Horarios',
+        description: 'Disponibilidad',
+        icon: Clock3,
+        tone: {
+          soft: 'bg-slate-100 text-slate-700 ring-slate-200',
+          active: 'from-slate-700 to-slate-500',
+          glow: 'shadow-slate-300/60',
+        },
+        permissions: ['CONFIG_BARBERS'],
+      },
+      {
+        to: '/owner/sedes',
+        label: 'Sedes',
+        description: 'Sucursales',
+        icon: Store,
+        tone: {
+          soft: 'bg-amber-50 text-amber-700 ring-amber-100',
+          active: 'from-amber-500 to-orange-400',
+          glow: 'shadow-amber-300/60',
+        },
+        permissions: ['CONFIG_BRANCHES'],
+      },
+      {
+        to: '/owner/reservas-pagos',
+        label: 'Reservas y pagos',
+        description: 'Inicial y métodos',
+        icon: ReceiptText,
+        tone: {
+          soft: 'bg-teal-50 text-teal-700 ring-teal-100',
+          active: 'from-teal-500 to-emerald-400',
+          glow: 'shadow-teal-300/60',
+        },
+        permissions: ['CONFIG_PAYMENT_METHODS'],
+      },
+    ],
+  },
+  {
+    title: 'Administración',
+    subtitle: 'Seguridad y ajustes',
+    items: [
+      {
+        to: '/owner/administradores',
+        label: 'Administradores',
+        description: 'Usuarios y permisos',
+        icon: UserCog,
+        tone: {
+          soft: 'bg-red-50 text-red-700 ring-red-100',
+          active: 'from-red-500 to-rose-400',
+          glow: 'shadow-red-300/60',
+        },
+        ownerOnly: true,
+      },
+      {
+        to: '/owner/configuracion',
+        label: 'Configuración',
+        description: 'Centro de control',
+        icon: Settings,
+        tone: {
+          soft: 'bg-neutral-100 text-neutral-700 ring-neutral-200',
+          active: 'from-neutral-900 to-neutral-600',
+          glow: 'shadow-neutral-300/60',
+        },
+        permissions: ['CONFIG_ACCESS'],
+      },
+    ],
+  },
 ];
 
-function SidebarContent({ session, handleLogout, closeMenu }) {
+function canSeeItem(item, session, permissions) {
+  const role = String(session?.role || '').toUpperCase();
+
+  if (role === 'OWNER') return true;
+  if (item.ownerOnly) return false;
+  if (!item.permissions || item.permissions.length === 0) return true;
+
+  return hasAnyOwnerPermission(permissions, item.permissions);
+}
+
+function PremiumNavItem({ item, closeMenu }) {
   return (
-    <div className="flex h-full flex-col overflow-y-auto px-5 py-5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/35">
-      <div className="flex shrink-0 items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10">
+    <NavLink
+      to={item.to}
+      onClick={closeMenu}
+      className={({ isActive }) =>
+        `group relative flex items-center gap-3 rounded-[24px] px-3.5 py-3 transition-all duration-200 ${
+          isActive
+            ? 'border border-neutral-950/5 bg-white text-neutral-950 shadow-[0_20px_42px_rgba(15,23,42,0.14)]'
+            : 'border border-transparent text-slate-700 hover:border-neutral-200 hover:bg-white/85 hover:text-neutral-950 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]'
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <div
+            className={`absolute inset-y-2 left-0 w-[5px] rounded-r-full transition ${
+              isActive
+                ? 'bg-gradient-to-b from-neutral-950 via-amber-500 to-orange-400 opacity-100'
+                : 'bg-slate-300 opacity-0 group-hover:opacity-100'
+            }`}
+          />
+
+          <div
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] ring-1 transition-all duration-200 ${
+              isActive
+                ? `bg-gradient-to-br ${item.tone.active} text-white ring-white shadow-xl ${item.tone.glow}`
+                : `${item.tone.soft} group-hover:scale-[1.04] group-hover:shadow-md`
+            }`}
+          >
+            <item.icon size={21} strokeWidth={2.6} />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div
+              className={`truncate text-[14.5px] font-black leading-5 ${
+                isActive ? 'text-neutral-950' : 'text-slate-800 group-hover:text-neutral-950'
+              }`}
+            >
+              {item.label}
+            </div>
+            <div
+              className={`truncate text-[11px] font-extrabold leading-4 ${
+                isActive ? 'text-slate-600' : 'text-slate-400'
+              }`}
+            >
+              {item.description}
+            </div>
+          </div>
+
+          <div
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition ${
+              isActive
+                ? 'bg-neutral-950 text-white shadow-lg'
+                : 'bg-white text-slate-400 shadow-sm ring-1 ring-slate-100 group-hover:bg-neutral-950 group-hover:text-white'
+            }`}
+          >
+            <ChevronRight size={16} strokeWidth={3} />
+          </div>
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+function SidebarContent({ session, permissions, handleLogout, closeMenu }) {
+  const visibleGroups = useMemo(() => {
+    return navGroups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => canSeeItem(item, session, permissions)),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [session, permissions]);
+
+  return (
+    <div className="flex h-full flex-col overflow-y-auto px-4 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-amber-300/70 hover:scrollbar-thumb-amber-400">
+      <div className="flex shrink-0 items-center justify-between gap-3 rounded-[28px] border border-amber-200/70 bg-white p-3 shadow-[0_18px_42px_rgba(15,23,42,0.09)]">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[22px] border border-amber-300 bg-neutral-950 shadow-[0_16px_36px_rgba(15,23,42,0.18)]">
+            <div className="absolute inset-1 rounded-[18px] bg-gradient-to-br from-neutral-900 to-neutral-950" />
             <img
               src="/logo-super-gods.png"
               alt="Super Gods logo"
-              className="h-9 w-9 rounded-xl object-cover"
+              className="relative h-10 w-10 rounded-2xl object-cover"
             />
           </div>
 
-          <div>
-            <div className="font-black tracking-[0.2em] text-amber-400">
+          <div className="min-w-0">
+            <div className="truncate text-[16px] font-black tracking-[0.18em] text-neutral-950">
               SUPER GODS
             </div>
-            <div className="text-xs font-medium text-white/45">
-              Panel Dueño
+            <div className="mt-0.5 text-[11px] font-black uppercase tracking-[0.12em] text-amber-600">
+              Panel web premium
             </div>
           </div>
         </div>
@@ -45,65 +364,79 @@ function SidebarContent({ session, handleLogout, closeMenu }) {
         <button
           type="button"
           onClick={closeMenu}
-          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-xl font-black text-white lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 lg:hidden"
         >
-          ×
+          <X size={20} strokeWidth={2.5} />
         </button>
       </div>
 
-      <div className="mt-8 shrink-0 rounded-[28px] border border-white/10 bg-white/[0.06] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
-        <div className="text-[11px] font-black uppercase tracking-[0.18em] text-white/35">
-          Barbería
-        </div>
+      <div className="mt-4 shrink-0 overflow-hidden rounded-[30px] border border-amber-200/80 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.34),transparent_42%),linear-gradient(135deg,#ffffff_0%,#fff3d8_54%,#ffffff_100%)] p-4 shadow-[0_20px_48px_rgba(15,23,42,0.10)]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-700">
+              <Crown size={14} strokeWidth={3} />
+              Barbería activa
+            </div>
 
-        <div className="mt-2 truncate text-lg font-black">
-          {session?.tenantName || 'Mi barbería'}
-        </div>
+            <div className="mt-2 truncate text-[21px] font-black tracking-tight text-neutral-950">
+              {session?.tenantName || 'Mi barbería'}
+            </div>
 
-        <div className="mt-2 flex items-center gap-2 text-xs text-white/50">
-          <span className="truncate">{session?.userName || 'Dueño'}</span>
-          <span className="h-1 w-1 shrink-0 rounded-full bg-white/30" />
-          <span>{session?.role || 'OWNER'}</span>
+            <div className="mt-2 flex items-center gap-2 text-xs font-black text-slate-600">
+              <span className="truncate">{session?.userName || 'Usuario'}</span>
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+              <span>{session?.role || 'OWNER'}</span>
+            </div>
+          </div>
+
+          <div className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-2 text-[10px] font-black text-emerald-700 shadow-sm">
+            ONLINE
+          </div>
         </div>
       </div>
 
-      <div className="mt-8 h-px shrink-0 bg-white/10" />
+      <nav className="mt-5 grid shrink-0 gap-5 pb-5">
+        {visibleGroups.map((group) => (
+          <section key={group.title}>
+            <div className="mb-2 flex items-center gap-3 px-2">
+              <div>
+                <div className="text-[11px] font-black uppercase tracking-[0.20em] text-neutral-700">
+                  {group.title}
+                </div>
+                <div className="mt-0.5 text-[11px] font-black text-slate-400">
+                  {group.subtitle}
+                </div>
+              </div>
 
-      <nav className="mt-6 grid shrink-0 gap-2 pb-4">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            onClick={closeMenu}
-            className={({ isActive }) =>
-              `group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black transition ${
-                isActive
-                  ? 'bg-amber-400 text-neutral-950 shadow-[0_14px_32px_rgba(251,191,36,0.22)]'
-                  : 'text-white/68 hover:bg-white/10 hover:text-white'
-              }`
-            }
-          >
-            <span className="w-6 text-center text-base">{item.icon}</span>
-            <span className="truncate">{item.label}</span>
-          </NavLink>
+              <div className="h-px flex-1 bg-gradient-to-r from-amber-300/90 via-slate-200 to-transparent" />
+            </div>
+
+            <div className="grid gap-1.5 rounded-[28px] border border-amber-100/80 bg-white/60 p-2 shadow-[0_14px_36px_rgba(15,23,42,0.065)] backdrop-blur-sm">
+              {group.items.map((item) => (
+                <PremiumNavItem key={item.to} item={item} closeMenu={closeMenu} />
+              ))}
+            </div>
+          </section>
         ))}
       </nav>
 
-      <div className="mt-auto shrink-0 rounded-[24px] border border-amber-400/15 bg-amber-400/10 p-4">
-        <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-300">
+      <div className="mt-auto shrink-0 overflow-hidden rounded-[28px] border border-amber-200/70 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.075)]">
+        <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">
+          <Sparkles size={15} strokeWidth={2.8} />
           Super Gods Web
         </div>
 
-        <p className="mt-2 text-xs leading-5 text-white/50">
-          Panel premium para controlar tu barbería desde computadora o celular.
+        <p className="mt-2 text-xs font-bold leading-5 text-slate-600">
+          Controla caja, clientes, agenda, fidelización y reportes desde una experiencia premium.
         </p>
       </div>
 
       <button
         type="button"
         onClick={handleLogout}
-        className="mt-5 w-full shrink-0 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-black text-white/70 transition hover:bg-white/10 hover:text-white"
+        className="mt-4 flex w-full shrink-0 items-center justify-center gap-2 rounded-[22px] border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.06)] transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
       >
+        <LogOut size={17} strokeWidth={2.6} />
         Cerrar sesión
       </button>
     </div>
@@ -114,6 +447,62 @@ export default function OwnerLayout() {
   const navigate = useNavigate();
   const { session, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [permissions, setPermissions] = useState(null);
+  const [loadingPermissions, setLoadingPermissions] = useState(true);
+
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth >= 1024) {
+        setMobileMenuOpen(false);
+      }
+    }
+
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadPermissions() {
+      setLoadingPermissions(true);
+
+      try {
+        const data = await getMyOwnerPermissions();
+
+        if (mounted) {
+          setPermissions(data);
+        }
+      } catch {
+        if (mounted) {
+          setPermissions({
+            owner: String(session?.role || '').toUpperCase() === 'OWNER',
+            permissions: [],
+          });
+        }
+      } finally {
+        if (mounted) {
+          setLoadingPermissions(false);
+        }
+      }
+    }
+
+    if (session?.token) {
+      loadPermissions();
+    } else {
+      setPermissions(null);
+      setLoadingPermissions(false);
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [session?.token, session?.role]);
 
   function handleLogout() {
     signOut();
@@ -126,28 +515,28 @@ export default function OwnerLayout() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFC_42%,#EEF2F7_100%)] text-neutral-950">
-      {/* Sidebar desktop */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-80 flex-col border-r border-white/10 bg-[linear-gradient(180deg,#050505_0%,#090909_50%,#111827_100%)] text-white shadow-[18px_0_60px_rgba(15,23,42,0.16)] lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[360px] flex-col border-r border-amber-200/80 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.26),transparent_26%),linear-gradient(180deg,#FFFFFF_0%,#FFF4D8_34%,#F8FAFC_100%)] text-neutral-950 shadow-[22px_0_64px_rgba(15,23,42,0.11)] lg:flex">
         <SidebarContent
           session={session}
+          permissions={permissions}
           handleLogout={handleLogout}
           closeMenu={closeMenu}
         />
       </aside>
 
-      {/* Sidebar mobile */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 block lg:hidden">
           <button
             type="button"
             aria-label="Cerrar menú"
             onClick={closeMenu}
-            className="absolute inset-0 bg-black/55 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/35 backdrop-blur-sm"
           />
 
-          <aside className="absolute inset-y-0 left-0 flex w-[86vw] max-w-[340px] flex-col border-r border-white/10 bg-[linear-gradient(180deg,#050505_0%,#090909_50%,#111827_100%)] text-white shadow-[18px_0_60px_rgba(0,0,0,0.35)]">
+          <aside className="absolute inset-y-0 left-0 flex w-[92vw] max-w-[370px] flex-col border-r border-amber-200 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.26),transparent_26%),linear-gradient(180deg,#FFFFFF_0%,#FFF4D8_34%,#F8FAFC_100%)] text-neutral-950 shadow-[22px_0_64px_rgba(0,0,0,0.22)]">
             <SidebarContent
               session={session}
+              permissions={permissions}
               handleLogout={handleLogout}
               closeMenu={closeMenu}
             />
@@ -155,16 +544,16 @@ export default function OwnerLayout() {
         </div>
       )}
 
-      <main className="min-h-screen lg:pl-80">
-        <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white/90 px-4 py-4 shadow-sm backdrop-blur-xl lg:px-8">
+      <main className="min-h-screen lg:pl-[360px]">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 py-4 shadow-sm backdrop-blur-xl lg:px-8">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-950 text-xl font-black text-white shadow-lg lg:hidden"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-950 text-white shadow-lg lg:hidden"
               >
-                ☰
+                <Menu size={20} strokeWidth={2.7} />
               </button>
 
               <div>
@@ -197,9 +586,17 @@ export default function OwnerLayout() {
           </div>
         </header>
 
-        <div className="max-w-full overflow-x-hidden p-4 sm:p-5 lg:p-8">
-          <Outlet />
-        </div>
+        {loadingPermissions ? (
+          <div className="p-4 sm:p-5 lg:p-8">
+            <div className="rounded-[28px] border border-neutral-200 bg-white p-6 font-black text-neutral-500 shadow-sm">
+              Cargando permisos...
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-full overflow-x-hidden p-4 sm:p-5 lg:p-8">
+            <Outlet />
+          </div>
+        )}
       </main>
     </div>
   );

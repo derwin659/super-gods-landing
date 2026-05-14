@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-
+import OwnerSecurityPage from './pages/owner/OwnerSecurityPage';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './routes/ProtectedRoute';
-
+import OwnerPermissionRoute from './routes/OwnerPermissionRoute';
+import OwnerAdjustPointsPage from './pages/owner/OwnerAdjustPointsPage';
 import LoginPage from './pages/auth/LoginPage';
-
+import OwnerAdminsPage from './pages/owner/OwnerAdminsPage';
 import OwnerLayout from './pages/owner/OwnerLayout';
 import OwnerDashboardPage from './pages/owner/OwnerDashboardPage';
 import OwnerAgendaPage from './pages/owner/OwnerAgendaPage';
@@ -830,24 +831,163 @@ export default function App() {
 
         <Route path="/login" element={<LoginPage />} />
 
-        <Route path="/owner" element={<ProtectedRoute allowedRoles={['OWNER']}><OwnerLayout /></ProtectedRoute>}>
+        <Route
+          path="/owner"
+          element={
+            <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+              <OwnerLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Navigate to="/owner/dashboard" replace />} />
           <Route path="dashboard" element={<OwnerDashboardPage />} />
-          <Route path="caja" element={<OwnerCashPage />} />
-          <Route path="agenda" element={<OwnerAgendaPage />} />
-          <Route path="clientes" element={<OwnerCustomersPage />} />
-          <Route path="productos" element={<OwnerProductsPage />} />
-          <Route path="servicios" element={<OwnerServicesPage />} />
-          <Route path="barberos" element={<OwnerBarbersPage />} />
-          <Route path="horarios" element={<OwnerBarberSchedulePage />} />
-          <Route path="premios" element={<OwnerRewardsPage />} />
-          <Route path="reservas-pagos" element={<OwnerReservationSettingsPage />} />
-          <Route path="promociones" element={<OwnerPromotionsPage />} />
-          <Route path="sedes" element={<OwnerBranchesPage />} />
-          <Route path="reportes" element={<OwnerReportsPage />} />
-          <Route path="configuracion" element={<OwnerConfigPage />} />
-        </Route>
 
+          <Route
+            path="caja"
+            element={
+              <OwnerPermissionRoute permissions={['CASH_ACCESS']}>
+                <OwnerCashPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="agenda"
+            element={
+              <OwnerPermissionRoute permissions={['AGENDA_ACCESS']}>
+                <OwnerAgendaPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="clientes"
+            element={
+              <OwnerPermissionRoute permissions={['CUSTOMERS_ACCESS']}>
+                <OwnerCustomersPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+
+
+          <Route
+            path="productos"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_PRODUCTS']}>
+                <OwnerProductsPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="servicios"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_SERVICES']}>
+                <OwnerServicesPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="barberos"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_BARBERS']}>
+                <OwnerBarbersPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="horarios"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_BARBERS']}>
+                <OwnerBarberSchedulePage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="premios"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_REWARDS']}>
+                <OwnerRewardsPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="reservas-pagos"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_PAYMENT_METHODS']}>
+                <OwnerReservationSettingsPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="promociones"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_PROMOTIONS']}>
+                <OwnerPromotionsPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="sedes"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_BRANCHES']}>
+                <OwnerBranchesPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="reportes"
+            element={
+              <OwnerPermissionRoute permissions={['REPORTS_ACCESS']}>
+                <OwnerReportsPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="administradores"
+            element={
+              <OwnerPermissionRoute ownerOnly>
+                <OwnerAdminsPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="ajustar-puntos"
+            element={
+              <OwnerPermissionRoute permissions={['CUSTOMERS_ACCESS']}>
+                <OwnerAdjustPointsPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="seguridad"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_ACCESS']}>
+                <OwnerSecurityPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="configuracion"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_ACCESS']}>
+                <OwnerConfigPage />
+              </OwnerPermissionRoute>
+            }
+          />
+        </Route>
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboardPage />} />
