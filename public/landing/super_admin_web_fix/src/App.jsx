@@ -26,7 +26,7 @@ import OwnerSubscriptionPage from './pages/owner/OwnerSubscriptionPage';
 
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
-import SuperAdminLayout from './componentes/super-admin/SuperAdminLayout';
+import SuperAdminLayout from './components/super-admin/SuperAdminLayout';
 import {
   SuperAdminDashboard,
   SuperAdminCreateBarbershop,

@@ -207,22 +207,45 @@ export async function createBarberPayment({
   periodTo,
   amountPaid,
   paymentMethod,
+  payments = null,
   note = null,
 }) {
+  const normalizedPayments = Array.isArray(payments)
+    ? payments
+        .map((item) => ({
+          method: String(item.method || item.paymentMethod || '').trim(),
+          amount: Number(item.amount || 0),
+        }))
+        .filter((item) => item.method && item.amount > 0)
+    : [];
+
+  const payload = {
+    barberUserId,
+    periodFrom,
+    periodTo,
+    note,
+  };
+
+  if (normalizedPayments.length > 0) {
+    payload.payments = normalizedPayments;
+    payload.amountPaid = normalizedPayments.reduce(
+      (sum, item) => sum + item.amount,
+      0
+    );
+    payload.paymentMethod =
+      normalizedPayments.length > 1 ? 'MIXED' : normalizedPayments[0].method;
+  } else {
+    payload.amountPaid = Number(amountPaid || 0);
+    payload.paymentMethod = paymentMethod;
+  }
+
   return apiRequest(
     `/api/owner/cash-registers/${cashRegisterId}/barber-payments${toQuery({
       branchId,
     })}`,
     {
       method: 'POST',
-      body: JSON.stringify({
-        barberUserId,
-        periodFrom,
-        periodTo,
-        amountPaid: Number(amountPaid || 0),
-        paymentMethod,
-        note,
-      }),
+      body: JSON.stringify(payload),
     }
   );
 }
@@ -372,7 +395,9 @@ export async function getCashServices() {
       return extractList(data)
         .map((item) => ({
           id: toNumber(item.id ?? item.serviceId),
-          name: String(item.nombre ?? item.name ?? item.serviceName ?? 'Servicio'),
+          name: String(
+            item.nombre ?? item.name ?? item.serviceName ?? 'Servicio'
+          ),
           price: toNumber(item.precio ?? item.price ?? item.amount),
           durationMinutes: toNumber(
             item.duracionMinutos ??

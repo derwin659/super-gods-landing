@@ -51,7 +51,7 @@ where s.sale_id = si.sale_id
   and s.user_id is not null
   and si.barber_user_id is null;
 
-
+dfdf
 
   extender dias 
 
@@ -228,3 +228,83 @@ ORDER BY bpv.fecha_fin ASC;
 victor 91
 carlos 77.5
 karlos 27.5   
+
+
+
+WITH barberias_vencidas AS (
+    SELECT
+        t.tenant_id,
+        t.nombre AS barberia,
+        t.codigo AS codigo_barberia,
+        s.plan,
+        s.estado,
+        s.trial,
+        s.fecha_fin,
+        (CURRENT_DATE - s.fecha_fin::date) AS dias_vencido,
+        CASE
+            WHEN s.fecha_fin::date = CURRENT_DATE - INTERVAL '1 day'
+                THEN 'VENCIO_AYER'
+            ELSE 'VENCIO_ULTIMOS_7_DIAS'
+        END AS grupo_vencimiento
+    FROM subscription s
+    JOIN tenant t ON t.tenant_id = s.tenant_id
+    WHERE s.fecha_fin IS NOT NULL
+      AND s.fecha_fin::date BETWEEN CURRENT_DATE - INTERVAL '7 days'
+                              AND CURRENT_DATE - INTERVAL '1 day'
+      AND s.estado IN ('ACTIVE', 'TRIAL', 'EXPIRED', 'CANCELLED')
+),
+
+ventas AS (
+    SELECT
+        tenant_id,
+        COUNT(*) AS total_ventas,
+        COALESCE(SUM(total), 0) AS monto_total_ventas,
+        COALESCE(SUM(total) FILTER (
+            WHERE fecha_creacion::date >= CURRENT_DATE - INTERVAL '7 days'
+        ), 0) AS ventas_ultimos_7_dias
+    FROM sale
+    GROUP BY tenant_id
+),
+
+clientes AS (
+    SELECT
+        tenant_id,
+        COUNT(*) AS total_clientes
+    FROM customer
+    GROUP BY tenant_id
+),
+
+transacciones AS (
+    SELECT
+        tenant_id,
+        COUNT(*) AS total_transacciones,
+        COALESCE(SUM(amount), 0) AS monto_total_transacciones
+    FROM cash_movement
+    GROUP BY tenant_id
+)
+
+SELECT
+    bv.tenant_id,
+    bv.barberia,
+    bv.codigo_barberia,
+    bv.plan,
+    bv.estado,
+    bv.trial,
+    bv.fecha_fin,
+    bv.dias_vencido,
+    bv.grupo_vencimiento,
+
+    COALESCE(c.total_clientes, 0) AS total_clientes,
+
+    COALESCE(v.total_ventas, 0) AS total_ventas,
+    COALESCE(v.monto_total_ventas, 0) AS monto_total_ventas,
+    COALESCE(v.ventas_ultimos_7_dias, 0) AS ventas_ultimos_7_dias,
+
+    COALESCE(t.total_transacciones, 0) AS total_transacciones,
+    COALESCE(t.monto_total_transacciones, 0) AS monto_total_transacciones
+
+FROM barberias_vencidas bv
+LEFT JOIN clientes c ON c.tenant_id = bv.tenant_id
+LEFT JOIN ventas v ON v.tenant_id = bv.tenant_id
+LEFT JOIN transacciones t ON t.tenant_id = bv.tenant_id
+ORDER BY bv.fecha_fin DESC;
