@@ -19,7 +19,23 @@ export default function SuperAdminDashboard() {
       <div className="inline-flex rounded-full border border-[#E9DED0] bg-white/70 px-3 py-2 text-xs font-black uppercase tracking-wider text-[#AF8750]">Vista ejecutiva</div>
       <h1 className="mt-4 max-w-2xl text-4xl font-black leading-tight">Controla crecimiento, pagos y estado de cada barbería.</h1>
       <p className="mt-3 max-w-2xl text-sm font-semibold text-[#7A6F63]">{pending > 0 ? `Tienes ${pending} pago(s) pendiente(s) por revisar y validar.` : "Todo está al día. No tienes pagos pendientes por aprobar."}</p>
-      <div className="mt-6 grid gap-3 sm:grid-cols-3"><Link className="rounded-2xl bg-white/80 p-4 font-black hover:bg-white" to="/super-admin/barberias">Ver barberías</Link><Link className="rounded-2xl bg-white/80 p-4 font-black hover:bg-white" to="/super-admin/pagos">Aprobar pagos</Link><Link className="rounded-2xl bg-[#AF8750] p-4 font-black text-white hover:opacity-90" to="/super-admin/crear-barberia">Crear barbería</Link></div>
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+  <Link className="rounded-2xl bg-white/80 p-4 font-black hover:bg-white" to="/super-admin/solicitudes-demo">
+    Solicitudes demo
+  </Link>
+
+  <Link className="rounded-2xl bg-white/80 p-4 font-black hover:bg-white" to="/super-admin/barberias">
+    Ver negocios
+  </Link>
+
+  <Link className="rounded-2xl bg-white/80 p-4 font-black hover:bg-white" to="/super-admin/pagos">
+    Aprobar pagos
+  </Link>
+
+  <Link className="rounded-2xl bg-[#AF8750] p-4 font-black text-white hover:opacity-90" to="/super-admin/crear-barberia">
+    Crear negocio
+  </Link>
+</div>
     </section>
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><StatCard title="Total barberías" value={data?.totalTenants} /><StatCard title="Activas" value={data?.activeTenants} tone="green" /><StatCard title="En trial" value={data?.trialTenants} tone="amber" /><StatCard title="Vencidas" value={data?.expiredTenants} tone="red" /><StatCard title="Suspendidas" value={data?.suspendedTenants} tone="purple" /><StatCard title="Pagos pendientes" value={data?.pendingPayments} tone="teal" /></section>
   </div>;

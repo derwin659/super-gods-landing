@@ -243,8 +243,8 @@ function PublicHomePage() {
             <a href="/login" className="hidden rounded-2xl border border-[#CBD5E1] bg-white px-5 py-3 text-sm font-black text-[#0F172A] transition hover:border-[#2563EB] hover:text-[#2563EB] sm:inline-flex">
               Iniciar sesión
             </a>
-            <a href="#contacto" className="rounded-2xl bg-[#0F2A5F] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84]">
-              Probar 7 días gratis
+            <a href={whatsappUrl} target="_blank" rel="noreferrer" className="rounded-2xl bg-[#0F2A5F] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84]">
+              Empezar gratis
             </a>
           </div>
         </nav>
@@ -270,8 +270,8 @@ function PublicHomePage() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a href="#contacto" className="inline-flex justify-center rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]">
-                  Solicitar demo gratis
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="inline-flex justify-center rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]">
+                  Empezar prueba gratis
                 </a>
                 <a href="#contacto" className="inline-flex justify-center rounded-2xl border border-slate-200 bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1 hover:border-blue-600 hover:text-blue-700">
                   Agendar demo
@@ -357,7 +357,7 @@ function PublicHomePage() {
                 <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Control total</p>
                 <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">Todo tu negocio conectado en una sola plataforma</h2>
                 <p className="mt-5 text-lg font-medium leading-8 text-slate-600">Super Gods no es solo una agenda. Es un sistema completo para controlar ventas, caja, clientes, barberos, productos, promociones, puntos y reportes.</p>
-                <a href="#contacto" className="mt-8 inline-flex rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 hover:bg-[#123A84]">Solicitar demo gratis</a>
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="mt-8 inline-flex rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 hover:bg-[#123A84]">Quiero probar Super Gods</a>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -413,7 +413,7 @@ function PublicHomePage() {
               <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-200">Gods AI · Próximamente</p>
               <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] md:text-6xl">La próxima experiencia premium para barberías modernas</h2>
               <p className="mt-5 text-lg font-medium leading-8 text-blue-100">Estamos preparando un módulo premium para analizar el rostro del cliente, recomendar estilos y mostrar una vista ilustrativa del resultado. Ideal para barberías que quieren diferenciarse.</p>
-              <a href="#contacto" className="mt-8 inline-flex rounded-2xl bg-white px-7 py-4 text-base font-black text-[#0F2A5F] transition hover:-translate-y-1">Solicitar demo Gods AI</a>
+              <a href={whatsappUrl} target="_blank" rel="noreferrer" className="mt-8 inline-flex rounded-2xl bg-white px-7 py-4 text-base font-black text-[#0F2A5F] transition hover:-translate-y-1">Quiero estar en la lista premium</a>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -451,7 +451,7 @@ function PublicHomePage() {
                       </div>
                     ))}
                   </div>
-                  <a href="#contacto" className={plan.highlighted ? 'mt-8 inline-flex w-full justify-center rounded-2xl bg-white px-6 py-4 text-sm font-black text-[#0F2A5F] transition hover:-translate-y-1' : 'mt-8 inline-flex w-full justify-center rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white transition hover:-translate-y-1 hover:bg-[#0F2A5F]'}>Solicitar demo gratis</a>
+                  <a href={whatsappUrl} target="_blank" rel="noreferrer" className={plan.highlighted ? 'mt-8 inline-flex w-full justify-center rounded-2xl bg-white px-6 py-4 text-sm font-black text-[#0F2A5F] transition hover:-translate-y-1' : 'mt-8 inline-flex w-full justify-center rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white transition hover:-translate-y-1 hover:bg-[#0F2A5F]'}>Probar gratis</a>
                 </div>
               ))}
             </div>
@@ -476,7 +476,7 @@ function PublicHomePage() {
           </h2>
 
           <p className="mt-5 text-lg font-medium leading-8 text-blue-100">
-            Completa tus datos y revisaremos tu negocio para activar una demo gratis de 7 días. Si todo está correcto, te enviaremos los accesos por WhatsApp o correo.
+            Completa unos datos rápidos y te llevamos a WhatsApp con un mensaje listo. Así podemos ayudarte más rápido y mostrarte exactamente lo que necesitas.
           </p>
         </div>
 
@@ -498,7 +498,7 @@ function PublicHomePage() {
             <h2 className="mx-auto max-w-3xl text-4xl font-black tracking-[-0.05em] md:text-6xl">Empieza hoy a ordenar tu barbería con Super Gods</h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg font-medium leading-8 text-slate-300">Activa tu prueba gratis, recibe soporte y empieza a probar reservas, caja, clientes, puntos y reportes.</p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <a href="#contacto" className="rounded-2xl bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1">Solicitar demo gratis</a>
+              <a href={whatsappUrl} target="_blank" rel="noreferrer" className="rounded-2xl bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1">Empezar prueba gratis</a>
               <a href="/login" className="rounded-2xl border border-white/30 px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 hover:bg-white/10">Iniciar sesión</a>
             </div>
           </div>
