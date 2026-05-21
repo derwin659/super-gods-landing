@@ -1,27 +1,4 @@
 import { useState } from 'react';
-import {
-  Scissors,
-  Sparkles,
-  Hand,
-  Eye,
-  PenTool,
-  Leaf,
-  Blocks,
-  CalendarDays,
-  Banknote,
-  UsersRound,
-  Gift,
-  ChartNoAxesCombined,
-  ShieldCheck,
-  Bot,
-  CreditCard,
-  Star,
-  Tags,
-  ReceiptText,
-  CheckCircle2,
-  UserRoundCog,
-  Package,
-} from 'lucide-react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { demoRequestApi } from './api/demoRequestApi';
 import OwnerSecurityPage from './pages/owner/OwnerSecurityPage';
@@ -77,52 +54,52 @@ function PublicHomePage() {
   );
 
   const rubros = [
-    { icon: Scissors, title: 'Barberías', text: 'Reservas, caja, barberos, puntos, promociones, pagos y reportes.' },
-    { icon: Sparkles, title: 'Peluquerías', text: 'Agenda, servicios, profesionales, clientes frecuentes y control de ingresos.' },
-    { icon: Hand, title: 'Estudios de uñas', text: 'Citas, paquetes, clientas frecuentes, historial, pagos y fidelización.' },
-    { icon: Eye, title: 'Cejas y pestañas', text: 'Reservas ordenadas, especialistas, servicios recurrentes y promociones.' },
-    { icon: PenTool, title: 'Tattoo studios', text: 'Citas, artistas, clientes, pagos, seguimiento y organización del estudio.' },
-    { icon: Leaf, title: 'Spas y estética', text: 'Servicios, reservas, paquetes, clientes, sedes, caja y reportes.' },
+    { icon: '✂️', title: 'Barberías', text: 'Reservas, caja, barberos, puntos, promociones, pagos y reportes.' },
+    { icon: '💇‍♀️', title: 'Peluquerías', text: 'Agenda, servicios, profesionales, clientes frecuentes y control de ingresos.' },
+    { icon: '💅', title: 'Estudios de uñas', text: 'Citas, paquetes, clientas frecuentes, historial, pagos y fidelización.' },
+    { icon: '👁️', title: 'Cejas y pestañas', text: 'Reservas ordenadas, especialistas, servicios recurrentes y promociones.' },
+    { icon: '🖋️', title: 'Tattoo studios', text: 'Citas, artistas, clientes, pagos, seguimiento y organización del estudio.' },
+    { icon: '🌿', title: 'Spas y estética', text: 'Servicios, reservas, paquetes, clientes, sedes, caja y reportes.' },
   ];
 
   const companyServices = [
     {
-      icon: Blocks,
+      icon: '🧩',
       title: 'Desarrollo de software para negocios',
       text: 'Creamos plataformas digitales para ordenar operaciones, atención, ventas y administración.',
     },
     {
-      icon: CalendarDays,
+      icon: '📅',
       title: 'Sistema de reservas online',
       text: 'Tus clientes pueden reservar desde su celular y el negocio controla horarios, sedes, servicios y profesionales.',
     },
     {
-      icon: Banknote,
+      icon: '💵',
       title: 'Control de caja y ventas',
       text: 'Registra ingresos, gastos, efectivo, Yape, Plin, tarjeta, pagos mixtos y cierres diarios.',
     },
     {
-      icon: UsersRound,
+      icon: '👥',
       title: 'Gestión de clientes',
       text: 'Guarda historial, visitas, puntos, recompensas, preferencias y datos de contacto.',
     },
     {
-      icon: Gift,
+      icon: '🎁',
       title: 'Fidelización, puntos y promociones',
       text: 'Crea premios, campañas y beneficios para que los clientes regresen con más frecuencia.',
     },
     {
-      icon: ChartNoAxesCombined,
+      icon: '📊',
       title: 'Reportes y métricas',
       text: 'Visualiza ventas, utilidad, gastos, rendimiento por sede, profesional y rango de fechas.',
     },
     {
-      icon: ShieldCheck,
+      icon: '🔐',
       title: 'Roles y permisos',
       text: 'Controla el acceso de dueños, administradores, profesionales y equipo interno.',
     },
     {
-      icon: Bot,
+      icon: '🤖',
       title: 'Inteligencia artificial aplicada',
       text: 'Soluciones con IA para mejorar la experiencia del cliente y diferenciar el negocio.',
     },
@@ -130,62 +107,62 @@ function PublicHomePage() {
 
   const features = [
     {
-      icon: CalendarDays,
+      icon: '📅',
       title: 'Reservas online',
       text: 'Clientes reservan desde su celular y el negocio controla horarios, sedes, servicios y profesionales.',
     },
     {
-      icon: Banknote,
+      icon: '💵',
       title: 'Control de caja',
       text: 'Apertura, cierre, ingresos, gastos, ventas, métodos de pago y movimientos del día.',
     },
     {
-      icon: CreditCard,
+      icon: '💳',
       title: 'Pagos por método',
       text: 'Controla efectivo, Yape, Plin, tarjeta y pagos mixtos para cuadrar mejor el negocio.',
     },
     {
-      icon: UsersRound,
+      icon: '👥',
       title: 'Clientes e historial',
       text: 'Guarda datos, historial de visitas, reservas, consumos, puntos y comportamiento.',
     },
     {
-      icon: Star,
+      icon: '⭐',
       title: 'Puntos de fidelidad',
       text: 'Premia automáticamente a clientes frecuentes y motiva nuevas visitas.',
     },
     {
-      icon: Gift,
+      icon: '🎁',
       title: 'Premios y recompensas',
       text: 'Crea premios canjeables por puntos para aumentar la recurrencia.',
     },
     {
-      icon: Tags,
+      icon: '🏷️',
       title: 'Promociones',
       text: 'Crea ofertas, descuentos y campañas para atraer más reservas.',
     },
     {
-      icon: ReceiptText,
+      icon: '🧾',
       title: 'Reservas con inicial',
       text: 'Permite separar citas con pago inicial, número de operación y comprobante.',
     },
     {
-      icon: CheckCircle2,
+      icon: '✅',
       title: 'Validación de pagos',
       text: 'El dueño puede revisar, aprobar o rechazar comprobantes de pagos iniciales.',
     },
     {
-      icon: UserRoundCog,
+      icon: '🧑‍💼',
       title: 'Gestión de profesionales',
       text: 'Administra horarios, servicios asignados, comisiones, pagos y rendimiento.',
     },
     {
-      icon: Package,
+      icon: '📦',
       title: 'Inventario por sede',
       text: 'Controla productos, stock, imágenes, precios y disponibilidad por sucursal.',
     },
     {
-      icon: ChartNoAxesCombined,
+      icon: '📊',
       title: 'Reportes del negocio',
       text: 'Mira ventas, utilidad, gastos, clientes, profesionales y rendimiento por fechas.',
     },
@@ -272,22 +249,9 @@ function PublicHomePage() {
       <header className="fixed left-0 right-0 top-0 z-50 px-4 py-4">
         <nav className="mx-auto flex max-w-7xl items-center justify-between rounded-[28px] border border-white/80 bg-white/95 px-4 py-3 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl md:px-6">
   
-          <a href="/" className="flex items-center gap-3">
-  <img
-    src="/logo-super-gods.png"
-    alt="Gods Technologies S.A.C."
-    className="h-12 w-12 rounded-2xl object-cover shadow-sm"
-  />
-
-  <div>
-    <p className="text-lg font-black leading-none tracking-tight text-[#0F172A]">
-      Gods Technologies
-    </p>
-    <p className="text-xs font-bold text-[#64748B]">
-      Super Gods App
-    </p>
-  </div>
-</a>
+          <a href="/" className="flex items-center">
+            <BrandIdentity compact />
+          </a>
      
 
           <div className="hidden items-center gap-7 lg:flex">
@@ -415,7 +379,7 @@ function PublicHomePage() {
             <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {rubros.map((item) => (
                 <div key={item.title} className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.07)] transition hover:-translate-y-1 hover:border-blue-200">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100"><LandingIcon icon={item.icon} /></div>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-2xl">{item.icon}</div>
                   <h3 className="mt-5 text-xl font-black text-slate-950">{item.title}</h3>
                   <p className="mt-3 text-sm font-medium leading-6 text-slate-600">{item.text}</p>
                 </div>
@@ -441,7 +405,7 @@ function PublicHomePage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 {companyServices.map((service) => (
                   <div key={service.title} className="rounded-[26px] border border-slate-200 bg-slate-50 p-5">
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-blue-700 shadow-sm ring-1 ring-slate-100"><LandingIcon icon={service.icon} size={22} /></div>
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-xl shadow-sm">{service.icon}</div>
                     <p className="text-lg font-black text-slate-950">{service.title}</p>
                     <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{service.text}</p>
                   </div>
@@ -466,7 +430,7 @@ function PublicHomePage() {
             <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {features.map((feature) => (
                 <div key={feature.title} className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.07)] transition hover:-translate-y-1 hover:border-blue-200">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100"><LandingIcon icon={feature.icon} /></div>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-2xl">{feature.icon}</div>
                   <h3 className="mt-5 text-xl font-black text-slate-950">{feature.title}</h3>
                   <p className="mt-3 text-sm font-medium leading-6 text-slate-600">{feature.text}</p>
                 </div>
@@ -625,9 +589,7 @@ function PublicHomePage() {
 
       <footer className="border-t border-slate-200 bg-white px-4 py-8">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div className="flex items-center">
-            <img src="/logo-super-gods.png" alt="Gods Technologies S.A.C." className="h-12 w-auto object-contain" />
-          </div>
+          <BrandIdentity />
           <div className="flex flex-wrap gap-5 text-sm font-bold text-slate-500">
             <a href="/" className="hover:text-blue-700">Inicio</a>
             <a href="/soporte" className="hover:text-blue-700">Soporte</a>
@@ -641,8 +603,34 @@ function PublicHomePage() {
   );
 }
 
-function LandingIcon({ icon: Icon, size = 24 }) {
-  return <Icon size={size} strokeWidth={2.6} />;
+
+function BrandIdentity({ compact = false }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B1220] via-[#111827] to-[#020617] shadow-[0_16px_40px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(250,204,21,0.32),transparent_35%)]" />
+        <div className="relative flex h-8 w-8 items-center justify-center rounded-xl border border-[#D4AF37]/70 bg-black/20">
+          <span className="text-[13px] font-black leading-none tracking-[-0.08em] text-[#F6D365]">
+            GT
+          </span>
+        </div>
+      </div>
+
+      <div className={compact ? 'hidden sm:block' : 'block'}>
+        <div className="flex items-center gap-2">
+          <p className="text-lg font-black leading-none tracking-[-0.035em] text-slate-950">
+            Gods Technologies
+          </p>
+          <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-black tracking-[0.12em] text-amber-700 md:inline-flex">
+            S.A.C.
+          </span>
+        </div>
+        <p className="mt-1 text-xs font-bold tracking-wide text-slate-500">
+          Empresa creadora de Super Gods App
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function MetricCard({ value, label }) {
@@ -1083,13 +1071,7 @@ function SimplePublicPage({ title }) {
   return (
     <div className="min-h-screen bg-[#F5F7FB] px-6 py-16 text-slate-950">
       <div className="mx-auto max-w-4xl rounded-[32px] border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/70">
-        <div className="flex items-center gap-3">
-          <img src="/gods-technologies-logo-horizontal.png" alt="Gods Technologies S.A.C." className="h-12 w-auto object-contain" />
-          <div>
-            <p className="text-lg font-black text-slate-950">Gods Technologies S.A.C.</p>
-            <p className="text-sm font-semibold text-slate-500">Empresa creadora de Super Gods App</p>
-          </div>
-        </div>
+        <BrandIdentity />
         <h1 className="mt-10 text-4xl font-black tracking-[-0.04em] text-slate-950">{title}</h1>
         <p className="mt-4 text-slate-600">Página pública de Gods Technologies S.A.C. y Super Gods App. Aquí agregaremos el contenido legal o de soporte correspondiente.</p>
         <a href="/" className="mt-8 inline-flex rounded-2xl bg-[#0F2A5F] px-5 py-3 font-black text-white">Volver al inicio</a>

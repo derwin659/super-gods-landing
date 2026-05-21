@@ -626,7 +626,7 @@ function PublicHomePage() {
       <footer className="border-t border-slate-200 bg-white px-4 py-8">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center">
-            <img src="/logo-super-gods.png" alt="Gods Technologies S.A.C." className="h-12 w-auto object-contain" />
+            <img src="/gods-technologies-logo-horizontal.png" alt="Gods Technologies S.A.C." className="h-12 w-auto object-contain" />
           </div>
           <div className="flex flex-wrap gap-5 text-sm font-bold text-slate-500">
             <a href="/" className="hover:text-blue-700">Inicio</a>

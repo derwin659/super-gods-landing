@@ -2,16 +2,82 @@ import { useMemo, useState } from 'react';
 
 const WHATSAPP_NUMBER = '51958062847';
 
+const industries = [
+  {
+    icon: '✂️',
+    title: 'Barberías',
+    text: 'Reservas, caja, barberos, clientes, puntos, promociones, reportes y pagos por profesional.',
+  },
+  {
+    icon: '💇‍♀️',
+    title: 'Peluquerías',
+    text: 'Agenda por servicios, control de profesionales, historial de clientes y seguimiento de ventas.',
+  },
+  {
+    icon: '💅',
+    title: 'Estudios de uñas',
+    text: 'Organiza citas, servicios, clientas frecuentes, pagos, promociones y control diario.',
+  },
+  {
+    icon: '👁️',
+    title: 'Cejas y pestañas',
+    text: 'Controla reservas, especialistas, paquetes, clientes recurrentes y recordatorios.',
+  },
+  {
+    icon: '🖋️',
+    title: 'Tattoo studios',
+    text: 'Gestiona artistas, citas, clientes, pagos, adelantos y seguimiento de trabajos.',
+  },
+  {
+    icon: '🧖‍♀️',
+    title: 'Spas y estética',
+    text: 'Administra servicios, cabinas, paquetes, reservas, clientes y control administrativo.',
+  },
+];
+
+const services = [
+  {
+    icon: '🧩',
+    title: 'Software para negocios',
+    text: 'Desarrollamos plataformas digitales modernas para negocios de belleza, estética y bienestar.',
+  },
+  {
+    icon: '📅',
+    title: 'Reservas online',
+    text: 'Tus clientes pueden reservar desde su celular y el negocio controla horarios, sedes y profesionales.',
+  },
+  {
+    icon: '💵',
+    title: 'Caja y ventas',
+    text: 'Control de ingresos, egresos, efectivo, Yape, Plin, tarjeta, ventas y cierre diario de caja.',
+  },
+  {
+    icon: '👥',
+    title: 'Clientes y fidelización',
+    text: 'Historial de clientes, visitas, puntos acumulados, premios, promociones y recompensas.',
+  },
+  {
+    icon: '📊',
+    title: 'Reportes del negocio',
+    text: 'Métricas de ventas, utilidad, gastos, rendimiento por sede y rendimiento por profesional.',
+  },
+  {
+    icon: '⚡',
+    title: 'Inteligencia artificial',
+    text: 'Soluciones con IA para recomendaciones, experiencias visuales y herramientas premium para atención.',
+  },
+];
+
 const features = [
   {
     icon: '📅',
     title: 'Agenda online',
-    text: 'Tus clientes pueden reservar desde su celular y el dueño controla horarios, sedes y barberos.',
+    text: 'Reservas por sede, servicio, horario y profesional para trabajar con más orden.',
   },
   {
     icon: '💵',
     title: 'Caja inteligente',
-    text: 'Controla ingresos, gastos, efectivo, Yape, Plin, tarjeta y cierre diario de caja.',
+    text: 'Controla ingresos, gastos, métodos de pago y cierre diario desde una sola plataforma.',
   },
   {
     icon: '👥',
@@ -21,17 +87,17 @@ const features = [
   {
     icon: '🎁',
     title: 'Promociones',
-    text: 'Crea promociones y premios para que tus clientes vuelvan más seguido.',
+    text: 'Crea promociones, premios y campañas para que tus clientes vuelvan más seguido.',
   },
   {
-    icon: '✂️',
-    title: 'Gestión de barberos',
-    text: 'Administra horarios, servicios, comisiones, pagos y rendimiento por profesional.',
+    icon: '👨‍💼',
+    title: 'Gestión de profesionales',
+    text: 'Administra horarios, servicios, comisiones, pagos y rendimiento por cada profesional.',
   },
   {
     icon: '📊',
-    title: 'Reportes del negocio',
-    text: 'Mira ventas, utilidad, gastos, clientes y rendimiento por sede o barbero.',
+    title: 'Reportes',
+    text: 'Mira ventas, utilidad, gastos, clientes y rendimiento por sede o profesional.',
   },
 ];
 
@@ -41,19 +107,19 @@ const modules = [
   'Clientes',
   'Puntos y premios',
   'Promociones',
-  'Barberos',
+  'Profesionales',
   'Reportes',
-  'IA de cortes',
+  'IA aplicada',
 ];
 
 const plans = [
   {
     name: 'Starter',
     price: 'S/ 39',
-    description: 'Para barberías pequeñas que quieren empezar a ordenar su negocio.',
+    description: 'Para negocios pequeños que quieren empezar a ordenar su operación.',
     items: [
       '1 sede',
-      'Hasta 5 barberos',
+      'Hasta 5 profesionales',
       'Reservas online',
       'Control de caja',
       'Clientes e historial',
@@ -63,24 +129,24 @@ const plans = [
   {
     name: 'Pro',
     price: 'S/ 79',
-    description: 'Para barberías que quieren crecer con más control, promociones y reportes.',
+    description: 'Para negocios que quieren crecer con más control, promociones y reportes.',
     highlighted: true,
     items: [
       'Hasta 3 sedes',
-      'Hasta 15 barberos',
+      'Hasta 15 profesionales',
       'Promociones ilimitadas',
       'Recompensas ilimitadas',
       'Reportes por sede',
-      'Reportes por barbero',
+      'Reportes por profesional',
     ],
   },
   {
     name: 'Gods AI',
     price: 'S/ 149',
-    description: 'Para barberías que quieren diferenciarse con inteligencia artificial.',
+    description: 'Para negocios que quieren diferenciarse con inteligencia artificial.',
     items: [
       'Todo lo de Pro',
-      'Asesor de cortes con IA',
+      'Asesoramiento con IA',
       'Vista ilustrativa del resultado',
       'Experiencia premium para clientes',
       'Soporte prioritario',
@@ -91,18 +157,20 @@ const plans = [
 export default function PublicHomePage() {
   const [form, setForm] = useState({
     nombre: '',
-    barberia: '',
+    negocio: '',
+    rubro: '',
     ciudad: '',
-    barberos: '',
+    profesionales: '',
   });
 
   const whatsappUrl = useMemo(() => {
     const text = encodeURIComponent(
       `Hola, quiero una demo gratis de Super Gods App.\n\n` +
         `Mi nombre es: ${form.nombre || '___'}\n` +
-        `Mi barbería se llama: ${form.barberia || '___'}\n` +
+        `Mi negocio se llama: ${form.negocio || '___'}\n` +
+        `Rubro: ${form.rubro || '___'}\n` +
         `Estoy en: ${form.ciudad || '___'}\n` +
-        `Tengo aproximadamente: ${form.barberos || '___'} barberos/profesionales.`
+        `Tengo aproximadamente: ${form.profesionales || '___'} profesionales.`
     );
 
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
@@ -129,29 +197,32 @@ export default function PublicHomePage() {
           <a href="/" className="flex items-center gap-3">
             <img
               src="/logo-super-gods.png"
-              alt="Super Gods logo"
+              alt="Gods Technologies S.A.C. logo"
               className="h-11 w-11 rounded-2xl object-cover"
             />
 
             <div>
               <p className="text-lg font-black leading-none tracking-tight">
-                Super Gods
+                Gods Technologies
               </p>
               <p className="text-xs font-bold text-slate-500">
-                App para barberías
+                Creador de Super Gods App
               </p>
             </div>
           </a>
 
           <div className="hidden items-center gap-7 lg:flex">
-            <a href="#funciones" className="text-sm font-black text-slate-600 hover:text-blue-700">
-              Funciones
+            <a href="#rubros" className="text-sm font-black text-slate-600 hover:text-blue-700">
+              Rubros
+            </a>
+            <a href="#servicios" className="text-sm font-black text-slate-600 hover:text-blue-700">
+              Servicios
+            </a>
+            <a href="#nosotros" className="text-sm font-black text-slate-600 hover:text-blue-700">
+              Nosotros
             </a>
             <a href="#planes" className="text-sm font-black text-slate-600 hover:text-blue-700">
               Planes
-            </a>
-            <a href="#ia" className="text-sm font-black text-slate-600 hover:text-blue-700">
-              Gods AI
             </a>
             <a href="#contacto" className="text-sm font-black text-slate-600 hover:text-blue-700">
               Contacto
@@ -159,42 +230,42 @@ export default function PublicHomePage() {
           </div>
 
           <div className="flex items-center gap-2">
-  <a
-    href="/login"
-    className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-black text-slate-900 transition hover:border-blue-600 hover:text-blue-700 sm:px-5 sm:text-sm"
-  >
-    Ingresar
-  </a>
+            <a
+              href="/login"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-black text-slate-900 transition hover:border-blue-600 hover:text-blue-700 sm:px-5 sm:text-sm"
+            >
+              Ingresar
+            </a>
 
-  <a
-    href={whatsappUrl}
-    target="_blank"
-    rel="noreferrer"
-    className="rounded-2xl bg-[#0F2A5F] px-4 py-3 text-xs font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84] sm:px-5 sm:text-sm"
-  >
-    Probar gratis
-  </a>
-</div>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-2xl bg-[#0F2A5F] px-4 py-3 text-xs font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84] sm:px-5 sm:text-sm"
+            >
+              Probar gratis
+            </a>
+          </div>
         </nav>
       </header>
 
       <main>
         <section className="relative overflow-hidden px-4 pb-16 pt-32 md:pb-24 md:pt-40">
-          <div className="absolute inset-x-0 top-0 h-[680px] bg-[radial-gradient(circle_at_20%_10%,#DCEBFF_0,#F5F7FB_40%,transparent_70%)]" />
+          <div className="absolute inset-x-0 top-0 h-[760px] bg-[radial-gradient(circle_at_20%_10%,#DCEBFF_0,#F5F7FB_40%,transparent_70%)]" />
 
           <div className="relative mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1fr_0.92fr]">
             <div>
               <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-2 text-sm font-black text-blue-700 shadow-sm">
                 <span className="h-2 w-2 rounded-full bg-green-500" />
-                Software para barberías modernas
+                Tecnología para belleza, estética y bienestar
               </div>
 
               <h1 className="max-w-4xl text-5xl font-black leading-[0.98] tracking-[-0.055em] text-slate-950 md:text-7xl">
-                Ordena tu barbería y vende más desde una sola app
+                Digitalizamos negocios para que vendan más y trabajen mejor
               </h1>
 
               <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate-600 md:text-xl">
-                Super Gods une reservas online, caja, clientes, puntos, promociones, barberos y reportes para que el dueño tenga el control real de su negocio.
+                En Gods Technologies S.A.C. creamos soluciones digitales para barberías, peluquerías, salones de belleza, estudios de uñas, cejas y pestañas, tattoo studios, spas y centros de bienestar.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -204,14 +275,14 @@ export default function PublicHomePage() {
                   rel="noreferrer"
                   className="inline-flex justify-center rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]"
                 >
-                  Empezar prueba gratis
+                  Solicitar demo gratis
                 </a>
 
                 <a
-                  href="#contacto"
+                  href="#servicios"
                   className="inline-flex justify-center rounded-2xl border border-slate-200 bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1 hover:border-blue-600 hover:text-blue-700"
                 >
-                  Agendar demo
+                  Ver servicios
                 </a>
 
                 <a
@@ -241,8 +312,8 @@ export default function PublicHomePage() {
                 <div className="rounded-[28px] bg-slate-950 p-5 text-white">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-black text-white">Panel del dueño</p>
-                      <p className="text-xs font-bold text-white/50">Resumen de hoy</p>
+                      <p className="text-sm font-black text-white">Super Gods App</p>
+                      <p className="text-xs font-bold text-white/50">Panel del dueño</p>
                     </div>
 
                     <div className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-black text-green-300">
@@ -264,8 +335,8 @@ export default function PublicHomePage() {
                     </div>
 
                     <AgendaItem hour="10:00" client="Carlos M." service="Fade clásico" />
-                    <AgendaItem hour="11:30" client="Luis A." service="Corte + barba" />
-                    <AgendaItem hour="12:15" client="Miguel R." service="Ondulación" />
+                    <AgendaItem hour="11:30" client="Andrea P." service="Uñas acrílicas" />
+                    <AgendaItem hour="12:15" client="Miguel R." service="Corte + barba" />
 
                     <a
                       href="/login"
@@ -280,38 +351,115 @@ export default function PublicHomePage() {
           </div>
         </section>
 
+        <section id="rubros" className="px-4 py-20">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">
+                Rubros
+              </p>
+              <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">
+                Una plataforma pensada para negocios que atienden con cita
+              </h2>
+              <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
+                Adaptamos nuestra tecnología a distintos negocios de belleza, estética y bienestar que necesitan orden, reservas, caja, clientes y reportes.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {industries.map((industry) => (
+                <InfoCard key={industry.title} {...industry} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="servicios" className="px-4 py-20">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">
+                Servicios
+              </p>
+              <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">
+                Servicios tecnológicos que ofrecemos
+              </h2>
+              <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
+                No solo vendemos una app. Creamos herramientas para que cada negocio tenga más control, más orden y mejores decisiones.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {services.map((service) => (
+                <InfoCard key={service.title} {...service} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="nosotros" className="px-4 py-20">
+          <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-2">
+            <div className="rounded-[36px] bg-slate-950 p-8 text-white shadow-2xl shadow-slate-900/20 md:p-10">
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-300">
+                Misión
+              </p>
+
+              <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] md:text-5xl">
+                Impulsar la transformación digital de negocios reales
+              </h2>
+
+              <p className="mt-6 text-lg font-medium leading-8 text-slate-200">
+                Nuestra misión es crear soluciones tecnológicas simples, modernas y accesibles que ayuden a negocios de belleza, estética y bienestar a mejorar su gestión, aumentar sus ventas, fidelizar clientes y optimizar su trabajo diario.
+              </p>
+            </div>
+
+            <div className="rounded-[36px] border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/80 md:p-10">
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">
+                Visión
+              </p>
+
+              <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-5xl">
+                Ser una empresa tecnológica líder en Latinoamérica
+              </h2>
+
+              <p className="mt-6 text-lg font-medium leading-8 text-slate-600">
+                Queremos ser reconocidos por desarrollar plataformas innovadoras, fáciles de usar y enfocadas en el crecimiento real de barberías, salones, estudios, spas y negocios de atención personalizada.
+              </p>
+            </div>
+          </div>
+
+          <div className="mx-auto mt-6 max-w-7xl rounded-[36px] border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/80 md:p-10">
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">
+              Nosotros
+            </p>
+
+            <div className="mt-4 grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+              <h2 className="text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-5xl">
+                Gods Technologies S.A.C. es la empresa creadora de Super Gods App
+              </h2>
+
+              <p className="text-lg font-medium leading-8 text-slate-600">
+                Somos una empresa peruana de tecnología enfocada en digitalizar negocios que necesitan controlar reservas, ventas, caja, clientes, profesionales, promociones y reportes desde una sola plataforma. Nuestro producto principal es Super Gods App, una solución creada para modernizar la operación diaria de negocios de belleza, estética y bienestar.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <section id="funciones" className="px-4 py-20">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">
-                Funciones
+                Super Gods App
               </p>
               <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">
-                Todo lo que tu barbería necesita para operar mejor
+                Todo lo que tu negocio necesita para operar mejor
               </h2>
               <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
-                Una plataforma simple para que el dueño, los administradores y los barberos trabajen con orden.
+                Una plataforma simple para que el dueño, los administradores y los profesionales trabajen con orden.
               </p>
             </div>
 
             <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {features.map((feature) => (
-                <div
-                  key={feature.title}
-                  className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.07)] transition hover:-translate-y-1 hover:border-blue-200"
-                >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-2xl">
-                    {feature.icon}
-                  </div>
-
-                  <h3 className="mt-5 text-xl font-black text-slate-950">
-                    {feature.title}
-                  </h3>
-
-                  <p className="mt-3 text-sm font-medium leading-6 text-slate-600">
-                    {feature.text}
-                  </p>
-                </div>
+                <InfoCard key={feature.title} {...feature} />
               ))}
             </div>
           </div>
@@ -325,14 +473,14 @@ export default function PublicHomePage() {
               </p>
 
               <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] md:text-5xl">
-                Reservas por WhatsApp, caja manual y clientes sin seguimiento
+                Citas por WhatsApp, caja manual y clientes sin seguimiento
               </h2>
 
               <div className="mt-8 grid gap-4">
                 <PainItem text="Mensajes desordenados para reservar citas." />
                 <PainItem text="No sabes exactamente cuánto quedó en caja." />
                 <PainItem text="No hay control claro de puntos, premios o promociones." />
-                <PainItem text="Difícil saber qué barbero vendió más." />
+                <PainItem text="Difícil saber qué profesional vendió más." />
               </div>
             </div>
 
@@ -346,7 +494,7 @@ export default function PublicHomePage() {
               </h2>
 
               <div className="mt-8 grid gap-4">
-                <GoodItem text="Agenda online por sede, horario, servicio y barbero." />
+                <GoodItem text="Agenda online por sede, horario, servicio y profesional." />
                 <GoodItem text="Caja separada por efectivo, Yape, Plin y tarjeta." />
                 <GoodItem text="Clientes con puntos, historial y recompensas." />
                 <GoodItem text="Reportes para tomar mejores decisiones." />
@@ -363,11 +511,11 @@ export default function PublicHomePage() {
               </p>
 
               <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] md:text-6xl">
-                Una experiencia premium para recomendar cortes con IA
+                Inteligencia artificial para crear experiencias premium
               </h2>
 
               <p className="mt-5 text-lg font-medium leading-8 text-blue-100">
-                Analiza el rostro del cliente, recomienda estilos y muestra una vista ilustrativa del resultado para diferenciar tu barbería.
+                Aplicamos IA para mejorar la experiencia del cliente, apoyar recomendaciones visuales y diferenciar negocios que buscan una atención más moderna.
               </p>
 
               <a
@@ -381,10 +529,10 @@ export default function PublicHomePage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <AiBox title="Análisis facial" text="Detecta forma de rostro y características clave." />
-              <AiBox title="Recomendaciones" text="Sugiere cortes según rostro y estilo." />
-              <AiBox title="Vista ilustrativa" text="Muestra una idea visual del resultado." />
-              <AiBox title="Experiencia distinta" text="Ideal para barberías que quieren destacar." />
+              <AiBox title="Análisis visual" text="Ayuda a identificar características clave para recomendaciones." />
+              <AiBox title="Recomendaciones" text="Sugiere estilos y servicios según el perfil del cliente." />
+              <AiBox title="Vista ilustrativa" text="Muestra una idea visual para mejorar la decisión del cliente." />
+              <AiBox title="Experiencia distinta" text="Ideal para negocios que quieren destacar frente a la competencia." />
             </div>
           </div>
         </section>
@@ -401,7 +549,7 @@ export default function PublicHomePage() {
               </h2>
 
               <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
-                Empieza con una prueba gratis y luego elige el plan ideal para tu barbería.
+                Empieza con una prueba gratis y luego elige el plan ideal para tu negocio.
               </p>
             </div>
 
@@ -484,17 +632,17 @@ export default function PublicHomePage() {
                 </p>
 
                 <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] md:text-6xl">
-                  Mira cómo Super Gods puede funcionar en tu barbería
+                  Mira cómo Super Gods puede funcionar en tu negocio
                 </h2>
 
                 <p className="mt-5 text-lg font-medium leading-8 text-blue-100">
-                  Te ayudamos a crear tu cuenta de prueba, configurar servicios, barberos, horarios y empezar a operar.
+                  Te ayudamos a crear tu cuenta de prueba, configurar servicios, profesionales, horarios y empezar a operar.
                 </p>
 
                 <div className="mt-10 grid gap-4">
                   <InfoLine text="Demo personalizada por WhatsApp o llamada." />
                   <InfoLine text="Prueba gratis por 7 días." />
-                  <InfoLine text="Soporte inicial para configurar tu barbería." />
+                  <InfoLine text="Soporte inicial para configurar tu negocio." />
                 </div>
               </div>
             </div>
@@ -522,14 +670,36 @@ export default function PublicHomePage() {
                 />
 
                 <LandingInput
-                  label="Nombre de la barbería"
-                  name="barberia"
-                  value={form.barberia}
+                  label="Nombre del negocio"
+                  name="negocio"
+                  value={form.negocio}
                   onChange={handleChange}
                   placeholder="Ej: Barbería Gods"
                 />
 
                 <div className="grid gap-5 md:grid-cols-2">
+                  <label className="grid gap-2">
+                    <span className="text-sm font-black text-slate-900">
+                      Rubro
+                    </span>
+
+                    <select
+                      name="rubro"
+                      value={form.rubro}
+                      onChange={handleChange}
+                      className="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="Barbería">Barbería</option>
+                      <option value="Peluquería">Peluquería</option>
+                      <option value="Salón de belleza">Salón de belleza</option>
+                      <option value="Estudio de uñas">Estudio de uñas</option>
+                      <option value="Cejas y pestañas">Cejas y pestañas</option>
+                      <option value="Tattoo studio">Tattoo studio</option>
+                      <option value="Spa / estética">Spa / estética</option>
+                    </select>
+                  </label>
+
                   <LandingInput
                     label="Ciudad"
                     name="ciudad"
@@ -537,26 +707,26 @@ export default function PublicHomePage() {
                     onChange={handleChange}
                     placeholder="Ej: Cusco"
                   />
-
-                  <label className="grid gap-2">
-                    <span className="text-sm font-black text-slate-900">
-                      Cantidad de barberos
-                    </span>
-
-                    <select
-                      name="barberos"
-                      value={form.barberos}
-                      onChange={handleChange}
-                      className="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                    >
-                      <option value="">Seleccionar</option>
-                      <option value="1">1 profesional</option>
-                      <option value="2">2 profesionales</option>
-                      <option value="3 a 5">3 a 5 profesionales</option>
-                      <option value="Más de 5">Más de 5 profesionales</option>
-                    </select>
-                  </label>
                 </div>
+
+                <label className="grid gap-2">
+                  <span className="text-sm font-black text-slate-900">
+                    Cantidad de profesionales
+                  </span>
+
+                  <select
+                    name="profesionales"
+                    value={form.profesionales}
+                    onChange={handleChange}
+                    className="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  >
+                    <option value="">Seleccionar</option>
+                    <option value="1">1 profesional</option>
+                    <option value="2">2 profesionales</option>
+                    <option value="3 a 5">3 a 5 profesionales</option>
+                    <option value="Más de 5">Más de 5 profesionales</option>
+                  </select>
+                </label>
               </div>
 
               <button
@@ -581,24 +751,25 @@ export default function PublicHomePage() {
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center gap-3">
             <img
-              src="/logo-super-gods.png"
-              alt="Super Gods logo"
+              src="/gods-technologies-logo-horizontal.png"
+              alt="Gods Technologies S.A.C. logo"
               className="h-10 w-10 rounded-2xl object-cover"
             />
 
             <div>
-              <p className="font-black text-slate-950">Super Gods App</p>
+              <p className="font-black text-slate-950">Gods Technologies S.A.C.</p>
               <p className="text-sm font-semibold text-slate-500">
-                Software para barberías modernas.
+                Empresa creadora de Super Gods App.
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-5 text-sm font-bold text-slate-500">
             <a href="/" className="hover:text-blue-700">Inicio</a>
+            <a href="#rubros" className="hover:text-blue-700">Rubros</a>
+            <a href="#servicios" className="hover:text-blue-700">Servicios</a>
             <a href="/soporte" className="hover:text-blue-700">Soporte</a>
             <a href="/privacy" className="hover:text-blue-700">Privacidad</a>
-            <a href="/datos" className="hover:text-blue-700">Datos</a>
             <a href="/login" className="hover:text-blue-700">Login</a>
           </div>
         </div>
@@ -631,6 +802,24 @@ function AgendaItem({ hour, client, service }) {
       </div>
 
       <p className="text-xs font-black text-green-600">Confirmado</p>
+    </div>
+  );
+}
+
+function InfoCard({ icon, title, text }) {
+  return (
+    <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.07)] transition hover:-translate-y-1 hover:border-blue-200">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-2xl">
+        {icon}
+      </div>
+
+      <h3 className="mt-5 text-xl font-black text-slate-950">
+        {title}
+      </h3>
+
+      <p className="mt-3 text-sm font-medium leading-6 text-slate-600">
+        {text}
+      </p>
     </div>
   );
 }
