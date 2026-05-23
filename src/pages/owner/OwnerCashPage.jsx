@@ -23,6 +23,7 @@ import {
 } from '../../api/ownerCashApi';
 import { createOwnerCustomer, getOwnerCustomers } from '../../api/ownerCustomersApi';
 import { useAuth } from '../../context/AuthContext';
+import { getBusinessLabels, readBusinessLabels } from '../../utils/businessLabels';
 
 function formatMoney(value) {
   const number = Number(value || 0);
@@ -424,6 +425,7 @@ function saleDateOf(sale) {
 }
 
 function saleBarberName(sale) {
+  const labels = readBusinessLabels();
   const direct = String(
     sale?.barberName ??
       sale?.barbero ??
@@ -446,7 +448,7 @@ function saleBarberName(sale) {
     if (candidate) return candidate;
   }
 
-  return 'Barbero no registrado';
+  return `${labels.professionalSingular[0].toUpperCase()}${labels.professionalSingular.slice(1)} no registrado`;
 }
 
 function isCourtesySale(sale) {
@@ -1393,7 +1395,7 @@ function MiniPreviewItem({ label, value, strong = false }) {
   );
 }
 
-function CourtesySummarySection({ summary }) {
+function CourtesySummarySection({ summary, labels = readBusinessLabels() }) {
   if (!summary?.count) return null;
 
   return (
@@ -1401,20 +1403,20 @@ function CourtesySummarySection({ summary }) {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-700">
-            Cortesias de hoy
+            {labels.courtesyPlural[0].toUpperCase() + labels.courtesyPlural.slice(1)} de hoy
           </div>
           <h3 className="mt-2 text-2xl font-black text-neutral-950">
             Servicios gratis registrados
           </h3>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-amber-800/75">
-            Controla cuantas cortesias se entregaron y su valor referencial por barbero.
+            Controla cuantas {labels.courtesyPlural} se entregaron y su valor referencial por {labels.professionalSingular}.
           </p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
             <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
-              Cortes gratis
+              Gratis
             </div>
             <div className="mt-1 text-2xl font-black text-neutral-950">
               {summary.count}
@@ -1452,7 +1454,7 @@ function CourtesySummarySection({ summary }) {
   );
 }
 
-function SalesSection({ sales, canManageSales, onView, onEdit, onDelete }) {
+function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), onView, onEdit, onDelete }) {
   return (
     <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -1480,7 +1482,7 @@ function SalesSection({ sales, canManageSales, onView, onEdit, onDelete }) {
           <thead className="bg-[linear-gradient(135deg,#090909_0%,#111827_100%)] text-white">
             <tr>
               <th className="px-5 py-4 font-black">Cliente</th>
-              <th className="px-5 py-4 font-black">Barbero</th>
+              <th className="px-5 py-4 font-black">{labels.professionalSingular[0].toUpperCase() + labels.professionalSingular.slice(1)}</th>
               <th className="px-5 py-4 font-black">Método</th>
               <th className="px-5 py-4 font-black">Total</th>
               <th className="px-5 py-4 font-black">Fecha</th>
@@ -2050,7 +2052,7 @@ function AppointmentSaleBanner({ appointment, isOpen, onOpenSale, onDismiss }) {
   );
 }
 
-function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
+function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethods = DEFAULT_PAYMENT_METHODS, labels = readBusinessLabels(), onClose, onSaved }) {
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -2393,11 +2395,11 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                 />
 
                 <SelectField
-                  label="Barbero"
+                  label={labels.professionalSingular[0].toUpperCase() + labels.professionalSingular.slice(1)}
                   value={selectedBarberId}
                   onChange={setSelectedBarberId}
                   options={[
-                    { value: '', label: 'Selecciona barbero' },
+                    { value: '', label: `Selecciona ${labels.professionalSingular}` },
                     ...barbers.map((barber) => ({
                       value: String(barber.id),
                       label: barber.name,
@@ -2563,7 +2565,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
 }
 
 
-function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
+function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, labels = readBusinessLabels(), onClose, onSaved }) {
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -2641,7 +2643,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         setBarbers(barberData.filter((item) => item.id > 0));
         setProducts(productData);
       } catch (error) {
-        setErrorMsg(error.message || 'No se pudieron cargar servicios, productos y barberos.');
+        setErrorMsg(error.message || `No se pudieron cargar servicios, productos y ${labels.professionalsPlural}.`);
       } finally {
         setLoading(false);
       }
@@ -2792,7 +2794,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     }
 
     if (!barber) {
-      setErrorMsg('Selecciona el barbero que realizó el servicio.');
+      setErrorMsg(`Selecciona el ${labels.professionalSingular} que realizo el servicio.`);
       return;
     }
 
@@ -2836,7 +2838,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
 
     const commission = Number(product.barberCommissionAmount ?? product.productCommissionAmount ?? 0);
     if (commission > 0 && !barber) {
-      setErrorMsg('Este producto tiene comisión. Selecciona el barbero que hizo la venta.');
+      setErrorMsg(`Este producto tiene comision. Selecciona el ${labels.professionalSingular} que hizo la venta.`);
       return;
     }
 
@@ -2879,7 +2881,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     }
 
     if (tipNumber > 0 && !effectiveTipBarberUserId) {
-      setErrorMsg('Para registrar propina, selecciona el barbero que la recibirá o agrega un servicio con barbero.');
+      setErrorMsg(`Para registrar propina, selecciona el ${labels.professionalSingular} que la recibira o agrega un servicio con ${labels.professionalSingular}.`);
       return;
     }
 
@@ -3201,10 +3203,10 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
 
                 <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-4">
                   <div className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-                    Propina para barbero
+                    Propina para {labels.professionalSingular}
                   </div>
                   <p className="mt-2 text-xs font-bold leading-5 text-emerald-800">
-                    La propina se suma al total cobrado y aparecerá en el cálculo de pago al barbero.
+                    La propina se suma al total cobrado y aparecera en el calculo de pago al {labels.professionalSingular}.
                   </p>
 
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -3218,11 +3220,11 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                     />
 
                     <SelectField
-                      label="Barbero que recibe la propina"
+                      label={`${labels.professionalSingular[0].toUpperCase()}${labels.professionalSingular.slice(1)} que recibe la propina`}
                       value={tipBarberUserId || String(firstServiceBarberId || '')}
                       onChange={setTipBarberUserId}
                       options={[
-                        { value: '', label: 'Selecciona barbero' },
+                        { value: '', label: `Selecciona ${labels.professionalSingular}` },
                         ...barbers.map((barber) => ({
                           value: String(barber.id),
                           label: barber.name,
@@ -3238,7 +3240,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       Venta gratis
                     </div>
                     <p className="mt-2 text-sm font-bold leading-6 text-amber-800">
-                      No se registrara ningun cobro. La venta saldra como Gratis / Cortesia y aparecera en el resumen de cortesias por barbero.
+                      No se registrara ningun cobro. La venta saldra como Gratis / Cortesia y aparecera en el resumen de {labels.courtesyPlural} por {labels.professionalSingular}.
                     </p>
                   </div>
                 ) : (
@@ -4003,6 +4005,10 @@ export default function OwnerCashPage() {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
 
   const canManageSales = String(session?.role || '').trim().toUpperCase() === 'OWNER';
+  const labels = useMemo(
+    () => getBusinessLabels(session?.businessType),
+    [session?.businessType]
+  );
 
   const selectedBranch = useMemo(() => {
     return branches.find((item) => String(item.id) === String(selectedBranchId)) || null;
@@ -4409,7 +4415,7 @@ export default function OwnerCashPage() {
             />
           </section>
 
-          <CourtesySummarySection summary={courtesySummary} />
+          <CourtesySummarySection summary={courtesySummary} labels={labels} />
 
           <section className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -4604,6 +4610,7 @@ export default function OwnerCashPage() {
           <SalesSection
             sales={sales}
             canManageSales={canManageSales}
+            labels={labels}
             onView={(sale) => setViewingSale(sale)}
             onEdit={(sale) => setEditingSale(sale)}
             onDelete={handleDeleteSale}
@@ -4647,6 +4654,7 @@ export default function OwnerCashPage() {
           branch={selectedBranch}
           cashRegister={cashRegister}
           paymentMethods={paymentMethods}
+          labels={labels}
           onClose={() => setShowSaleModal(false)}
           onSaved={async () => {
             setShowSaleModal(false);
@@ -4701,6 +4709,7 @@ export default function OwnerCashPage() {
           cashRegister={cashRegister}
           appointment={pendingAppointment}
           paymentMethods={paymentMethods}
+          labels={labels}
           onClose={() => setShowAppointmentSaleModal(false)}
           onSaved={() => {
             setShowAppointmentSaleModal(false);

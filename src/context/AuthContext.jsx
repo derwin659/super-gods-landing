@@ -21,6 +21,7 @@ import {
     role: 'ROLE',
     branchId: 'BRANCH_ID',
     branchName: 'BRANCH_NAME',
+    businessType: 'BUSINESS_TYPE',
     isOwner: 'IS_OWNER',
   };
   
@@ -40,6 +41,7 @@ import {
       userEmail: localStorage.getItem(SESSION_KEYS.userEmail),
       branchId: localStorage.getItem(SESSION_KEYS.branchId),
       branchName: localStorage.getItem(SESSION_KEYS.branchName),
+      businessType: localStorage.getItem(SESSION_KEYS.businessType),
       isOwner: localStorage.getItem(SESSION_KEYS.isOwner) === 'true',
     };
   }
@@ -84,6 +86,19 @@ import {
       localStorage.setItem(SESSION_KEYS.branchName, finalRes.branchName);
     } else {
       localStorage.removeItem(SESSION_KEYS.branchName);
+    }
+
+    const businessType =
+      finalRes.businessType ||
+      finalRes.tenantBusinessType ||
+      finalRes.tipoNegocio ||
+      finalRes.rubro ||
+      '';
+
+    if (businessType) {
+      localStorage.setItem(SESSION_KEYS.businessType, String(businessType).trim().toUpperCase());
+    } else {
+      localStorage.removeItem(SESSION_KEYS.businessType);
     }
   
     return readSession();
