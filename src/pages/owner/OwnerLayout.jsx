@@ -24,8 +24,14 @@ import {
   ChevronRight,
   Crown,
 } from 'lucide-react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { getMyOwnerPermissions } from '../../api/ownerPermissionsApi';
+import {
+  getCurrentSubscription,
+  isSubscriptionActive,
+  planLabel,
+  statusLabel,
+} from '../../api/ownerSubscriptionApi';
 import { useAuth } from '../../context/AuthContext';
 import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
 
@@ -63,6 +69,7 @@ const navGroups = [
           glow: 'shadow-emerald-300/60',
         },
         permissions: ['CASH_ACCESS'],
+        feature: 'core',
       },
       {
         to: '/owner/agenda',
@@ -75,6 +82,7 @@ const navGroups = [
           glow: 'shadow-sky-300/60',
         },
         permissions: ['AGENDA_ACCESS'],
+        feature: 'core',
       },
       {
         to: '/owner/reportes',
@@ -87,6 +95,7 @@ const navGroups = [
           glow: 'shadow-orange-300/60',
         },
         permissions: ['REPORTS_ACCESS'],
+        feature: 'reports',
       },
     ],
   },
@@ -105,6 +114,7 @@ const navGroups = [
           glow: 'shadow-indigo-300/60',
         },
         permissions: ['CUSTOMERS_ACCESS'],
+        feature: 'core',
       },
       {
         to: '/owner/ajustar-puntos',
@@ -117,6 +127,7 @@ const navGroups = [
           glow: 'shadow-violet-300/60',
         },
         permissions: ['CUSTOMERS_ACCESS'],
+        feature: 'loyalty',
       },
       {
         to: '/owner/premios',
@@ -129,6 +140,7 @@ const navGroups = [
           glow: 'shadow-rose-300/60',
         },
         permissions: ['CONFIG_REWARDS'],
+        feature: 'loyalty',
       },
       {
         to: '/owner/promociones',
@@ -141,6 +153,7 @@ const navGroups = [
           glow: 'shadow-fuchsia-300/60',
         },
         permissions: ['CONFIG_PROMOTIONS'],
+        feature: 'promotions',
       },
     ],
   },
@@ -159,6 +172,7 @@ const navGroups = [
           glow: 'shadow-cyan-300/60',
         },
         permissions: ['CONFIG_SERVICES'],
+        feature: 'core',
       },
       {
         to: '/owner/productos',
@@ -171,6 +185,7 @@ const navGroups = [
           glow: 'shadow-lime-300/60',
         },
         permissions: ['CONFIG_PRODUCTS'],
+        feature: 'core',
       },
       {
         to: '/owner/barberos',
@@ -183,6 +198,7 @@ const navGroups = [
           glow: 'shadow-red-300/60',
         },
         permissions: ['CONFIG_BARBERS'],
+        feature: 'core',
       },
       {
         to: '/owner/horarios',
@@ -195,6 +211,7 @@ const navGroups = [
           glow: 'shadow-slate-300/60',
         },
         permissions: ['CONFIG_BARBERS'],
+        feature: 'core',
       },
       {
         to: '/owner/sedes',
@@ -207,6 +224,7 @@ const navGroups = [
           glow: 'shadow-amber-300/60',
         },
         permissions: ['CONFIG_BRANCHES'],
+        feature: 'core',
       },
       {
         to: '/owner/reservas-pagos',
@@ -219,6 +237,7 @@ const navGroups = [
           glow: 'shadow-teal-300/60',
         },
         permissions: ['CONFIG_PAYMENT_METHODS'],
+        feature: 'core',
       },
     ],
   },
@@ -237,6 +256,7 @@ const navGroups = [
           glow: 'shadow-red-300/60',
         },
         ownerOnly: true,
+        feature: 'core',
       },
       {
         to: '/owner/plan-pagos',
@@ -274,6 +294,120 @@ function canSeeItem(item, session, permissions) {
   if (!item.permissions || item.permissions.length === 0) return true;
 
   return hasAnyOwnerPermission(permissions, item.permissions);
+}
+
+function isPendingReview(subscription) {
+  return String(subscription?.estado || '').trim().toUpperCase() === 'PENDING_REVIEW';
+}
+
+function isExpiredSubscription(subscription) {
+  const estado = String(subscription?.estado || '').trim().toUpperCase();
+
+  return (
+    subscription?.expired === true ||
+    estado === 'EXPIRED' ||
+    estado === 'VENCIDO' ||
+    estado === 'EXPIRADO' ||
+    estado === 'CANCELLED' ||
+    estado === 'CANCELADO' ||
+    estado === 'PAST_DUE'
+  );
+}
+
+function canOperateCore(subscription) {
+  if (!subscription) return false;
+  if (isPendingReview(subscription) && !isExpiredSubscription(subscription)) return true;
+  return isSubscriptionActive(subscription);
+}
+
+function canUseFeature(item, subscription) {
+  if (!item.feature) return true;
+  if (item.to === '/owner/plan-pagos') return true;
+  if (!subscription) return true;
+
+  const coreEnabled = canOperateCore(subscription);
+
+  if (item.feature === 'core') return coreEnabled;
+  if (item.feature === 'reports') return coreEnabled;
+  if (item.feature === 'loyalty') return coreEnabled && subscription?.loyaltyEnabled !== false;
+  if (item.feature === 'promotions') return coreEnabled && subscription?.promotionsEnabled !== false;
+
+  return true;
+}
+
+function findNavItemByPath(pathname) {
+  return navGroups
+    .flatMap((group) => group.items)
+    .find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+}
+
+function SubscriptionStatusBanner({ subscription, error }) {
+  if (error) {
+    return (
+      <div className="mb-5 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-black text-amber-800">
+        No se pudo validar la suscripcion. Revisa Plan y pagos si notas algun bloqueo.
+      </div>
+    );
+  }
+
+  if (!subscription) return null;
+
+  const active = canOperateCore(subscription);
+  const pending = isPendingReview(subscription);
+  const expired = isExpiredSubscription(subscription);
+
+  if (active && !pending) return null;
+
+  return (
+    <div className={`mb-5 rounded-[26px] border px-5 py-4 shadow-sm ${
+      expired
+        ? 'border-red-200 bg-red-50 text-red-800'
+        : 'border-amber-200 bg-amber-50 text-amber-800'
+    }`}>
+      <div className="text-xs font-black uppercase tracking-[0.18em] opacity-70">
+        Estado de suscripcion
+      </div>
+      <div className="mt-1 text-lg font-black">
+        {statusLabel(subscription.estado)} · {planLabel(subscription.plan)}
+      </div>
+      <p className="mt-1 text-sm font-bold leading-6 opacity-80">
+        {pending
+          ? 'Tu pago esta en revision. Puedes seguir operando mientras no este vencido.'
+          : 'La cuenta necesita renovacion para usar los modulos operativos.'}
+      </p>
+    </div>
+  );
+}
+
+function SubscriptionBlockedView({ item, subscription, navigate }) {
+  const featureLabel = item?.label || 'Este modulo';
+
+  return (
+    <div className="rounded-[34px] border border-red-200 bg-white p-8 text-center shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] bg-red-50 text-red-700">
+        <CreditCard size={30} strokeWidth={2.5} />
+      </div>
+      <h2 className="mt-5 text-2xl font-black text-neutral-950">
+        {featureLabel} no disponible
+      </h2>
+      <p className="mx-auto mt-2 max-w-2xl text-sm font-bold leading-6 text-neutral-500">
+        El estado actual de la suscripcion no permite usar este modulo. Revisa el plan,
+        reporta tu pago o espera la validacion si ya fue enviado.
+      </p>
+      {subscription && (
+        <div className="mx-auto mt-5 max-w-md rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-black text-neutral-700">
+          {statusLabel(subscription.estado)} · {planLabel(subscription.plan)}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => navigate('/owner/plan-pagos')}
+        className="mt-6 rounded-2xl bg-neutral-950 px-6 py-4 text-sm font-black text-white transition hover:scale-[1.01]"
+      >
+        Ir a Plan y pagos
+      </button>
+    </div>
+  );
 }
 
 function PremiumNavItem({ item, closeMenu }) {
@@ -341,15 +475,17 @@ function PremiumNavItem({ item, closeMenu }) {
   );
 }
 
-function SidebarContent({ session, permissions, handleLogout, closeMenu }) {
+function SidebarContent({ session, permissions, subscription, handleLogout, closeMenu }) {
   const visibleGroups = useMemo(() => {
     return navGroups
       .map((group) => ({
         ...group,
-        items: group.items.filter((item) => canSeeItem(item, session, permissions)),
+        items: group.items.filter((item) => (
+          canSeeItem(item, session, permissions) && canUseFeature(item, subscription)
+        )),
       }))
       .filter((group) => group.items.length > 0);
-  }, [session, permissions]);
+  }, [session, permissions, subscription]);
 
   return (
     <div className="flex h-full flex-col overflow-y-auto px-4 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-amber-300/70 hover:scrollbar-thumb-amber-400">
@@ -458,10 +594,14 @@ function SidebarContent({ session, permissions, handleLogout, closeMenu }) {
 
 export default function OwnerLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { session, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [permissions, setPermissions] = useState(null);
   const [loadingPermissions, setLoadingPermissions] = useState(true);
+  const [subscription, setSubscription] = useState(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [subscriptionError, setSubscriptionError] = useState('');
 
   useEffect(() => {
     function handleResize() {
@@ -517,6 +657,44 @@ export default function OwnerLayout() {
     };
   }, [session?.token, session?.role]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSubscription() {
+      setLoadingSubscription(true);
+      setSubscriptionError('');
+
+      try {
+        const data = await getCurrentSubscription();
+
+        if (mounted) {
+          setSubscription(data);
+        }
+      } catch (error) {
+        if (mounted) {
+          setSubscription(null);
+          setSubscriptionError(error?.message || 'No se pudo validar la suscripcion.');
+        }
+      } finally {
+        if (mounted) {
+          setLoadingSubscription(false);
+        }
+      }
+    }
+
+    if (session?.token && String(session?.role || '').toUpperCase() !== 'SUPER_ADMIN') {
+      loadSubscription();
+    } else {
+      setSubscription(null);
+      setLoadingSubscription(false);
+      setSubscriptionError('');
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [session?.token, session?.role]);
+
   function handleLogout() {
     signOut();
     navigate('/login', { replace: true });
@@ -526,12 +704,23 @@ export default function OwnerLayout() {
     setMobileMenuOpen(false);
   }
 
+  const currentItem = findNavItemByPath(location.pathname);
+  const subscriptionBlocksCurrent =
+    currentItem &&
+    currentItem.to !== '/owner/plan-pagos' &&
+    !loadingSubscription &&
+    subscription &&
+    !canUseFeature(currentItem, subscription);
+
+  const loadingShell = loadingPermissions || loadingSubscription;
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#FFFFFF_0%,#F8FAFC_42%,#EEF2F7_100%)] text-neutral-950">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[360px] flex-col border-r border-amber-200/80 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.26),transparent_26%),linear-gradient(180deg,#FFFFFF_0%,#FFF4D8_34%,#F8FAFC_100%)] text-neutral-950 shadow-[22px_0_64px_rgba(15,23,42,0.11)] lg:flex">
         <SidebarContent
           session={session}
           permissions={permissions}
+          subscription={subscription}
           handleLogout={handleLogout}
           closeMenu={closeMenu}
         />
@@ -550,6 +739,7 @@ export default function OwnerLayout() {
             <SidebarContent
               session={session}
               permissions={permissions}
+              subscription={subscription}
               handleLogout={handleLogout}
               closeMenu={closeMenu}
             />
@@ -599,15 +789,24 @@ export default function OwnerLayout() {
           </div>
         </header>
 
-        {loadingPermissions ? (
+        {loadingShell ? (
           <div className="p-4 sm:p-5 lg:p-8">
             <div className="rounded-[28px] border border-neutral-200 bg-white p-6 font-black text-neutral-500 shadow-sm">
-              Cargando permisos...
+              Validando permisos y suscripcion...
             </div>
           </div>
         ) : (
           <div className="max-w-full overflow-x-hidden p-4 sm:p-5 lg:p-8">
-            <Outlet />
+            <SubscriptionStatusBanner subscription={subscription} error={subscriptionError} />
+            {subscriptionBlocksCurrent ? (
+              <SubscriptionBlockedView
+                item={currentItem}
+                subscription={subscription}
+                navigate={navigate}
+              />
+            ) : (
+              <Outlet />
+            )}
           </div>
         )}
       </main>
