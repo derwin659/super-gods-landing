@@ -2580,6 +2580,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const [customerSearching, setCustomerSearching] = useState(false);
   const [quickCustomerPhone, setQuickCustomerPhone] = useState('');
   const [creatingCustomer, setCreatingCustomer] = useState(false);
+  const [isCourtesy, setIsCourtesy] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [discount, setDiscount] = useState('0');
   const [tipAmount, setTipAmount] = useState('0');
@@ -2597,11 +2598,13 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const subtotal = items.reduce((sum, item) => sum + itemSubtotal(item), 0);
   const discountNumber = Number(String(discount).replace(',', '.')) || 0;
   const tipNumber = Math.max(0, parseMoneyInput(tipAmount));
+  const grossTotal = roundMoney(subtotal + tipNumber);
+  const effectiveDiscount = isCourtesy ? grossTotal : discountNumber;
   const firstServiceBarberId = items.find((item) => item.type === 'service' && item.barberUserId)?.barberUserId || selectedBarberId || '';
   const effectiveTipBarberUserId = tipNumber > 0
     ? (Number(tipBarberUserId || firstServiceBarberId || 0) || null)
     : null;
-  const total = Math.max(0, subtotal + tipNumber - discountNumber);
+  const total = Math.max(0, roundMoney(grossTotal - effectiveDiscount));
   const paymentPayloads = payments
     .map((payment) => ({
       method: normalizeMethod(payment.method),
@@ -2880,18 +2883,18 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
       return;
     }
 
-    if (total > 0 && paymentPayloads.length === 0) {
+    if (!isCourtesy && total > 0 && paymentPayloads.length === 0) {
       setErrorMsg('Agrega al menos un método de pago.');
       return;
     }
 
-    if (Math.abs(remainingPayment) > 0.009) {
+    if (!isCourtesy && Math.abs(remainingPayment) > 0.009) {
       const label = remainingPayment > 0 ? 'Falta' : 'Sobra';
       setErrorMsg(`${label} ${formatMoney(Math.abs(remainingPayment))} para completar el total.`);
       return;
     }
 
-    if (cashPaymentTotal > 0 && received + 0.009 < cashPaymentTotal) {
+    if (!isCourtesy && cashPaymentTotal > 0 && received + 0.009 < cashPaymentTotal) {
       setErrorMsg('El efectivo recibido no puede ser menor al monto pagado en efectivo.');
       return;
     }
@@ -2917,11 +2920,11 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         appointmentId: null,
         saleDate: buildLocalSaleDateForBackend(saleDate),
         metodoPago: primaryPaymentMethod,
-        discount: discountNumber,
-        cashReceived: cashPaymentTotal > 0 ? received : total,
+        discount: effectiveDiscount,
+        cashReceived: isCourtesy ? 0 : cashPaymentTotal > 0 ? received : total,
         tipAmount: tipNumber,
         tipBarberUserId: effectiveTipBarberUserId,
-        payments: total === 0 ? [] : paymentPayloads,
+        payments: isCourtesy || total === 0 ? [] : paymentPayloads,
         cutType: hasHaircut ? 'Corte registrado en caja web' : null,
         cutDetail: hasHaircut ? 'Venta registrada desde panel web' : null,
         cutObservations: selectedCustomer ? null : (customerName.trim() ? `Referencia: ${customerName.trim()}` : null),
@@ -3142,6 +3145,32 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                 Total a cobrar
               </p>
 
+              <button
+                type="button"
+                onClick={() => setIsCourtesy((value) => !value)}
+                className={`mt-4 flex w-full items-center justify-between gap-4 rounded-[22px] border px-4 py-4 text-left transition ${
+                  isCourtesy
+                    ? 'border-amber-300 bg-amber-50'
+                    : 'border-neutral-200 bg-neutral-50 hover:border-amber-200 hover:bg-amber-50/50'
+                }`}
+              >
+                <span>
+                  <span className="block text-sm font-black text-neutral-950">
+                    Registrar como cortesia gratis
+                  </span>
+                  <span className="mt-1 block text-xs font-bold leading-5 text-neutral-500">
+                    Guarda la venta en S/ 0 y conserva el subtotal como referencia para reportes.
+                  </span>
+                </span>
+                <span className={`flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition ${
+                  isCourtesy ? 'bg-amber-400' : 'bg-neutral-300'
+                }`}>
+                  <span className={`h-5 w-5 rounded-full bg-white shadow-sm transition ${
+                    isCourtesy ? 'translate-x-5' : 'translate-x-0'
+                  }`} />
+                </span>
+              </button>
+
               <div className="mt-5 space-y-4">
                 <label className="block">
                   <span className="text-sm font-black text-neutral-700">Fecha de venta</span>
@@ -3160,7 +3189,15 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                   )}
                 </label>
 
-                <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix="S/" />
+                <InputField
+                  label={isCourtesy ? 'Descuento aplicado por cortesia' : 'Descuento'}
+                  value={isCourtesy ? effectiveDiscount.toFixed(2) : discount}
+                  onChange={setDiscount}
+                  type="number"
+                  step="0.01"
+                  prefix="S/"
+                  disabled={isCourtesy}
+                />
 
                 <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-4">
                   <div className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
@@ -3195,6 +3232,16 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                   </div>
                 </div>
 
+                {isCourtesy ? (
+                  <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-4">
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+                      Venta gratis
+                    </div>
+                    <p className="mt-2 text-sm font-bold leading-6 text-amber-800">
+                      No se registrara ningun cobro. La venta saldra como Gratis / Cortesia y aparecera en el resumen de cortesias por barbero.
+                    </p>
+                  </div>
+                ) : (
                 <div className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -3270,8 +3317,9 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                     </div>
                   </div>
                 </div>
+                )}
 
-                {cashPaymentTotal > 0 && (
+                {!isCourtesy && cashPaymentTotal > 0 && (
                   <InputField
                     label={`Efectivo recibido para ${formatMoney(cashPaymentTotal)}`}
                     value={cashReceived}
@@ -3285,9 +3333,9 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
 
               <div className="mt-5 grid gap-3">
                 <StatCard title="Subtotal" value={formatMoney(subtotal)} />
-                <StatCard title="Descuento" value={formatMoney(discountNumber)} />
+                <StatCard title="Descuento" value={formatMoney(effectiveDiscount)} tone={isCourtesy ? 'gold' : 'default'} />
                 <StatCard title="Propina" value={formatMoney(tipNumber)} tone={tipNumber > 0 ? 'green' : 'default'} />
-                <StatCard title="Pagado" value={formatMoney(paymentsTotal)} tone={Math.abs(remainingPayment) <= 0.009 ? 'green' : 'gold'} />
+                <StatCard title="Pagado" value={formatMoney(isCourtesy ? 0 : paymentsTotal)} tone={isCourtesy || Math.abs(remainingPayment) <= 0.009 ? 'green' : 'gold'} />
                 <StatCard title="Vuelto" value={formatMoney(change)} tone={change > 0 ? 'green' : 'default'} />
               </div>
             </div>
@@ -3354,7 +3402,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
             disabled={saving}
             className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
           >
-            {saving ? 'Guardando venta...' : 'Guardar nueva venta'}
+            {saving ? 'Guardando venta...' : isCourtesy ? 'Guardar cortesia gratis' : 'Guardar nueva venta'}
           </button>
         </form>
       )}
@@ -3386,7 +3434,7 @@ function ModalShell({ title, subtitle, onClose, children }) {
   );
 }
 
-function InputField({ label, value, onChange, type = 'text', step, prefix }) {
+function InputField({ label, value, onChange, type = 'text', step, prefix, disabled = false }) {
   return (
     <label className="block">
       <span className="text-sm font-black text-neutral-700">{label}</span>
@@ -3400,8 +3448,9 @@ function InputField({ label, value, onChange, type = 'text', step, prefix }) {
           type={type}
           step={step}
           value={value}
+          disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-2xl bg-transparent px-4 py-4 font-bold text-neutral-950 outline-none"
+          className="w-full rounded-2xl bg-transparent px-4 py-4 font-bold text-neutral-950 outline-none disabled:cursor-not-allowed disabled:text-neutral-400"
         />
       </div>
     </label>
