@@ -4,6 +4,7 @@ import {
   createBarberPayment,
   createCashMovement,
   createCashSale,
+  deleteCashMovement,
   deleteCashSale,
   getBarberPaymentPreview,
   getCashBarbers,
@@ -17,9 +18,11 @@ import {
   getSalesByCashRegister,
   getTodayCashSales,
   openCashRegister,
+  updateCashMovement,
   updateCashSale,
 } from '../../api/ownerCashApi';
 import { createOwnerCustomer, getOwnerCustomers } from '../../api/ownerCustomersApi';
+import { useAuth } from '../../context/AuthContext';
 
 function formatMoney(value) {
   const number = Number(value || 0);
@@ -446,6 +449,72 @@ function saleBarberName(sale) {
   return 'Barbero no registrado';
 }
 
+function isCourtesySale(sale) {
+  return normalizeMethod(sale?.metodoPago) === 'FREE';
+}
+
+function saleReferenceValue(sale) {
+  const subtotal = Number(sale?.subtotal ?? 0);
+  if (subtotal > 0) return subtotal;
+
+  const itemsTotal = saleItemsOf(sale).reduce((sum, item) => sum + saleItemTotal(item), 0);
+  if (itemsTotal > 0) return itemsTotal;
+
+  return Number(sale?.discount ?? 0);
+}
+
+function buildCourtesySummary(sales = []) {
+  const byBarber = new Map();
+  let count = 0;
+  let referenceValue = 0;
+
+  sales.filter(isCourtesySale).forEach((sale) => {
+    const items = saleItemsOf(sale);
+    const serviceItems = items.filter((item) => {
+      const hasService = item?.serviceId || String(item?.serviceName ?? '').trim();
+      const hasProduct = item?.productId || String(item?.productName ?? '').trim();
+      return hasService || !hasProduct;
+    });
+
+    const entries = serviceItems.length > 0
+      ? serviceItems.map((item) => ({
+          barberName: saleItemBarberName(item) === '-' ? saleBarberName(sale) : saleItemBarberName(item),
+          count: saleItemQuantity(item),
+          referenceValue: saleItemTotal(item) || saleItemUnitPrice(item),
+        }))
+      : [{
+          barberName: saleBarberName(sale),
+          count: 1,
+          referenceValue: saleReferenceValue(sale),
+        }];
+
+    entries.forEach((entry) => {
+      const itemCount = Math.max(1, Number(entry.count || 1));
+      const itemValue = Number(entry.referenceValue || 0);
+      const current = byBarber.get(entry.barberName) || {
+        barberName: entry.barberName,
+        count: 0,
+        referenceValue: 0,
+      };
+
+      current.count += itemCount;
+      current.referenceValue += itemValue;
+      byBarber.set(entry.barberName, current);
+      count += itemCount;
+      referenceValue += itemValue;
+    });
+  });
+
+  return {
+    count,
+    referenceValue,
+    byBarber: Array.from(byBarber.values()).sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return b.referenceValue - a.referenceValue;
+    }),
+  };
+}
+
 function readAttendAppointmentFromStorage() {
   try {
     const raw = window.sessionStorage.getItem('ownerWebAttendAppointment');
@@ -662,17 +731,18 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
   );
 }
 
-function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
-  const [type, setType] = useState('EXPENSE');
-  const [amount, setAmount] = useState('');
-  const [concept, setConcept] = useState('Gasto general');
-  const [note, setNote] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('CASH');
-  const [fromPaymentMethod, setFromPaymentMethod] = useState(defaultExtraPaymentMethod(paymentMethods));
-  const [toPaymentMethod, setToPaymentMethod] = useState('CASH');
+function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, initialMovement = null, onClose, onSaved }) {
+  const isEditing = Boolean(initialMovement?.id);
+  const [type, setType] = useState(initialMovement?.type || 'EXPENSE');
+  const [amount, setAmount] = useState(initialMovement?.amount ? String(initialMovement.amount) : '');
+  const [concept, setConcept] = useState(initialMovement?.concept || 'Gasto general');
+  const [note, setNote] = useState(initialMovement?.note || '');
+  const [paymentMethod, setPaymentMethod] = useState(normalizeMethod(initialMovement?.paymentMethod) || 'CASH');
+  const [fromPaymentMethod, setFromPaymentMethod] = useState(normalizeMethod(initialMovement?.fromPaymentMethod) || defaultExtraPaymentMethod(paymentMethods));
+  const [toPaymentMethod, setToPaymentMethod] = useState(normalizeMethod(initialMovement?.toPaymentMethod) || 'CASH');
 
   const [barbers, setBarbers] = useState([]);
-  const [selectedBarberId, setSelectedBarberId] = useState('');
+  const [selectedBarberId, setSelectedBarberId] = useState(String(initialMovement?.barberUserId ?? initialMovement?.barberId ?? ''));
   const [loadingBarbers, setLoadingBarbers] = useState(false);
 
   const [saving, setSaving] = useState(false);
@@ -778,9 +848,8 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
     setSaving(true);
 
     try {
-      await createCashMovement({
+      const payload = {
         branchId: branch.id,
-        cashRegisterId: cashRegister.id,
         type,
         amount: parsedAmount,
         concept,
@@ -789,18 +858,31 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
         paymentMethod: isTransfer ? toPaymentMethod : paymentMethod,
         fromPaymentMethod: isTransfer ? fromPaymentMethod : null,
         toPaymentMethod: isTransfer ? toPaymentMethod : null,
-      });
+        movementDate: initialMovement?.movementDate || null,
+      };
+
+      if (isEditing) {
+        await updateCashMovement({
+          ...payload,
+          movementId: initialMovement.id,
+        });
+      } else {
+        await createCashMovement({
+          ...payload,
+          cashRegisterId: cashRegister.id,
+        });
+      }
 
       onSaved();
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudo registrar el movimiento.');
+      setErrorMsg(error.message || (isEditing ? 'No se pudo actualizar el movimiento.' : 'No se pudo registrar el movimiento.'));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <ModalShell title="Registrar movimiento" subtitle={branch?.name || 'Sede'} onClose={onClose}>
+    <ModalShell title={isEditing ? 'Editar movimiento' : 'Registrar movimiento'} subtitle={branch?.name || 'Sede'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <SelectField
           label="Tipo de movimiento"
@@ -909,7 +991,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
           disabled={saving}
           className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
         >
-          {saving ? 'Guardando...' : 'Guardar movimiento'}
+          {saving ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Guardar movimiento'}
         </button>
       </form>
     </ModalShell>
@@ -1311,7 +1393,66 @@ function MiniPreviewItem({ label, value, strong = false }) {
   );
 }
 
-function SalesSection({ sales, onView, onEdit, onDelete }) {
+function CourtesySummarySection({ summary }) {
+  if (!summary?.count) return null;
+
+  return (
+    <section className="rounded-[32px] border border-amber-200 bg-amber-50 p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-700">
+            Cortesias de hoy
+          </div>
+          <h3 className="mt-2 text-2xl font-black text-neutral-950">
+            Servicios gratis registrados
+          </h3>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-amber-800/75">
+            Controla cuantas cortesias se entregaron y su valor referencial por barbero.
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
+            <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+              Cortes gratis
+            </div>
+            <div className="mt-1 text-2xl font-black text-neutral-950">
+              {summary.count}
+            </div>
+          </div>
+          <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
+            <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+              Valor ref.
+            </div>
+            <div className="mt-1 text-2xl font-black text-neutral-950">
+              {formatMoney(summary.referenceValue)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {summary.byBarber.map((item) => (
+          <div key={item.barberName} className="rounded-[24px] border border-amber-100 bg-white p-4 shadow-sm">
+            <div className="text-sm font-black text-neutral-950">{item.barberName}</div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded-2xl bg-amber-50 px-3 py-2">
+                <div className="text-xs font-bold text-amber-700">Cantidad</div>
+                <div className="mt-1 font-black text-neutral-950">{item.count}</div>
+              </div>
+              <div className="rounded-2xl bg-neutral-50 px-3 py-2">
+                <div className="text-xs font-bold text-neutral-500">Ref.</div>
+                <div className="mt-1 font-black text-neutral-950">{formatMoney(item.referenceValue)}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SalesSection({ sales, canManageSales, onView, onEdit, onDelete }) {
   return (
     <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -1325,7 +1466,7 @@ function SalesSection({ sales, onView, onEdit, onDelete }) {
           </h3>
 
           <p className="mt-1 text-sm text-neutral-500">
-            Ventas registradas en la sede seleccionada. Puedes editar o eliminar desde web.
+            Ventas registradas en la sede seleccionada.
           </p>
         </div>
 
@@ -1395,18 +1536,22 @@ function SalesSection({ sales, onView, onEdit, onDelete }) {
                       >
                         Ver detalle
                       </button>
-                      <button
-                        onClick={() => onEdit(sale)}
-                        className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-black text-neutral-700 hover:bg-neutral-50"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => onDelete(sale)}
-                        className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700 hover:bg-red-100"
-                      >
-                        Eliminar
-                      </button>
+                      {canManageSales && (
+                        <>
+                          <button
+                            onClick={() => onEdit(sale)}
+                            className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-black text-neutral-700 hover:bg-neutral-50"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => onDelete(sale)}
+                            className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700 hover:bg-red-100"
+                          >
+                            Eliminar
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -3782,6 +3927,7 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, on
 
 
 export default function OwnerCashPage() {
+  const { session } = useAuth();
   const [branches, setBranches] = useState([]);
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [cashRegister, setCashRegister] = useState(null);
@@ -3800,10 +3946,14 @@ export default function OwnerCashPage() {
   const [showSaleModal, setShowSaleModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showBarberPaymentModal, setShowBarberPaymentModal] = useState(false);
+  const [editingMovement, setEditingMovement] = useState(null);
   const [editingSale, setEditingSale] = useState(null);
   const [viewingSale, setViewingSale] = useState(null);
   const [pendingAppointment, setPendingAppointment] = useState(null);
   const [showAppointmentSaleModal, setShowAppointmentSaleModal] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+
+  const canManageSales = String(session?.role || '').trim().toUpperCase() === 'OWNER';
 
   const selectedBranch = useMemo(() => {
     return branches.find((item) => String(item.id) === String(selectedBranchId)) || null;
@@ -3871,6 +4021,8 @@ export default function OwnerCashPage() {
         setMovements([]);
         setSales([]);
       }
+
+      setLastUpdatedAt(new Date());
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo cargar la caja.');
     } finally {
@@ -3898,6 +4050,43 @@ export default function OwnerCashPage() {
     }
   }, [selectedBranchId]);
 
+  useEffect(() => {
+    if (!selectedBranchId) return undefined;
+
+    const timer = window.setInterval(() => {
+      if (
+        showOpenModal ||
+        showCloseModal ||
+        showMovementModal ||
+        showSaleModal ||
+        showHistoryModal ||
+        showBarberPaymentModal ||
+        editingMovement ||
+        editingSale ||
+        viewingSale ||
+        showAppointmentSaleModal
+      ) {
+        return;
+      }
+
+      loadCash(selectedBranchId, { silent: true });
+    }, 10000);
+
+    return () => window.clearInterval(timer);
+  }, [
+    selectedBranchId,
+    showOpenModal,
+    showCloseModal,
+    showMovementModal,
+    showSaleModal,
+    showHistoryModal,
+    showBarberPaymentModal,
+    editingMovement,
+    editingSale,
+    viewingSale,
+    showAppointmentSaleModal,
+  ]);
+
   
   function dismissPendingAppointment() {
     clearAttendAppointmentFromStorage();
@@ -3906,6 +4095,8 @@ export default function OwnerCashPage() {
   }
 
   async function handleDeleteSale(sale) {
+    if (!canManageSales) return;
+
     const saleId = saleIdOf(sale);
     if (!selectedBranch || !saleId) return;
 
@@ -3923,6 +4114,26 @@ export default function OwnerCashPage() {
       await loadCash(selectedBranchId);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo eliminar la venta.');
+    }
+  }
+
+  async function handleDeleteMovement(movement) {
+    if (!selectedBranch || !movement?.id) return;
+
+    const ok = window.confirm('¿Seguro que deseas eliminar este movimiento? Esta acción no se puede deshacer.');
+    if (!ok) return;
+
+    setErrorMsg('');
+
+    try {
+      await deleteCashMovement({
+        branchId: selectedBranch.id,
+        movementId: movement.id,
+      });
+
+      await loadCash(selectedBranchId);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo eliminar el movimiento.');
     }
   }
 
@@ -3952,6 +4163,7 @@ export default function OwnerCashPage() {
   const cashBalance = Number(cashRow?.balanceAmount ?? expected);
   const income = Number(cashRegister?.movementsIncome || 0);
   const expense = Number(cashRegister?.movementsExpense || 0);
+  const courtesySummary = buildCourtesySummary(sales);
 
   return (
     <div className="space-y-7">
@@ -4021,6 +4233,20 @@ export default function OwnerCashPage() {
                   </div>
                 </div>
               )}
+
+              {lastUpdatedAt && (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3">
+                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-white/35">
+                    Actualizado
+                  </div>
+                  <div className="mt-1 text-sm font-black">
+                    {lastUpdatedAt.toLocaleTimeString('es-PE', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -4045,7 +4271,8 @@ export default function OwnerCashPage() {
               <>
                 <button
                   onClick={() => setShowSaleModal(true)}
-                  className="rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-neutral-950 shadow-[0_16px_35px_rgba(16,185,129,0.18)] transition hover:scale-[1.02]"
+                  disabled={!canManageSales}
+                  className="rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-neutral-950 shadow-[0_16px_35px_rgba(16,185,129,0.18)] transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Nueva venta
                 </button>
@@ -4132,6 +4359,8 @@ export default function OwnerCashPage() {
               tone={balanceTone(expected)}
             />
           </section>
+
+          <CourtesySummarySection summary={courtesySummary} />
 
           <section className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -4253,13 +4482,14 @@ export default function OwnerCashPage() {
                       <th className="px-5 py-4 font-black">Método</th>
                       <th className="px-5 py-4 font-black">Monto</th>
                       <th className="px-5 py-4 font-black">Fecha</th>
+                      <th className="px-5 py-4 font-black text-right">Acciones</th>
                     </tr>
                   </thead>
 
                   <tbody>
                     {movements.length === 0 ? (
                       <tr>
-                        <td className="px-5 py-6 text-neutral-500" colSpan="5">
+                        <td className="px-5 py-6 text-neutral-500" colSpan="6">
                           No hay movimientos registrados.
                         </td>
                       </tr>
@@ -4294,6 +4524,25 @@ export default function OwnerCashPage() {
                           <td className="px-5 py-5 text-xs font-bold text-neutral-500">
                             {formatDateTime(movement.movementDate)}
                           </td>
+
+                          <td className="px-5 py-5">
+                            <div className="flex flex-wrap justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditingMovement(movement)}
+                                className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-black text-neutral-700 hover:bg-neutral-50"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMovement(movement)}
+                                className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700 hover:bg-red-100"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))
                     )}
@@ -4305,6 +4554,7 @@ export default function OwnerCashPage() {
 
           <SalesSection
             sales={sales}
+            canManageSales={canManageSales}
             onView={(sale) => setViewingSale(sale)}
             onEdit={(sale) => setEditingSale(sale)}
             onDelete={handleDeleteSale}
@@ -4364,6 +4614,20 @@ export default function OwnerCashPage() {
           onClose={() => setShowMovementModal(false)}
           onSaved={() => {
             setShowMovementModal(false);
+            loadCash(selectedBranchId);
+          }}
+        />
+      )}
+
+      {editingMovement && selectedBranch && cashRegister && (
+        <MovementModal
+          branch={selectedBranch}
+          cashRegister={cashRegister}
+          paymentMethods={paymentMethods}
+          initialMovement={editingMovement}
+          onClose={() => setEditingMovement(null)}
+          onSaved={() => {
+            setEditingMovement(null);
             loadCash(selectedBranchId);
           }}
         />

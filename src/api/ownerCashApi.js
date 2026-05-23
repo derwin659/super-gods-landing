@@ -145,6 +145,56 @@ export async function createCashMovement({
   );
 }
 
+export async function updateCashMovement({
+  branchId,
+  movementId,
+  type,
+  amount = 0,
+  concept = null,
+  note = null,
+  barberUserId = null,
+  paymentMethod = 'CASH',
+  fromPaymentMethod = null,
+  toPaymentMethod = null,
+  movementDate = null,
+}) {
+  const payload = {
+    type,
+    amount: Number(amount || 0),
+    concept,
+    note,
+    barberUserId,
+    paymentMethod,
+    fromPaymentMethod,
+    toPaymentMethod,
+  };
+
+  if (movementDate) {
+    payload.movementDate = movementDate;
+  }
+
+  return apiRequest(
+    `/api/owner/cash-registers/movements/${movementId}${toQuery({
+      branchId,
+    })}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export async function deleteCashMovement({ branchId, movementId }) {
+  return apiRequest(
+    `/api/owner/cash-registers/movements/${movementId}${toQuery({
+      branchId,
+    })}`,
+    {
+      method: 'DELETE',
+    }
+  );
+}
+
 export async function getCashBarbers(branchId) {
   try {
     const data = await apiRequest(
