@@ -103,30 +103,34 @@ function firstNumber(...values) {
 }
 
 function courtesyCountOf(item = {}) {
+  const source = item || {};
+
   return firstNumber(
-    item.courtesyCutsCount,
-    item.freeCutsCount,
-    item.courtesyCount,
-    item.freeCount,
-    item.cortesiasCount,
-    item.cortesGratis,
-    item.freeSalesCount,
-    item.courtesySalesCount,
-    item.gratisCount
+    source.courtesyCutsCount,
+    source.freeCutsCount,
+    source.courtesyCount,
+    source.freeCount,
+    source.cortesiasCount,
+    source.cortesGratis,
+    source.freeSalesCount,
+    source.courtesySalesCount,
+    source.gratisCount
   );
 }
 
 function courtesyValueOf(item = {}) {
+  const source = item || {};
+
   return firstNumber(
-    item.courtesyReferenceValue,
-    item.freeReferenceValue,
-    item.courtesyAmount,
-    item.freeAmount,
-    item.cortesiasReferenceValue,
-    item.cortesGratisReferenceValue,
-    item.courtesyTotal,
-    item.freeTotal,
-    item.gratisAmount
+    source.courtesyReferenceValue,
+    source.freeReferenceValue,
+    source.courtesyAmount,
+    source.freeAmount,
+    source.cortesiasReferenceValue,
+    source.cortesGratisReferenceValue,
+    source.courtesyTotal,
+    source.freeTotal,
+    source.gratisAmount
   );
 }
 
