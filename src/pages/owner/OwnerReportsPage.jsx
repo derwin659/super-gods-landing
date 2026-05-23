@@ -93,6 +93,84 @@ function n(value) {
   return Number(value || 0);
 }
 
+function firstNumber(...values) {
+  for (const value of values) {
+    const number = Number(value ?? 0);
+    if (!Number.isNaN(number) && number !== 0) return number;
+  }
+
+  return 0;
+}
+
+function courtesyCountOf(item = {}) {
+  return firstNumber(
+    item.courtesyCutsCount,
+    item.freeCutsCount,
+    item.courtesyCount,
+    item.freeCount,
+    item.cortesiasCount,
+    item.cortesGratis,
+    item.freeSalesCount,
+    item.courtesySalesCount,
+    item.gratisCount
+  );
+}
+
+function courtesyValueOf(item = {}) {
+  return firstNumber(
+    item.courtesyReferenceValue,
+    item.freeReferenceValue,
+    item.courtesyAmount,
+    item.freeAmount,
+    item.cortesiasReferenceValue,
+    item.cortesGratisReferenceValue,
+    item.courtesyTotal,
+    item.freeTotal,
+    item.gratisAmount
+  );
+}
+
+function buildCourtesyReportSummary({ salesReport, paymentSummary, profitability, barbers, branchReports }) {
+  const barbersWithCourtesy = (Array.isArray(barbers) ? barbers : [])
+    .map((barber) => ({
+      barberId: barber.barberId,
+      barberName: barber.barberName || 'Barbero',
+      count: courtesyCountOf(barber),
+      referenceValue: courtesyValueOf(barber),
+    }))
+    .filter((item) => item.count > 0 || item.referenceValue > 0)
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return b.referenceValue - a.referenceValue;
+    });
+
+  const branchTotalCount = (Array.isArray(branchReports) ? branchReports : [])
+    .reduce((sum, branch) => sum + courtesyCountOf(branch), 0);
+  const branchTotalValue = (Array.isArray(branchReports) ? branchReports : [])
+    .reduce((sum, branch) => sum + courtesyValueOf(branch), 0);
+
+  const barbersTotalCount = barbersWithCourtesy.reduce((sum, item) => sum + item.count, 0);
+  const barbersTotalValue = barbersWithCourtesy.reduce((sum, item) => sum + item.referenceValue, 0);
+
+  return {
+    count: firstNumber(
+      courtesyCountOf(salesReport),
+      courtesyCountOf(paymentSummary),
+      courtesyCountOf(profitability),
+      branchTotalCount,
+      barbersTotalCount
+    ),
+    referenceValue: firstNumber(
+      courtesyValueOf(salesReport),
+      courtesyValueOf(paymentSummary),
+      courtesyValueOf(profitability),
+      branchTotalValue,
+      barbersTotalValue
+    ),
+    byBarber: barbersWithCourtesy,
+  };
+}
+
 function getBranchIdentifier(branch) {
   return branch?.id ?? branch?.branchId ?? branch?.sucursalId;
 }
@@ -333,6 +411,71 @@ function InsightCard({ insights }) {
       </div>
     );
   }
+
+function CourtesyReportSection({ summary, from, to }) {
+  const hasData = summary.count > 0 || summary.referenceValue > 0 || summary.byBarber.length > 0;
+
+  return (
+    <section className="rounded-[30px] border border-amber-200 bg-amber-50 p-5 shadow-[0_14px_38px_rgba(15,23,42,0.05)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-700">
+            Cortes gratis
+          </div>
+          <h3 className="mt-2 text-xl font-black text-neutral-950">
+            Cortesias por rango de fecha
+          </h3>
+          <p className="mt-1 text-sm font-bold leading-6 text-amber-800/75">
+            Rango consultado: {shortDate(from)} - {shortDate(to)}.
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
+            <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+              Cantidad
+            </div>
+            <div className="mt-1 text-3xl font-black text-neutral-950">
+              {summary.count}
+            </div>
+          </div>
+          <div className="rounded-2xl bg-white px-5 py-4 shadow-sm">
+            <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+              Valor ref.
+            </div>
+            <div className="mt-1 text-3xl font-black text-neutral-950">
+              {formatMoney(summary.referenceValue)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {!hasData ? (
+        <div className="mt-5 rounded-[24px] border border-dashed border-amber-300 bg-white/70 p-5 text-sm font-bold text-amber-800">
+          No hay cortes gratis reportados para este rango o el backend aun no envia los campos de cortesia.
+        </div>
+      ) : summary.byBarber.length > 0 ? (
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {summary.byBarber.map((item) => (
+            <div key={item.barberId || item.barberName} className="rounded-[24px] border border-amber-100 bg-white p-4 shadow-sm">
+              <div className="text-sm font-black text-neutral-950">{item.barberName}</div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-2xl bg-amber-50 px-3 py-2">
+                  <div className="text-xs font-bold text-amber-700">Cantidad</div>
+                  <div className="mt-1 font-black text-neutral-950">{item.count}</div>
+                </div>
+                <div className="rounded-2xl bg-neutral-50 px-3 py-2">
+                  <div className="text-xs font-bold text-neutral-500">Ref.</div>
+                  <div className="mt-1 font-black text-neutral-950">{formatMoney(item.referenceValue)}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
 
 function BarberDetailModal({ barber, loading, errorMsg, items, onClose }) {
   return (
@@ -850,6 +993,16 @@ export default function OwnerReportsPage() {
     }));
   }, [topServices]);
 
+  const courtesySummary = useMemo(() => {
+    return buildCourtesyReportSummary({
+      salesReport,
+      paymentSummary,
+      profitability,
+      barbers,
+      branchReports,
+    });
+  }, [salesReport, paymentSummary, profitability, barbers, branchReports]);
+
   const insights = useMemo(() => {
     const items = [];
 
@@ -1041,6 +1194,8 @@ export default function OwnerReportsPage() {
           </section>
 
           <PaymentMethodSummaryCard paymentSummary={paymentSummary} />
+
+          <CourtesyReportSection summary={courtesySummary} from={from} to={to} />
 
           <BranchComparisonSection
             branchReports={branchReports}
