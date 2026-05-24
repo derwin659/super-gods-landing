@@ -32,8 +32,10 @@ import {
   planLabel,
   statusLabel,
 } from '../../api/ownerSubscriptionApi';
+import { getOwnerLoyaltySettings } from '../../api/ownerLoyaltySettingsApi';
 import { useAuth } from '../../context/AuthContext';
 import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
+import { saveTenantMoneySettings } from '../../utils/tenantMoney';
 
 const navGroups = [
   {
@@ -650,6 +652,29 @@ export default function OwnerLayout() {
     } else {
       setPermissions(null);
       setLoadingPermissions(false);
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [session?.token, session?.role]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadMoneySettings() {
+      try {
+        const data = await getOwnerLoyaltySettings();
+        if (mounted) {
+          saveTenantMoneySettings(data);
+        }
+      } catch {
+        // La moneda vuelve a PEN por defecto si la configuracion no carga.
+      }
+    }
+
+    if (session?.token && String(session?.role || '').toUpperCase() !== 'SUPER_ADMIN') {
+      loadMoneySettings();
     }
 
     return () => {

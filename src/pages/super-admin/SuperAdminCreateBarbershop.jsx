@@ -29,12 +29,36 @@ const CURRENCY_OPTIONS = [
   { value: "USD", label: "Dólares (USD)" },
 ];
 
+const COUNTRY_OPTIONS = [
+  { value: "Peru", label: "Peru", currency: "PEN" },
+  { value: "Estados Unidos", label: "Estados Unidos", currency: "USD" },
+  { value: "Colombia", label: "Colombia", currency: "COP" },
+  { value: "Mexico", label: "Mexico", currency: "MXN" },
+  { value: "Chile", label: "Chile", currency: "CLP" },
+  { value: "Argentina", label: "Argentina", currency: "ARS" },
+  { value: "Bolivia", label: "Bolivia", currency: "BOB" },
+  { value: "Brasil", label: "Brasil", currency: "BRL" },
+  { value: "Union Europea", label: "Union Europea", currency: "EUR" },
+  { value: "Venezuela", label: "Venezuela", currency: "VES" },
+  { value: "Uruguay", label: "Uruguay", currency: "UYU" },
+  { value: "Paraguay", label: "Paraguay", currency: "PYG" },
+  { value: "Costa Rica", label: "Costa Rica", currency: "CRC" },
+  { value: "Republica Dominicana", label: "Republica Dominicana", currency: "DOP" },
+  { value: "Guatemala", label: "Guatemala", currency: "GTQ" },
+];
+
+const COUNTRY_CURRENCY_OPTIONS = COUNTRY_OPTIONS.map((item) => ({
+  value: item.currency,
+  label: `${item.currency} - ${item.label}`,
+}));
+
 const initialForm = {
   businessName: "",
   businessType: "BARBERSHOP",
   ownerName: "",
   ownerEmail: "",
   ownerPhone: "",
+  country: "Peru",
   branchName: "Principal",
   branchAddress: "",
   branchPhone: "",
@@ -55,6 +79,12 @@ export default function SuperAdminCreateBarbershop() {
   const [created, setCreated] = useState(null);
 
   function update(name, value) {
+    if (name === "country") {
+      const currency = COUNTRY_OPTIONS.find((item) => item.value === value)?.currency || "PEN";
+      setForm((prev) => ({ ...prev, country: value, currency }));
+      return;
+    }
+
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
@@ -79,6 +109,7 @@ export default function SuperAdminCreateBarbershop() {
         ownerName: form.ownerName.trim(),
         ownerEmail: form.ownerEmail.trim().toLowerCase(),
         ownerPhone: form.ownerPhone.trim(),
+        country: form.country,
         branchName: form.branchName.trim(),
         branchAddress: form.branchAddress.trim(),
         branchPhone: form.branchPhone.trim(),
@@ -155,6 +186,12 @@ export default function SuperAdminCreateBarbershop() {
               value={form.branchPhone}
               onChange={(v) => update("branchPhone", v)}
             />
+            <Select
+              label="Pais del negocio"
+              value={form.country}
+              onChange={(v) => update("country", v)}
+              options={COUNTRY_OPTIONS}
+            />
           </div>
         </Card>
 
@@ -197,7 +234,7 @@ export default function SuperAdminCreateBarbershop() {
               label="Moneda"
               value={form.currency}
               onChange={(v) => update("currency", v)}
-              options={CURRENCY_OPTIONS}
+              options={COUNTRY_CURRENCY_OPTIONS}
             />
             <Field
               label="Días de prueba"

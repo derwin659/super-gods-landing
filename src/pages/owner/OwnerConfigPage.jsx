@@ -370,6 +370,15 @@ import {
   
           <ConfigTile
             icon={Star}
+            title="Moneda y puntos"
+            subtitle="Define la moneda del negocio y los puntos por cada unidad monetaria gastada."
+            badge="CRM"
+            tone="gold"
+            onClick={() => navigate('/owner/puntos-configuracion')}
+          />
+
+          <ConfigTile
+            icon={Star}
             title="Ajustar puntos"
             subtitle="Corrige o entrega puntos manualmente a clientes especiales."
             badge="CRM"

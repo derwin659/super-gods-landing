@@ -25,6 +25,7 @@ import {
   getSalesReport,
   getTopServices,
 } from '../../api/ownerReportsApi';
+import { formatTenantMoney } from '../../utils/tenantMoney';
 
 function toDateInputValue(date = new Date()) {
   const yyyy = date.getFullYear();
@@ -40,14 +41,7 @@ function defaultFromDate() {
 }
 
 function formatMoney(value) {
-  const number = Number(value || 0);
-
-  return new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: 'PEN',
-    minimumFractionDigits: number % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
+  return formatTenantMoney(value);
 }
 
 function formatPercent(value) {

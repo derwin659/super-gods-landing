@@ -3,6 +3,7 @@ import {
   getOwnerReservationSettings,
   updateOwnerReservationSettings,
 } from '../../api/ownerReservationSettingsApi';
+import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 
 const TEMPLATES = [
   {
@@ -518,7 +519,7 @@ export default function OwnerReservationSettingsPage() {
 
         <StatCard
           title="Valor"
-          value={mode === 'FIXED' ? `S/ ${fixedAmount || '0'}` : `${percent || '0'}%`}
+          value={mode === 'FIXED' ? formatTenantMoney(fixedAmount || 0) : `${percent || '0'}%`}
           helper="Monto solicitado"
           tone="dark"
         />
@@ -600,7 +601,7 @@ export default function OwnerReservationSettingsPage() {
                   onChange={setFixedAmount}
                   placeholder="Ej. 10.00"
                   type="number"
-                  prefix="S/"
+                  prefix={getTenantCurrencySymbol()}
                   disabled={!enabled}
                 />
               ) : (

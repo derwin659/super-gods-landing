@@ -7,16 +7,10 @@ import {
   updateOwnerService,
   uploadOwnerServiceImage,
 } from '../../api/ownerServicesApi';
+import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 
 function formatMoney(value) {
-  const number = Number(value || 0);
-
-  return new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: 'PEN',
-    minimumFractionDigits: number % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
+  return formatTenantMoney(value);
 }
 
 function initials(value) {
@@ -351,7 +345,7 @@ function ServiceFormModal({ service, onClose, onSaved }) {
                   placeholder="25.00"
                   type="number"
                   step="0.01"
-                  prefix="S/"
+                  prefix={getTenantCurrencySymbol()}
                 />
               </div>
 
@@ -797,3 +791,4 @@ export default function OwnerServicesPage() {
     </div>
   );
 }
+

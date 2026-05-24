@@ -47,6 +47,7 @@ import OwnerBarberSchedulePage from './pages/owner/OwnerBarberSchedulePage';
 import OwnerReservationSettingsPage from './pages/owner/OwnerReservationSettingsPage';
 import OwnerPromotionsPage from './pages/owner/OwnerPromotionsPage';
 import OwnerSubscriptionPage from './pages/owner/OwnerSubscriptionPage';
+import OwnerLoyaltySettingsPage from './pages/owner/OwnerLoyaltySettingsPage';
 
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -1253,6 +1254,15 @@ export default function App() {
             element={
               <OwnerPermissionRoute permissions={['CUSTOMERS_ACCESS']}>
                 <OwnerAdjustPointsPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="puntos-configuracion"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_ACCESS']}>
+                <OwnerLoyaltySettingsPage />
               </OwnerPermissionRoute>
             }
           />

@@ -149,7 +149,6 @@ function RewardFormModal({ reward, onClose, onSaved }) {
   );
   const [imagenUrl, setImagenUrl] = useState(reward?.imagenUrl || '');
   const [activo, setActivo] = useState(reward?.activo !== false);
-  const [sendNotification, setSendNotification] = useState(false);
   const [imageFile, setImageFile] = useState(null);
 
   const [saving, setSaving] = useState(false);
@@ -184,6 +183,12 @@ function RewardFormModal({ reward, onClose, onSaved }) {
       setErrorMsg(validation);
       return;
     }
+
+    const sendNotification = !isEdit
+      ? window.confirm(
+          '¿Quieres enviar una notificación a tus clientes sobre este nuevo premio?'
+        )
+      : false;
 
     setSaving(true);
     setErrorMsg('');
@@ -352,21 +357,6 @@ function RewardFormModal({ reward, onClose, onSaved }) {
                 </div>
               </div>
 
-              {!isEdit && (
-                <button
-                  type="button"
-                  onClick={() => setSendNotification((prev) => !prev)}
-                  className={`w-full rounded-2xl px-4 py-4 text-sm font-black ${
-                    sendNotification
-                      ? 'bg-neutral-950 text-white'
-                      : 'border border-neutral-200 bg-white text-neutral-700'
-                  }`}
-                >
-                  {sendNotification
-                    ? 'Enviar notificación al crear'
-                    : 'No enviar notificación al crear'}
-                </button>
-              )}
             </div>
           </div>
         </div>

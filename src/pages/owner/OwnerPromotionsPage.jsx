@@ -9,6 +9,7 @@ import {
   updateOwnerPromotion,
   uploadOwnerPromotionImage,
 } from '../../api/ownerPromotionsApi';
+import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 
 const PROMOTION_TYPES = [
   { value: 'DISCOUNT', label: 'Descuento' },
@@ -67,9 +68,9 @@ function formatDiscount(promotion) {
 
   if (!type || value <= 0) return 'Sin descuento real';
 
-  if (type === 'AMOUNT') return `Descuento S/ ${value.toFixed(2)}`;
+  if (type === 'AMOUNT') return `Descuento ${formatTenantMoney(value)}`;
   if (type === 'PERCENT') return `${value % 1 === 0 ? value.toFixed(0) : value.toFixed(2)}% descuento`;
-  if (type === 'FIXED_PRICE') return `Precio final S/ ${value.toFixed(2)}`;
+  if (type === 'FIXED_PRICE') return `Precio final ${formatTenantMoney(value)}`;
 
   return 'Descuento';
 }
@@ -251,7 +252,6 @@ function PromotionFormModal({ promotion, branches, onClose, onSaved }) {
       : ''
   );
   const [activo, setActivo] = useState(promotion?.activo !== false);
-  const [sendNotification, setSendNotification] = useState(false);
 
   const [fechaInicio, setFechaInicio] = useState(toDateTimeInputValue(promotion?.fechaInicio));
   const [fechaFin, setFechaFin] = useState(toDateTimeInputValue(promotion?.fechaFin));
@@ -317,6 +317,12 @@ function PromotionFormModal({ promotion, branches, onClose, onSaved }) {
       setErrorMsg(validation);
       return;
     }
+
+    const sendNotification = !isEdit
+      ? window.confirm(
+          '¿Quieres enviar una notificación a tus clientes sobre esta nueva promoción?'
+        )
+      : false;
 
     setSaving(true);
     setErrorMsg('');
@@ -478,7 +484,7 @@ function PromotionFormModal({ promotion, branches, onClose, onSaved }) {
                   label="Texto de precio"
                   value={priceText}
                   onChange={setPriceText}
-                  placeholder="Ej. Desde S/ 25"
+                  placeholder="Ej. Desde 25"
                 />
 
                 <InputField
@@ -531,7 +537,7 @@ function PromotionFormModal({ promotion, branches, onClose, onSaved }) {
                       : 'Ej. 25'
                 }
                 type="number"
-                prefix={discountType === 'PERCENT' ? null : 'S/'}
+                prefix={discountType === 'PERCENT' ? null : getTenantCurrencySymbol()}
                 suffix={discountType === 'PERCENT' ? '%' : null}
               />
             )}
@@ -540,11 +546,11 @@ function PromotionFormModal({ promotion, branches, onClose, onSaved }) {
           {discountType !== 'NONE' && (
             <div className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm font-bold leading-6 text-amber-800">
               {discountType === 'AMOUNT' &&
-                `Se descontará S/ ${discountValue || '0'} del precio normal.`}
+                `Se descontará ${formatTenantMoney(discountValue || 0)} del precio normal.`}
               {discountType === 'PERCENT' &&
                 `Se descontará ${discountValue || '0'}% del precio normal.`}
               {discountType === 'FIXED_PRICE' &&
-                `El servicio quedará con precio promocional de S/ ${discountValue || '0'}.`}
+                `El servicio quedará con precio promocional de ${formatTenantMoney(discountValue || 0)}.`}
             </div>
           )}
         </div>
@@ -604,21 +610,6 @@ function PromotionFormModal({ promotion, branches, onClose, onSaved }) {
             </div>
           )}
 
-          {!isEdit && (
-            <button
-              type="button"
-              onClick={() => setSendNotification((prev) => !prev)}
-              className={`mt-4 w-full rounded-2xl px-4 py-4 text-sm font-black ${
-                sendNotification
-                  ? 'bg-neutral-950 text-white'
-                  : 'border border-neutral-200 bg-neutral-50 text-neutral-700'
-              }`}
-            >
-              {sendNotification
-                ? 'Enviar notificación al crear'
-                : 'No enviar notificación al crear'}
-            </button>
-          )}
         </div>
 
         <button
@@ -1095,3 +1086,4 @@ export default function OwnerPromotionsPage() {
     </div>
   );
 }
+

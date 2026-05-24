@@ -24,16 +24,10 @@ import {
 import { createOwnerCustomer, getOwnerCustomers } from '../../api/ownerCustomersApi';
 import { useAuth } from '../../context/AuthContext';
 import { getBusinessLabels, readBusinessLabels } from '../../utils/businessLabels';
+import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 
 function formatMoney(value) {
-  const number = Number(value || 0);
-
-  return new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: 'PEN',
-    minimumFractionDigits: number % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
+  return formatTenantMoney(value);
 }
 
 function formatDateTime(value) {
@@ -630,7 +624,7 @@ function OpenCashModal({ branch, onClose, onSaved }) {
           onChange={setOpeningAmount}
           type="number"
           step="0.01"
-          prefix="S/"
+          prefix={getTenantCurrencySymbol()}
         />
 
         <TextAreaField
@@ -710,7 +704,7 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
           onChange={setCounted}
           type="number"
           step="0.01"
-          prefix="S/"
+          prefix={getTenantCurrencySymbol()}
         />
 
         <TextAreaField
@@ -905,7 +899,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
           onChange={setAmount}
           type="number"
           step="0.01"
-          prefix="S/"
+          prefix={getTenantCurrencySymbol()}
         />
 
         <SelectField
@@ -1290,7 +1284,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
           onChange={handleAmountChange}
           type="number"
           step="0.01"
-          prefix="S/"
+          prefix={getTenantCurrencySymbol()}
         />
 
         <div className="rounded-[26px] border border-neutral-200 bg-neutral-50 p-4">
@@ -1332,7 +1326,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
                   onChange={(value) => updatePaymentRow(row.key, 'amount', value)}
                   type="number"
                   step="0.01"
-                  prefix="S/"
+                  prefix={getTenantCurrencySymbol()}
                 />
 
                 <button
@@ -1892,9 +1886,9 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
     <ModalShell title="Editar venta" subtitle={branch?.name || 'Sede'} onClose={onClose} maxWidth="max-w-5xl">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid gap-3 sm:grid-cols-3">
-          <InputField label="Subtotal" value={subtotal} onChange={setSubtotal} type="number" step="0.01" prefix="S/" />
-          <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix="S/" />
-          <InputField label="Total" value={total} onChange={setTotal} type="number" step="0.01" prefix="S/" />
+          <InputField label="Subtotal" value={subtotal} onChange={setSubtotal} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
+          <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
+          <InputField label="Total" value={total} onChange={setTotal} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
         </div>
 
         <div className="rounded-[28px] border border-neutral-200 bg-white p-5">
@@ -1934,7 +1928,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
                     onChange={(value) => updatePayment(index, { amount: value })}
                     type="number"
                     step="0.01"
-                    prefix="S/"
+                    prefix={getTenantCurrencySymbol()}
                   />
 
                   <button
@@ -1958,7 +1952,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
                 onChange={setCashReceived}
                 type="number"
                 step="0.01"
-                prefix="S/"
+                prefix={getTenantCurrencySymbol()}
               />
               <StatCard title="Vuelto" value={formatMoney(changeAmount)} tone={changeAmount > 0 ? 'green' : 'default'} />
             </div>
@@ -2482,8 +2476,8 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                   onChange={setPaymentMethod}
                   options={paymentOptions}
                 />
-                <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix="S/" />
-                <InputField label="Recibido" value={cashReceived} onChange={setCashReceived} type="number" step="0.01" prefix="S/" />
+                <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
+                <InputField label="Recibido" value={cashReceived} onChange={setCashReceived} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
               </div>
             </div>
           </div>
@@ -3165,7 +3159,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                     Registrar como cortesia gratis
                   </span>
                   <span className="mt-1 block text-xs font-bold leading-5 text-neutral-500">
-                    Guarda la venta en S/ 0 y conserva el subtotal como referencia para reportes.
+                    Guarda la venta en 0 y conserva el subtotal como referencia para reportes.
                   </span>
                 </span>
                 <span className={`flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition ${
@@ -3201,7 +3195,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                   onChange={setDiscount}
                   type="number"
                   step="0.01"
-                  prefix="S/"
+                  prefix={getTenantCurrencySymbol()}
                   disabled={isCourtesy}
                 />
 
@@ -3220,7 +3214,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       onChange={setTipAmount}
                       type="number"
                       step="0.01"
-                      prefix="S/"
+                      prefix={getTenantCurrencySymbol()}
                     />
 
                     <SelectField
@@ -3303,7 +3297,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                             onChange={(value) => updatePayment(index, 'amount', value)}
                             type="number"
                             step="0.01"
-                            prefix="S/"
+                            prefix={getTenantCurrencySymbol()}
                           />
                         </div>
                       </div>
@@ -3332,7 +3326,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                     onChange={setCashReceived}
                     type="number"
                     step="0.01"
-                    prefix="S/"
+                    prefix={getTenantCurrencySymbol()}
                   />
                 )}
               </div>
@@ -4746,3 +4740,4 @@ export default function OwnerCashPage() {
     </div>
   );
 }
+

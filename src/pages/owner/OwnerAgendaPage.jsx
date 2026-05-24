@@ -13,6 +13,7 @@ import {
   updateOwnerAppointment,
   validateAppointmentDeposit,
 } from '../../api/ownerAgendaApi';
+import { formatTenantMoney } from '../../utils/tenantMoney';
 
 function toDateInputValue(date) {
   const yyyy = date.getFullYear();
@@ -23,14 +24,7 @@ function toDateInputValue(date) {
 }
 
 function formatMoney(value) {
-  const number = Number(value || 0);
-
-  return new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: 'PEN',
-    minimumFractionDigits: number % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
+  return formatTenantMoney(value);
 }
 
 function prettyDate(value) {

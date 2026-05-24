@@ -8,16 +8,10 @@ import {
   updateOwnerBarberStatus,
   uploadOwnerBarberPhoto,
 } from '../../api/ownerBarbersApi';
+import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 
 function formatMoney(value) {
-  const number = Number(value || 0);
-
-  return new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: 'PEN',
-    minimumFractionDigits: number % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
+  return formatTenantMoney(value);
 }
 
 function n(value) {
@@ -560,7 +554,7 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
                         placeholder="Ej. 1200"
                         type="number"
                         step="0.01"
-                        prefix="S/"
+                        prefix={getTenantCurrencySymbol()}
                       />
 
                       <SelectField
@@ -1049,3 +1043,4 @@ export default function OwnerBarbersPage() {
     </div>
   );
 }
+

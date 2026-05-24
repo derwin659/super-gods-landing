@@ -9,16 +9,10 @@ import {
   updateOwnerProduct,
   uploadOwnerProductImage,
 } from '../../api/ownerProductsApi';
+import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 
 function formatMoney(value) {
-  const number = Number(value || 0);
-
-  return new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: 'PEN',
-    minimumFractionDigits: number % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(number);
+  return formatTenantMoney(value);
 }
 
 function prettyDate(value) {
@@ -291,9 +285,9 @@ function ProductFormModal({ branch, product, onClose, onSaved }) {
               <InputField label="Nombre" value={nombre} onChange={setNombre} placeholder="Ej. Cera matte premium" />
               <InputField label="Categoría" value={categoria} onChange={setCategoria} placeholder="Ej. Ceras" />
               <InputField label="SKU" value={sku} onChange={setSku} placeholder="Código interno opcional" />
-              <InputField label="Precio compra" value={precioCompra} onChange={setPrecioCompra} type="number" step="0.01" prefix="S/" />
-              <InputField label="Precio venta" value={precioVenta} onChange={setPrecioVenta} type="number" step="0.01" prefix="S/" />
-              <InputField label="Comisión barbero" value={barberCommissionAmount} onChange={setBarberCommissionAmount} type="number" step="0.01" prefix="S/" />
+              <InputField label="Precio compra" value={precioCompra} onChange={setPrecioCompra} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
+              <InputField label="Precio venta" value={precioVenta} onChange={setPrecioVenta} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
+              <InputField label="Comisión barbero" value={barberCommissionAmount} onChange={setBarberCommissionAmount} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
               <InputField label="Stock actual" value={stockActual} onChange={setStockActual} type="number" />
               <InputField label="Stock mínimo" value={stockMinimo} onChange={setStockMinimo} type="number" />
             </div>
@@ -421,7 +415,7 @@ function StockAdjustModal({ branch, product, onClose, onSaved }) {
           <InputField label="Cantidad" value={cantidad} onChange={setCantidad} type="number" placeholder="Ej. 10" />
           <InputField label="Fecha de recepción" value={fechaRecepcion} onChange={setFechaRecepcion} type="date" />
           <InputField label="Proveedor" value={proveedor} onChange={setProveedor} placeholder="Ej. Distribuidora Cusco" />
-          <InputField label="Costo unitario" value={costoUnitario} onChange={setCostoUnitario} type="number" step="0.01" prefix="S/" />
+          <InputField label="Costo unitario" value={costoUnitario} onChange={setCostoUnitario} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
           <InputField label="Número de comprobante" value={numeroComprobante} onChange={setNumeroComprobante} placeholder="Ej. F001-123" />
         </div>
 
@@ -865,3 +859,4 @@ export default function OwnerProductsPage() {
     </div>
   );
 }
+

@@ -28,6 +28,7 @@ import {
   reportSubscriptionPayment,
   statusLabel,
 } from '../../api/ownerSubscriptionApi';
+import { formatTenantMoney } from '../../utils/tenantMoney';
 
 const PLAN_OPTIONS = [
   {
@@ -87,7 +88,7 @@ const BILLING_OPTIONS = [
 ];
 
 function currency(value) {
-  return `S/ ${Number(value || 0).toFixed(2)}`;
+  return formatTenantMoney(value);
 }
 
 function formatDate(value) {
@@ -181,7 +182,7 @@ function PlanCard({ plan, selected, onSelect }) {
 
       <h3 className="mt-5 text-xl font-black">{plan.name}</h3>
       <div className="mt-2 flex items-end gap-1">
-        <span className="text-4xl font-black tracking-tight">S/ {plan.price}</span>
+        <span className="text-4xl font-black tracking-tight">{currency(plan.price)}</span>
         <span className="pb-1 text-sm font-black opacity-60">/ mes</span>
       </div>
 
