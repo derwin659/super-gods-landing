@@ -1270,7 +1270,11 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <MiniPreviewItem label="Servicios" value={formatMoney(preview.serviceCommissionAmount)} />
+              {String(preview.paymentMode || '').toUpperCase() === 'SALARY' ? (
+                <MiniPreviewItem label="Sueldo del periodo" value={formatMoney(preview.salaryAmount)} />
+              ) : (
+                <MiniPreviewItem label="Servicios" value={formatMoney(preview.serviceCommissionAmount)} />
+              )}
               <MiniPreviewItem label="Productos" value={formatMoney(preview.productCommissionAmount)} />
               <MiniPreviewItem label="Propinas" value={formatMoney(preview.tipsAmount)} />
               <MiniPreviewItem label="Adelantos" value={formatMoney(preview.advancesApplied)} />
