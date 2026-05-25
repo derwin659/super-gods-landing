@@ -21,6 +21,7 @@ import {
   billingLabel,
   discountPercent,
   finalPrice,
+  createSubscriptionCheckout,
   getCurrentSubscription,
   isSubscriptionActive,
   monthlyPrice,
@@ -29,6 +30,7 @@ import {
   statusLabel,
 } from '../../api/ownerSubscriptionApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
+import { openPaddleCheckout } from '../../utils/paddleCheckout';
 
 const PLAN_OPTIONS = [
   {
@@ -249,6 +251,7 @@ export default function OwnerSubscriptionPage() {
 
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [openingCheckout, setOpeningCheckout] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
   const planPrices = subscription?.planPrices || [];
@@ -266,6 +269,7 @@ export default function OwnerSubscriptionPage() {
   );
 
   const currentActive = isSubscriptionActive(subscription);
+  const isPeruManualPayment = String(activeCurrency || '').toUpperCase() === 'PEN';
 
   async function load() {
     setLoading(true);
@@ -334,6 +338,42 @@ export default function OwnerSubscriptionPage() {
       });
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleInternationalCheckout() {
+    setMessage({ type: '', text: '' });
+    setOpeningCheckout(true);
+
+    try {
+      const checkout = await createSubscriptionCheckout({
+        plan: selectedPlan,
+        billingCycle: selectedBilling,
+      });
+
+      if (checkout?.priceId) {
+        await openPaddleCheckout({
+          priceId: checkout.priceId,
+          tenantId: subscription?.tenantId,
+          plan: selectedPlan,
+          billingCycle: selectedBilling,
+          currency: checkout.currency || activeCurrency,
+        });
+        return;
+      }
+
+      if (!checkout?.checkoutUrl) {
+        throw new Error('No se pudo iniciar el checkout internacional.');
+      }
+
+      window.location.href = checkout.checkoutUrl;
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error?.message || 'No se pudo abrir el pago internacional.',
+      });
+    } finally {
+      setOpeningCheckout(false);
     }
   }
 
@@ -529,6 +569,7 @@ export default function OwnerSubscriptionPage() {
                   </div>
                 </div>
 
+                {isPeruManualPayment ? (
                 <div className="mt-5 rounded-[26px] border border-blue-100 bg-blue-50 p-5">
                   <div className="flex items-center gap-3">
                     <CreditCard size={22} strokeWidth={2.5} className="text-blue-700" />
@@ -554,8 +595,34 @@ export default function OwnerSubscriptionPage() {
                     </div>
                   </div>
                 </div>
+                ) : (
+                <div className="mt-5 rounded-[26px] border border-emerald-100 bg-emerald-50 p-5">
+                  <div className="flex items-center gap-3">
+                    <CreditCard size={22} strokeWidth={2.5} className="text-emerald-700" />
+                    <div>
+                      <div className="text-sm font-black text-emerald-900">
+                        Pago automático internacional
+                      </div>
+                      <div className="text-xs font-bold text-emerald-700">
+                        Registra tu tarjeta una sola vez y la renovación se cobra automáticamente.
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleInternationalCheckout}
+                    disabled={openingCheckout}
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <CreditCard size={17} strokeWidth={2.5} />
+                    {openingCheckout ? 'Abriendo checkout...' : `Pagar con tarjeta · ${currency(amount, activeCurrency)}`}
+                  </button>
+                </div>
+                )}
               </section>
 
+              {isPeruManualPayment ? (
               <form
                 onSubmit={handleSubmit}
                 className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.055)]"
@@ -621,6 +688,19 @@ export default function OwnerSubscriptionPage() {
                   </div>
                 )}
               </form>
+              ) : (
+              <section className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-neutral-500">
+                  Renovación automática
+                </div>
+                <h3 className="mt-2 text-2xl font-black text-neutral-950">
+                  Sin reportar pagos manuales
+                </h3>
+                <p className="mt-3 text-sm font-bold leading-6 text-neutral-500">
+                  Para cuentas fuera de Perú, el pago se valida desde el proveedor internacional. Al aprobarse el cargo, la suscripción se renueva automáticamente.
+                </p>
+              </section>
+              )}
             </aside>
           </section>
         </>

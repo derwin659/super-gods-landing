@@ -221,3 +221,24 @@ export async function reportSubscriptionPayment({
     }),
   });
 }
+
+export async function createSubscriptionCheckout({
+  plan,
+  billingCycle,
+}) {
+  const data = await apiRequest('/api/subscription/checkout', {
+    method: 'POST',
+    body: JSON.stringify({
+      plan: String(plan || '').trim().toUpperCase(),
+      billingCycle: String(billingCycle || '').trim().toUpperCase(),
+    }),
+  });
+
+  return {
+    provider: text(data?.provider, 'PADDLE'),
+    checkoutUrl: text(data?.checkoutUrl),
+    priceId: text(data?.priceId),
+    currency: text(data?.currency, 'USD'),
+    amount: toNumber(data?.amount),
+  };
+}
