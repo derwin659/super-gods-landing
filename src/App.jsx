@@ -617,6 +617,9 @@ function PublicHomePage() {
             </div>
 
             <p className="mt-6 text-center text-sm font-semibold text-slate-500">Precio de lanzamiento · 10% de descuento pagando 6 meses · 20% de descuento pagando anual.</p>
+            <p className="mx-auto mt-3 max-w-3xl text-center text-xs font-semibold leading-6 text-slate-400">
+              En Peru el pago se gestiona de forma local. Para otros paises, el cobro internacional se procesa con Paddle y el monto final puede variar levemente por conversion de moneda, impuestos o comisiones del medio de pago.
+            </p>
           </div>
         </section>
 

@@ -586,6 +586,10 @@ function SuperGodsLandingPage() {
               </div>
             ))}
           </div>
+
+          <p className="mx-auto mt-6 max-w-3xl text-center text-xs font-semibold leading-6 text-white/45">
+            En Peru el pago se gestiona de forma local. Para otros paises, el cobro internacional se procesa con Paddle y el monto final puede variar levemente por conversion de moneda, impuestos o comisiones del medio de pago.
+          </p>
         </div>
       </section>
 
