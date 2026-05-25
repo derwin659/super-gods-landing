@@ -51,6 +51,9 @@ export function getInitialPricingCountry() {
       return normalizedQuery;
     }
 
+    const timeZoneCountry = countryFromTimeZone();
+    if (timeZoneCountry) return timeZoneCountry;
+
     const locale = String(navigator.language || '').toUpperCase();
     const localeCountry = locale.includes('-') ? locale.split('-').pop() : '';
     if (COUNTRY_PRICE_OPTIONS.some((option) => option.code === localeCountry)) {
@@ -61,6 +64,37 @@ export function getInitialPricingCountry() {
   }
 
   return 'PE';
+}
+
+function countryFromTimeZone() {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+
+  const map = {
+    'America/Lima': 'PE',
+    'America/Santiago': 'CL',
+    'America/Bogota': 'CO',
+    'America/Mexico_City': 'MX',
+    'America/Monterrey': 'MX',
+    'America/Tijuana': 'MX',
+    'America/Cancun': 'MX',
+    'America/Argentina/Buenos_Aires': 'AR',
+    'America/La_Paz': 'BO',
+    'America/Sao_Paulo': 'BR',
+    'America/Montevideo': 'UY',
+    'America/Asuncion': 'PY',
+    'America/Costa_Rica': 'CR',
+    'America/Santo_Domingo': 'DO',
+    'America/Guatemala': 'GT',
+    'America/New_York': 'US',
+    'America/Chicago': 'US',
+    'America/Denver': 'US',
+    'America/Los_Angeles': 'US',
+  };
+
+  if (map[timeZone]) return map[timeZone];
+  if (timeZone.startsWith('Europe/')) return 'EU';
+
+  return '';
 }
 
 export function buildPriceMap(planPrices = []) {
