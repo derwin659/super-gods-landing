@@ -25,15 +25,17 @@ export function getTenantCurrencySymbol() {
 export function formatTenantMoney(value, currencyOverride = '') {
   const amount = Number(value || 0);
   const currency = String(currencyOverride || getTenantCurrency()).trim().toUpperCase();
+  const zeroDecimalCurrencies = ['CLP', 'COP', 'PYG', 'JPY', 'KRW', 'VND'];
+  const digits = zeroDecimalCurrencies.includes(currency) ? 0 : 2;
 
   try {
     return new Intl.NumberFormat('es-PE', {
       style: 'currency',
       currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
     }).format(Number.isNaN(amount) ? 0 : amount);
   } catch {
-    return `${getTenantCurrencySymbol()} ${(Number.isNaN(amount) ? 0 : amount).toFixed(2)}`;
+    return `${getTenantCurrencySymbol()} ${(Number.isNaN(amount) ? 0 : amount).toFixed(digits)}`;
   }
 }

@@ -164,7 +164,7 @@ function PlanCard({ plan, selected, onSelect, currencyCode }) {
     <button
       type="button"
       onClick={() => onSelect(plan.id)}
-      className={`group rounded-[30px] border p-5 text-left transition-all hover:-translate-y-1 ${
+      className={`group flex min-h-[520px] flex-col rounded-[30px] border p-5 text-left transition-all hover:-translate-y-1 ${
         selected
           ? tone.active
           : 'border-neutral-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.045)] hover:shadow-[0_22px_55px_rgba(15,23,42,0.09)]'
@@ -183,9 +183,13 @@ function PlanCard({ plan, selected, onSelect, currencyCode }) {
       </div>
 
       <h3 className="mt-5 text-xl font-black">{plan.name}</h3>
-      <div className="mt-2 flex items-end gap-1">
-        <span className="text-4xl font-black tracking-tight">{currency(plan.price, currencyCode)}</span>
-        <span className="pb-1 text-sm font-black opacity-60">/ mes</span>
+      <div className="mt-3 min-w-0">
+        <div className="flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
+          <span className="max-w-full break-words text-[clamp(1.65rem,2.2vw,2.25rem)] font-black leading-none tracking-tight">
+            {currency(plan.price, currencyCode)}
+          </span>
+          <span className="text-xs font-black opacity-60">/ mes</span>
+        </div>
       </div>
 
       <p className="mt-3 min-h-[48px] text-sm font-semibold leading-6 opacity-70">
@@ -270,6 +274,9 @@ export default function OwnerSubscriptionPage() {
 
   const currentActive = isSubscriptionActive(subscription);
   const isPeruManualPayment = String(activeCurrency || '').toUpperCase() === 'PEN';
+  const availableBillingOptions = isPeruManualPayment
+    ? BILLING_OPTIONS
+    : BILLING_OPTIONS.filter((option) => option.id === 'MONTHLY');
 
   async function load() {
     setLoading(true);
@@ -293,6 +300,12 @@ export default function OwnerSubscriptionPage() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    if (!loading && !isPeruManualPayment && selectedBilling !== 'MONTHLY') {
+      setSelectedBilling('MONTHLY');
+    }
+  }, [isPeruManualPayment, loading, selectedBilling]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -458,7 +471,7 @@ export default function OwnerSubscriptionPage() {
             />
           </section>
 
-          <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+          <section className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)]">
             <div className="space-y-5">
               <section className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
                 <div className="flex items-center justify-between gap-3">
@@ -474,7 +487,7 @@ export default function OwnerSubscriptionPage() {
                   <Sparkles className="text-amber-500" size={28} strokeWidth={2.5} />
                 </div>
 
-                <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                <div className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
                   {visiblePlans.map((plan) => (
                     <PlanCard
                       key={plan.id}
@@ -497,7 +510,7 @@ export default function OwnerSubscriptionPage() {
                 </h3>
 
                 <div className="mt-5 grid gap-3 md:grid-cols-3">
-                  {BILLING_OPTIONS.map((option) => (
+                  {availableBillingOptions.map((option) => (
                     <BillingButton
                       key={option.id}
                       option={option}
@@ -506,6 +519,12 @@ export default function OwnerSubscriptionPage() {
                     />
                   ))}
                 </div>
+
+                {!isPeruManualPayment && (
+                  <p className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold leading-6 text-emerald-800">
+                    El cobro automatico internacional esta habilitado en ciclo mensual. Los planes semestral y anual se activaran cuando creemos esos precios recurrentes en Paddle.
+                  </p>
+                )}
               </section>
 
               {selectedPlan === 'GODS_AI' && (
@@ -563,7 +582,7 @@ export default function OwnerSubscriptionPage() {
                     <div className="text-xs font-black uppercase tracking-[0.18em] text-violet-500">
                       Monto final
                     </div>
-                    <div className="mt-1 text-4xl font-black text-neutral-950">
+                    <div className="mt-2 break-words text-[clamp(2rem,3vw,2.75rem)] font-black leading-none text-neutral-950">
                       {currency(amount, activeCurrency)}
                     </div>
                   </div>
