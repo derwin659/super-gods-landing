@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Scissors,
   Sparkles,
@@ -48,6 +48,14 @@ import OwnerReservationSettingsPage from './pages/owner/OwnerReservationSettings
 import OwnerPromotionsPage from './pages/owner/OwnerPromotionsPage';
 import OwnerSubscriptionPage from './pages/owner/OwnerSubscriptionPage';
 import OwnerLoyaltySettingsPage from './pages/owner/OwnerLoyaltySettingsPage';
+import { getPublicSubscriptionPrices } from './api/publicSubscriptionPricingApi';
+import {
+  buildPriceMap,
+  COUNTRY_PRICE_OPTIONS,
+  formatSubscriptionPrice,
+  getInitialPricingCountry,
+  getPlanPriceFromMap,
+} from './utils/subscriptionPricing';
 
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -67,6 +75,24 @@ const buildWhatsAppUrl = (message) => {
 };
 
 function PublicHomePage() {
+  const [pricingCountry, setPricingCountry] = useState(getInitialPricingCountry);
+  const [remotePrices, setRemotePrices] = useState([]);
+  const publicPriceMap = useMemo(() => buildPriceMap(remotePrices), [remotePrices]);
+
+  useEffect(() => {
+    let active = true;
+    getPublicSubscriptionPrices(pricingCountry)
+      .then((prices) => {
+        if (active) setRemotePrices(prices);
+      })
+      .catch(() => {
+        if (active) setRemotePrices([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [pricingCountry]);
+
   const whatsappUrl = buildWhatsAppUrl(
     'Hola, quiero una demo gratis de Super Gods App.\n\n' +
       'Empresa: Gods Technologies S.A.C.\n' +
@@ -195,7 +221,7 @@ function PublicHomePage() {
   const plans = [
     {
       name: 'Starter',
-      price: 'S/ 39',
+      price: formatSubscriptionPrice(getPlanPriceFromMap('STARTER', pricingCountry, publicPriceMap)),
       badge: 'Para empezar',
       description: 'Para negocios pequeños que quieren ordenar reservas, caja y clientes.',
       items: [
@@ -210,7 +236,7 @@ function PublicHomePage() {
     },
     {
       name: 'Pro',
-      price: 'S/ 79',
+      price: formatSubscriptionPrice(getPlanPriceFromMap('PRO', pricingCountry, publicPriceMap)),
       badge: 'Más recomendado',
       highlighted: true,
       description: 'Para negocios que quieren crecer con promociones, reportes y más control.',
@@ -227,7 +253,7 @@ function PublicHomePage() {
     },
     {
       name: 'Gods AI',
-      price: 'S/ 149',
+      price: formatSubscriptionPrice(getPlanPriceFromMap('GODS_AI', pricingCountry, publicPriceMap)),
       badge: 'Premium',
       description: 'Para negocios que quieren diferenciarse con tecnología e inteligencia artificial.',
       items: [
@@ -550,6 +576,21 @@ function PublicHomePage() {
               <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Planes</p>
               <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">Planes simples para empezar rápido</h2>
               <p className="mt-5 text-lg font-medium leading-8 text-slate-600">Empieza con una prueba gratis y luego elige el plan ideal para tu negocio.</p>
+            </div>
+
+            <div className="mx-auto mt-8 flex max-w-md items-center gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/70">
+              <span className="pl-3 text-xs font-black uppercase tracking-[0.16em] text-slate-500">Pais</span>
+              <select
+                value={pricingCountry}
+                onChange={(event) => setPricingCountry(event.target.value)}
+                className="h-12 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+              >
+                {COUNTRY_PRICE_OPTIONS.map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.label} ({option.currency})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="mt-12 grid gap-6 lg:grid-cols-3">

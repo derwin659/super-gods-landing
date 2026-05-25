@@ -46,6 +46,14 @@ export function normalizeSubscription(raw = {}) {
     aiEnabled: toBool(raw.aiEnabled),
     loyaltyEnabled: toBool(raw.loyaltyEnabled),
     promotionsEnabled: toBool(raw.promotionsEnabled),
+    planPrices: Array.isArray(raw.planPrices)
+      ? raw.planPrices.map((item) => ({
+          plan: text(item.plan, '').toUpperCase(),
+          countryCode: text(item.countryCode, 'PE').toUpperCase(),
+          currency: text(item.currency, raw.currency || 'PEN').toUpperCase(),
+          monthlyAmount: toNumber(item.monthlyAmount),
+        }))
+      : [],
     canOperate: toBool(raw.canOperate, true),
     expired: toBool(raw.expired),
     raw,
@@ -101,8 +109,12 @@ export function billingLabel(billing) {
   }
 }
 
-export function monthlyPrice(plan) {
-  switch (String(plan || '').toUpperCase()) {
+export function monthlyPrice(plan, planPrices = []) {
+  const planCode = String(plan || '').toUpperCase();
+  const configured = planPrices.find((item) => item.plan === planCode);
+  if (configured && configured.monthlyAmount > 0) return configured.monthlyAmount;
+
+  switch (planCode) {
     case 'STARTER':
       return 39;
     case 'PRO':
@@ -126,8 +138,8 @@ export function discountPercent(billing) {
   }
 }
 
-export function basePrice(plan, billing) {
-  const monthly = monthlyPrice(plan);
+export function basePrice(plan, billing, planPrices = []) {
+  const monthly = monthlyPrice(plan, planPrices);
 
   switch (String(billing || '').toUpperCase()) {
     case 'SEMIANNUAL':
@@ -140,8 +152,8 @@ export function basePrice(plan, billing) {
   }
 }
 
-export function finalPrice(plan, billing) {
-  const base = basePrice(plan, billing);
+export function finalPrice(plan, billing, planPrices = []) {
+  const base = basePrice(plan, billing, planPrices);
   return base * (1 - discountPercent(billing));
 }
 
@@ -171,6 +183,18 @@ export function isSubscriptionActive(subscription) {
 export async function getCurrentSubscription() {
   const data = await apiRequest('/api/subscription/current');
   return normalizeSubscription(data);
+}
+
+export async function getSubscriptionPlanPrices() {
+  const data = await apiRequest('/api/subscription/plan-prices');
+  return Array.isArray(data)
+    ? data.map((item) => ({
+        plan: text(item.plan, '').toUpperCase(),
+        countryCode: text(item.countryCode, 'PE').toUpperCase(),
+        currency: text(item.currency, 'PEN').toUpperCase(),
+        monthlyAmount: toNumber(item.monthlyAmount),
+      }))
+    : [];
 }
 
 export async function reportSubscriptionPayment({

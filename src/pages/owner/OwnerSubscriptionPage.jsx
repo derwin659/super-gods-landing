@@ -87,8 +87,8 @@ const BILLING_OPTIONS = [
   },
 ];
 
-function currency(value) {
-  return formatTenantMoney(value);
+function currency(value, currencyCode = '') {
+  return formatTenantMoney(value, currencyCode);
 }
 
 function formatDate(value) {
@@ -154,7 +154,7 @@ function StatCard({ icon: Icon, label, value, helper, tone = 'neutral' }) {
   );
 }
 
-function PlanCard({ plan, selected, onSelect }) {
+function PlanCard({ plan, selected, onSelect, currencyCode }) {
   const Icon = plan.icon;
   const tone = toneClasses(plan.tone);
 
@@ -182,7 +182,7 @@ function PlanCard({ plan, selected, onSelect }) {
 
       <h3 className="mt-5 text-xl font-black">{plan.name}</h3>
       <div className="mt-2 flex items-end gap-1">
-        <span className="text-4xl font-black tracking-tight">{currency(plan.price)}</span>
+        <span className="text-4xl font-black tracking-tight">{currency(plan.price, currencyCode)}</span>
         <span className="pb-1 text-sm font-black opacity-60">/ mes</span>
       </div>
 
@@ -251,10 +251,19 @@ export default function OwnerSubscriptionPage() {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  const regularPrice = basePrice(selectedPlan, selectedBilling);
-  const amount = finalPrice(selectedPlan, selectedBilling);
+  const planPrices = subscription?.planPrices || [];
+  const activeCurrency = planPrices[0]?.currency || subscription?.currency || '';
+  const regularPrice = basePrice(selectedPlan, selectedBilling, planPrices);
+  const amount = finalPrice(selectedPlan, selectedBilling, planPrices);
   const discount = discountPercent(selectedBilling);
   const discountAmount = regularPrice - amount;
+  const visiblePlans = useMemo(
+    () => PLAN_OPTIONS.map((plan) => ({
+      ...plan,
+      price: monthlyPrice(plan.id, planPrices),
+    })),
+    [planPrices]
+  );
 
   const currentActive = isSubscriptionActive(subscription);
 
@@ -426,12 +435,13 @@ export default function OwnerSubscriptionPage() {
                 </div>
 
                 <div className="mt-6 grid gap-4 lg:grid-cols-3">
-                  {PLAN_OPTIONS.map((plan) => (
+                  {visiblePlans.map((plan) => (
                     <PlanCard
                       key={plan.id}
                       plan={plan}
                       selected={selectedPlan === plan.id}
                       onSelect={setSelectedPlan}
+                      currencyCode={activeCurrency}
                     />
                   ))}
                 </div>
@@ -492,20 +502,20 @@ export default function OwnerSubscriptionPage() {
                 <div className="mt-5 rounded-[26px] border border-violet-100 bg-violet-50 p-5">
                   <div className="flex items-center justify-between text-sm font-black text-violet-700">
                     <span>Precio mensual</span>
-                    <span>{currency(monthlyPrice(selectedPlan))}</span>
+                    <span>{currency(monthlyPrice(selectedPlan, planPrices), activeCurrency)}</span>
                   </div>
 
                   <div className="mt-3 flex items-center justify-between text-sm font-black text-violet-700">
                     <span>Precio regular</span>
                     <span className={discount > 0 ? 'line-through opacity-60' : ''}>
-                      {currency(regularPrice)}
+                      {currency(regularPrice, activeCurrency)}
                     </span>
                   </div>
 
                   {discount > 0 && (
                     <div className="mt-3 flex items-center justify-between text-sm font-black text-emerald-700">
                       <span>Descuento {(discount * 100).toFixed(0)}%</span>
-                      <span>- {currency(discountAmount)}</span>
+                      <span>- {currency(discountAmount, activeCurrency)}</span>
                     </div>
                   )}
 
@@ -514,7 +524,7 @@ export default function OwnerSubscriptionPage() {
                       Monto final
                     </div>
                     <div className="mt-1 text-4xl font-black text-neutral-950">
-                      {currency(amount)}
+                      {currency(amount, activeCurrency)}
                     </div>
                   </div>
                 </div>
@@ -599,7 +609,7 @@ export default function OwnerSubscriptionPage() {
                   ) : (
                     <>
                       <Send size={17} strokeWidth={2.5} />
-                      Reportar pago · {currency(amount)}
+                      Reportar pago · {currency(amount, activeCurrency)}
                     </>
                   )}
                 </button>

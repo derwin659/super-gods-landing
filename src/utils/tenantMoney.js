@@ -22,9 +22,9 @@ export function getTenantCurrencySymbol() {
   return String(localStorage.getItem(CURRENCY_SYMBOL_KEY) || FALLBACK_SYMBOL).trim();
 }
 
-export function formatTenantMoney(value) {
+export function formatTenantMoney(value, currencyOverride = '') {
   const amount = Number(value || 0);
-  const currency = getTenantCurrency();
+  const currency = String(currencyOverride || getTenantCurrency()).trim().toUpperCase();
 
   try {
     return new Intl.NumberFormat('es-PE', {

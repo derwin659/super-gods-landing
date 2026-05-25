@@ -1,4 +1,13 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
+import { getPublicSubscriptionPrices } from '../../api/publicSubscriptionPricingApi';
+import {
+  buildPriceMap,
+  COUNTRY_PRICE_OPTIONS,
+  formatSubscriptionPrice,
+  getInitialPricingCountry,
+  getPlanPriceFromMap,
+} from '../../utils/subscriptionPricing';
 
 function SupportPage() {
   return (
@@ -144,6 +153,23 @@ function DataChoicesPage() {
 }
 
 function SuperGodsLandingPage() {
+  const [pricingCountry, setPricingCountry] = useState(getInitialPricingCountry);
+  const [remotePrices, setRemotePrices] = useState([]);
+  const publicPriceMap = useMemo(() => buildPriceMap(remotePrices), [remotePrices]);
+
+  useEffect(() => {
+    let active = true;
+    getPublicSubscriptionPrices(pricingCountry)
+      .then((prices) => {
+        if (active) setRemotePrices(prices);
+      })
+      .catch(() => {
+        if (active) setRemotePrices([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [pricingCountry]);
   const playStoreUrl =
     'https://play.google.com/store/apps/details?id=com.gods.barberia';
   const appStoreUrl = '#';
@@ -154,7 +180,7 @@ function SuperGodsLandingPage() {
   const plans = [
     {
       name: 'Starter',
-      price: 'S/ 39',
+      price: formatSubscriptionPrice(getPlanPriceFromMap('STARTER', pricingCountry, publicPriceMap)),
       period: '/mes',
       launchNote: 'Precio de lanzamiento',
       description:
@@ -182,7 +208,7 @@ function SuperGodsLandingPage() {
     },
     {
       name: 'Pro',
-      price: 'S/ 79',
+      price: formatSubscriptionPrice(getPlanPriceFromMap('PRO', pricingCountry, publicPriceMap)),
       period: '/mes',
       launchNote: 'Precio de lanzamiento',
       description:
@@ -205,7 +231,7 @@ function SuperGodsLandingPage() {
     },
     {
       name: 'Gods AI',
-      price: 'S/ 149',
+      price: formatSubscriptionPrice(getPlanPriceFromMap('GODS_AI', pricingCountry, publicPriceMap)),
       period: '/mes',
       launchNote: 'Precio de lanzamiento',
       description:
@@ -480,6 +506,21 @@ function SuperGodsLandingPage() {
               Empieza con prueba gratis y aprovecha nuestros precios de
               lanzamiento por tiempo limitado.
             </p>
+          </div>
+
+          <div className="mx-auto mt-8 flex max-w-md items-center gap-3 rounded-3xl border border-white/10 bg-white/5 p-3">
+            <span className="pl-3 text-xs font-black uppercase tracking-[0.16em] text-white/50">Pais</span>
+            <select
+              value={pricingCountry}
+              onChange={(event) => setPricingCountry(event.target.value)}
+              className="h-12 flex-1 rounded-2xl border border-white/10 bg-neutral-900 px-4 text-sm font-black text-white outline-none focus:border-amber-400"
+            >
+              {COUNTRY_PRICE_OPTIONS.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label} ({option.currency})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="mt-12 grid gap-6 lg:grid-cols-3">
