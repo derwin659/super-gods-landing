@@ -676,7 +676,9 @@ function PublicHomePage() {
           <div className="flex flex-wrap gap-5 text-sm font-bold text-slate-500">
             <a href="/" className="hover:text-blue-700">Inicio</a>
             <a href="/soporte" className="hover:text-blue-700">Soporte</a>
+            <a href="/terms" className="hover:text-blue-700">Terminos</a>
             <a href="/privacy" className="hover:text-blue-700">Privacidad</a>
+            <a href="/refund" className="hover:text-blue-700">Reembolsos</a>
             <a href="/datos" className="hover:text-blue-700">Datos</a>
             <a href="/login" className="hover:text-blue-700">Login</a>
           </div>
@@ -1124,6 +1126,145 @@ function LandingSelect({ label, name, value, onChange, options }) {
   );
 }
 
+const LEGAL_PAGES = {
+  privacy: {
+    title: 'Politica de Privacidad',
+    updatedAt: '25 de mayo de 2026',
+    intro:
+      'Esta politica explica como Gods Technologies S.A.C. trata la informacion relacionada con Super Gods App, una plataforma SaaS para gestion de negocios de belleza, barberias y servicios.',
+    sections: [
+      {
+        title: 'Informacion que recopilamos',
+        body:
+          'Podemos recopilar datos de cuenta, datos de negocio, datos de contacto, informacion de clientes registrada por los negocios, reservas, ventas, inventario, reportes operativos y datos tecnicos necesarios para operar la plataforma.',
+      },
+      {
+        title: 'Uso de la informacion',
+        body:
+          'Usamos la informacion para prestar el servicio, gestionar suscripciones, brindar soporte, mejorar la plataforma, prevenir fraude, mantener seguridad y cumplir obligaciones legales aplicables.',
+      },
+      {
+        title: 'Procesadores y proveedores',
+        body:
+          'Podemos utilizar proveedores de infraestructura, analitica, comunicaciones y pagos. Para pagos internacionales, Paddle puede procesar informacion de pago como Merchant of Record conforme a sus propias politicas.',
+      },
+      {
+        title: 'Conservacion y seguridad',
+        body:
+          'Conservamos la informacion mientras sea necesaria para prestar el servicio o cumplir obligaciones legales. Aplicamos medidas razonables de seguridad para proteger la informacion contra acceso no autorizado.',
+      },
+      {
+        title: 'Derechos y contacto',
+        body:
+          'Puedes solicitar acceso, correccion o eliminacion de datos escribiendo a derwinnieves659@gmail.com. Algunas solicitudes pueden estar sujetas a verificaciones o restricciones legales.',
+      },
+    ],
+  },
+  terms: {
+    title: 'Terminos de Servicio',
+    updatedAt: '25 de mayo de 2026',
+    intro:
+      'Estos terminos regulan el uso de Super Gods App, software ofrecido por Gods Technologies S.A.C. para administracion de reservas, caja, clientes, puntos, promociones, inventario, reportes y funciones relacionadas.',
+    sections: [
+      {
+        title: 'Servicio',
+        body:
+          'Super Gods App es una plataforma SaaS por suscripcion. El acceso puede incluir panel web, aplicaciones moviles, soporte y modulos segun el plan contratado.',
+      },
+      {
+        title: 'Cuenta y uso aceptable',
+        body:
+          'El usuario es responsable de mantener sus credenciales seguras y de usar la plataforma de forma legal. No se permite usar el servicio para actividades fraudulentas, ilegales, abusivas o que afecten la disponibilidad de la plataforma.',
+      },
+      {
+        title: 'Suscripciones y pagos',
+        body:
+          'Los planes pueden cobrarse de forma mensual, semestral o anual segun disponibilidad. En Peru pueden existir pagos manuales locales; para pagos internacionales podemos usar Paddle u otros proveedores autorizados.',
+      },
+      {
+        title: 'Disponibilidad y cambios',
+        body:
+          'Trabajamos para mantener el servicio disponible, pero pueden existir mantenimientos, fallas externas o interrupciones. Podemos mejorar, cambiar o retirar funciones para mantener la seguridad y evolucion del producto.',
+      },
+      {
+        title: 'Limitacion de responsabilidad',
+        body:
+          'El servicio se ofrece como herramienta operativa. El negocio usuario es responsable de validar sus registros, reportes, impuestos, operaciones comerciales y decisiones tomadas con base en la plataforma.',
+      },
+    ],
+  },
+  refund: {
+    title: 'Politica de Reembolsos y Cancelacion',
+    updatedAt: '25 de mayo de 2026',
+    intro:
+      'Esta politica describe como gestionamos cancelaciones y reembolsos de suscripciones de Super Gods App.',
+    sections: [
+      {
+        title: 'Prueba y suscripcion',
+        body:
+          'Cuando exista prueba gratis, el cliente puede evaluar el servicio antes del primer cobro. Al continuar con una suscripcion de pago, el acceso se mantiene durante el periodo contratado.',
+      },
+      {
+        title: 'Cancelaciones',
+        body:
+          'El cliente puede solicitar la cancelacion de la renovacion futura. La cancelacion no elimina automaticamente obligaciones pendientes ni pagos ya procesados por periodos consumidos.',
+      },
+      {
+        title: 'Reembolsos',
+        body:
+          'Los pagos de suscripcion generalmente no son reembolsables una vez iniciado el periodo de servicio, salvo errores de cobro, duplicidad, imposibilidad tecnica comprobada o requerimientos legales aplicables.',
+      },
+      {
+        title: 'Pagos internacionales',
+        body:
+          'Los pagos internacionales procesados por Paddle pueden estar sujetos a politicas, impuestos y procedimientos de Paddle. Algunas solicitudes de reembolso podrian gestionarse mediante el proveedor de pago.',
+      },
+      {
+        title: 'Contacto',
+        body:
+          'Para solicitar revision de un pago o cancelacion, escribe a derwinnieves659@gmail.com con el nombre del negocio, correo de cuenta y detalle de la solicitud.',
+      },
+    ],
+  },
+};
+
+function LegalPage({ type }) {
+  const page = LEGAL_PAGES[type] || LEGAL_PAGES.privacy;
+
+  return (
+    <div className="min-h-screen bg-[#F5F7FB] px-6 py-16 text-slate-950">
+      <article className="mx-auto max-w-4xl rounded-[32px] border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/70">
+        <div className="flex items-center gap-3">
+          <img src="/gods-technologies-logo-horizontal.png" alt="Gods Technologies S.A.C." className="h-12 w-auto object-contain" />
+          <div>
+            <p className="text-lg font-black text-slate-950">Gods Technologies S.A.C.</p>
+            <p className="text-sm font-semibold text-slate-500">Super Gods App</p>
+          </div>
+        </div>
+
+        <h1 className="mt-10 text-4xl font-black tracking-[-0.04em] text-slate-950">{page.title}</h1>
+        <p className="mt-2 text-sm font-bold text-slate-400">Ultima actualizacion: {page.updatedAt}</p>
+        <p className="mt-5 text-base font-semibold leading-8 text-slate-600">{page.intro}</p>
+
+        <div className="mt-8 grid gap-6">
+          {page.sections.map((section) => (
+            <section key={section.title} className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+              <h2 className="text-lg font-black text-slate-950">{section.title}</h2>
+              <p className="mt-2 text-sm font-semibold leading-7 text-slate-600">{section.body}</p>
+            </section>
+          ))}
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm font-semibold leading-7 text-blue-900">
+          Contacto legal y soporte: derwinnieves659@gmail.com
+        </div>
+
+        <a href="/" className="mt-8 inline-flex rounded-2xl bg-[#0F2A5F] px-5 py-3 font-black text-white">Volver al inicio</a>
+      </article>
+    </div>
+  );
+}
+
 function SimplePublicPage({ title }) {
   return (
     <div className="min-h-screen bg-[#F5F7FB] px-6 py-16 text-slate-950">
@@ -1158,7 +1299,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<PublicHomePage />} />
         <Route path="/soporte" element={<SimplePublicPage title="Soporte Super Gods App" />} />
-        <Route path="/privacy" element={<SimplePublicPage title="Política de Privacidad" />} />
+        <Route path="/terms" element={<LegalPage type="terms" />} />
+        <Route path="/privacy" element={<LegalPage type="privacy" />} />
+        <Route path="/refund" element={<LegalPage type="refund" />} />
         <Route path="/datos" element={<SimplePublicPage title="Opciones de Privacidad y Datos" />} />
 
         <Route path="/login" element={<LoginPage />} />
