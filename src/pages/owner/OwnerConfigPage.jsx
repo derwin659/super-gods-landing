@@ -311,8 +311,8 @@ import {
   
           <ConfigTile
             icon={ReceiptText}
-            title="Reservas y pagos"
-            subtitle="Configurar inicial obligatoria, métodos de pago, QR e instrucciones."
+            title="Métodos de pago"
+            subtitle="Configurar billeteras, transferencias, tarjetas e iniciales para reservas."
             badge="VIP"
             tone="gold"
             onClick={() => navigate('/owner/reservas-pagos')}

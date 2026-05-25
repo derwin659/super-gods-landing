@@ -478,11 +478,11 @@ export default function OwnerReservationSettingsPage() {
         <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-amber-300">
-              Reservas y pagos
+              Métodos de pago
             </div>
 
             <h2 className="mt-5 text-4xl font-black tracking-tight">
-              Pago inicial para reservas
+              Métodos de pago del negocio
             </h2>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">
@@ -545,7 +545,7 @@ export default function OwnerReservationSettingsPage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h3 className="text-xl font-black text-neutral-950">
-                  Configuración del inicial
+                  Anticipo para reservas
                 </h3>
                 <p className="mt-1 text-sm text-neutral-500">
                   Decide si el cliente debe pagar antes de confirmar su reserva.
@@ -668,7 +668,7 @@ export default function OwnerReservationSettingsPage() {
                   Métodos configurados
                 </h3>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Estos métodos aparecerán al cliente cuando reserve con pago inicial.
+                  Estos métodos estarán disponibles para el negocio y, si activas anticipos, también para reservas.
                 </p>
               </div>
 

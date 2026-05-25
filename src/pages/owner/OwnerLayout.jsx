@@ -230,8 +230,8 @@ const navGroups = [
       },
       {
         to: '/owner/reservas-pagos',
-        label: 'Reservas y pagos',
-        description: 'Inicial y métodos',
+        label: 'Métodos de pago',
+        description: 'Caja y anticipos',
         icon: ReceiptText,
         tone: {
           soft: 'bg-teal-50 text-teal-700 ring-teal-100',
