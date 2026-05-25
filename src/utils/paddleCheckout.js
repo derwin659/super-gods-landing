@@ -2,6 +2,7 @@ const PADDLE_SCRIPT_URL = 'https://cdn.paddle.com/paddle/v2/paddle.js';
 
 let scriptPromise = null;
 let initialized = false;
+let paddleEventHandler = null;
 
 function loadPaddleScript() {
   if (window.Paddle) return Promise.resolve(window.Paddle);
@@ -25,6 +26,7 @@ export async function openPaddleCheckout({
   plan,
   billingCycle,
   currency,
+  onEvent,
 }) {
   const token = import.meta.env.VITE_PADDLE_CLIENT_TOKEN || '';
   const environment = String(import.meta.env.VITE_PADDLE_ENV || 'sandbox').toLowerCase();
@@ -36,6 +38,8 @@ export async function openPaddleCheckout({
   const Paddle = await loadPaddleScript();
   if (!Paddle) throw new Error('Paddle.js no está disponible.');
 
+  paddleEventHandler = typeof onEvent === 'function' ? onEvent : null;
+
   if (!initialized) {
     if (environment === 'sandbox' && Paddle.Environment?.set) {
       Paddle.Environment.set('sandbox');
@@ -43,6 +47,14 @@ export async function openPaddleCheckout({
 
     Paddle.Initialize({
       token,
+      eventCallback: (event) => {
+        if (paddleEventHandler) paddleEventHandler(event);
+
+        const eventName = String(event?.name || '').toLowerCase();
+        if (eventName.includes('error')) {
+          console.error('Paddle checkout error', event);
+        }
+      },
     });
 
     initialized = true;

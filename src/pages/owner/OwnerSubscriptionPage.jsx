@@ -371,6 +371,22 @@ export default function OwnerSubscriptionPage() {
           plan: selectedPlan,
           billingCycle: selectedBilling,
           currency: checkout.currency || activeCurrency,
+          onEvent: (event) => {
+            const eventName = String(event?.name || '').toLowerCase();
+            if (!eventName.includes('error')) return;
+
+            const message =
+              event?.error?.detail ||
+              event?.error?.message ||
+              event?.data?.error?.detail ||
+              event?.data?.error?.message ||
+              'Paddle rechazo el checkout. Revisa que la cuenta live este verificada, el dominio aprobado y el price ID corresponda al mismo entorno.';
+
+            setMessage({
+              type: 'error',
+              text: message,
+            });
+          },
         });
         return;
       }
@@ -487,7 +503,7 @@ export default function OwnerSubscriptionPage() {
                   <Sparkles className="text-amber-500" size={28} strokeWidth={2.5} />
                 </div>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
                   {visiblePlans.map((plan) => (
                     <PlanCard
                       key={plan.id}
