@@ -21,6 +21,10 @@ import {
   CheckCircle2,
   UserRoundCog,
   Package,
+  ArrowRight,
+  Clock3,
+  MessageCircle,
+  TrendingUp,
 } from 'lucide-react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { demoRequestApi } from './api/demoRequestApi';
@@ -294,6 +298,102 @@ function PublicHomePage() {
     },
   ];
 
+  const outcomes = [
+    {
+      icon: CalendarDays,
+      title: 'Menos citas perdidas',
+      text: 'Agenda online por sede, profesional y horario para reducir el desorden de WhatsApp.',
+    },
+    {
+      icon: Banknote,
+      title: 'Caja más clara',
+      text: 'Ventas, gastos, ingresos, pagos digitales y efectivo separados para cerrar mejor el día.',
+    },
+    {
+      icon: UsersRound,
+      title: 'Clientes que regresan',
+      text: 'Puntos, premios, historial y promociones para convertir una visita en recurrencia.',
+    },
+    {
+      icon: TrendingUp,
+      title: 'Decisiones con datos',
+      text: 'Reportes por sede, servicio y profesional para saber qué vende más y dónde ajustar.',
+    },
+  ];
+
+  const salesStats = [
+    {
+      value: 'S/ 1,240',
+      label: 'Ventas del día',
+      detail: 'Resumen por método de pago para cerrar caja con claridad.',
+    },
+    {
+      value: '148',
+      label: 'Clientes activos',
+      detail: 'Historial, puntos y visitas para vender con recurrencia.',
+    },
+    {
+      value: '32',
+      label: 'Reservas semanales',
+      detail: 'Agenda por profesional, sede, horario y estado.',
+    },
+    {
+      value: '+18%',
+      label: 'Oportunidad de retorno',
+      detail: 'Promociones, premios y recordatorios para que vuelvan.',
+    },
+  ];
+
+  const verticalMarkets = [
+    {
+      icon: Scissors,
+      title: 'Barberías',
+      text: 'Controla citas, barberos, comisiones, caja y productos sin perder el ritmo del local.',
+      image: '/landing/caja-owner.png',
+      stat: 'Ventas + caja',
+    },
+    {
+      icon: Hand,
+      title: 'Estudios de uñas',
+      text: 'Agenda servicios recurrentes, paquetes, clientas frecuentes y promociones por temporada.',
+      image: '/landing/agenda-owner.png',
+      stat: 'Citas recurrentes',
+    },
+    {
+      icon: Sparkles,
+      title: 'Salones de belleza',
+      text: 'Organiza profesionales, servicios, sedes, inventario y experiencia del cliente desde una sola plataforma.',
+      image: '/landing/dashboard-owner.png',
+      stat: 'Reportes por sede',
+    },
+    {
+      icon: Leaf,
+      title: 'Spa y estética',
+      text: 'Gestiona paquetes, historial, ventas, fidelización y reservas con una imagen más profesional.',
+      image: '/landing/clientes-puntos.png',
+      stat: 'Clientes que vuelven',
+    },
+  ];
+
+  const faqItems = [
+    {
+      question: '¿Super Gods App sirve solo para barberías?',
+      answer: 'No. Funciona para barberías, peluquerías, salones de belleza, estudios de uñas, cejas y pestañas, spas, estética y negocios que trabajan con reservas, servicios, profesionales y clientes frecuentes.',
+    },
+    {
+      question: '¿Puedo usarlo desde celular y computadora?',
+      answer: 'Sí. El dueño puede gestionar desde el panel web y el equipo puede operar desde la app móvil según su rol y permisos.',
+    },
+    {
+      question: '¿La prueba gratis necesita tarjeta?',
+      answer: 'No. Primero revisamos tu solicitud y activamos una demo para que pruebes reservas, caja, clientes, puntos, promociones y reportes.',
+    },
+    {
+      question: '¿Funciona con monedas de otros países?',
+      answer: 'Sí. La plataforma soporta moneda por país y los pagos internacionales pueden procesarse con Paddle cuando corresponde.',
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-[#F5F7FB] text-[#0F172A]">
       <header className="fixed left-0 right-0 top-0 z-50 px-4 py-4">
@@ -323,6 +423,7 @@ function PublicHomePage() {
             <a href="#servicios" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Servicios</a>
             <a href="#producto" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Super Gods App</a>
             <a href="#planes" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Planes</a>
+            <a href="#preguntas" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">FAQ</a>
             <a href="#contacto" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Contacto</a>
           </div>
 
@@ -339,6 +440,59 @@ function PublicHomePage() {
 
       <main>
         <section className="relative overflow-hidden px-4 pb-16 pt-32 md:pb-24 md:pt-40">
+          <div className="absolute inset-x-0 top-0 h-[760px] bg-[radial-gradient(circle_at_18%_8%,#DBEAFE_0,#F5F7FB_44%,transparent_70%),radial-gradient(circle_at_88%_16%,rgba(16,185,129,0.18),transparent_32%)]" />
+
+          <div className="relative mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1fr_0.92fr]">
+            <div>
+              <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-2 text-sm font-black text-blue-700 shadow-sm">
+                <span className="h-2 w-2 rounded-full bg-green-500" />
+                Software premium para barberías, salones y centros de belleza
+              </div>
+
+              <h1 className="max-w-4xl text-5xl font-black leading-[0.98] tracking-[-0.055em] text-slate-950 md:text-7xl">
+                Más reservas, caja clara y clientes que vuelven
+              </h1>
+
+              <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate-600 md:text-xl">
+                Super Gods App une agenda online, ventas, caja, clientes, puntos, promociones, inventario, comisiones y reportes en una plataforma creada para negocios de belleza que quieren operar con nivel profesional.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <a href="#contacto" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]">
+                  Probar 7 días gratis
+                  <ArrowRight size={18} strokeWidth={2.6} />
+                </a>
+                <a href="#capturas" className="inline-flex justify-center rounded-2xl border border-slate-200 bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1 hover:border-blue-600 hover:text-blue-700">
+                  Ver cómo funciona
+                </a>
+                <a href="/login" className="inline-flex justify-center rounded-2xl bg-slate-950 px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 sm:hidden">
+                  Iniciar sesión
+                </a>
+              </div>
+
+              <div className="mt-8 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+                {['Sin tarjeta', 'Soporte inicial', 'App + web', 'Multi moneda'].map((item) => (
+                  <div key={item} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center text-xs font-black text-slate-700 shadow-sm">{item}</div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -inset-6 rounded-[40px] bg-gradient-to-br from-blue-500/20 via-green-400/10 to-transparent blur-2xl" />
+              <div className="relative overflow-hidden rounded-[36px] border border-white bg-white p-3 shadow-[0_40px_100px_rgba(15,23,42,0.18)]">
+                <img src="/landing/dashboard-owner.png" alt="Dashboard de Super Gods App para barberías y salones de belleza" className="rounded-[28px] object-cover" />
+                <div className="grid gap-3 p-3 sm:grid-cols-3">
+                  <HeroSignal icon={Clock3} title="Agenda" text="Reservas por horario" />
+                  <HeroSignal icon={Banknote} title="Caja" text="Cierre por método" />
+                  <HeroSignal icon={MessageCircle} title="Clientes" text="Historial y puntos" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {false && (
+        <section className="hidden">
           <div className="absolute inset-x-0 top-0 h-[720px] bg-[radial-gradient(circle_at_20%_10%,#DCEBFF_0,#F5F7FB_42%,transparent_70%),radial-gradient(circle_at_85%_22%,rgba(34,197,94,0.16),transparent_30%)]" />
 
           <div className="relative mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1fr_0.92fr]">
@@ -384,12 +538,38 @@ function PublicHomePage() {
           </div>
         </section>
 
+        )}
+
         <section className="px-4 py-8">
           <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-4">
             <MetricCard value="24/7" label="Reservas online" />
             <MetricCard value="+Caja" label="Control de pagos y ventas" />
             <MetricCard value="+Puntos" label="Fidelización y premios" />
             <MetricCard value="+Reportes" label="Métricas para decidir mejor" />
+          </div>
+        </section>
+
+        <section className="px-4 py-16">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Resultados que se sienten</p>
+              <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">
+                Una operación más ordenada se convierte en más ventas
+              </h2>
+              <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
+                La plataforma está pensada para el día a día del dueño: menos improvisación, más control y una experiencia más profesional para cada cliente.
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              {outcomes.map((item) => (
+                <div key={item.title} className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.07)]">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100"><LandingIcon icon={item.icon} /></div>
+                  <h3 className="mt-5 text-xl font-black text-slate-950">{item.title}</h3>
+                  <p className="mt-3 text-sm font-medium leading-6 text-slate-600">{item.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -623,6 +803,32 @@ function PublicHomePage() {
           </div>
         </section>
 
+        <section id="preguntas" className="px-4 py-20">
+          <div className="mx-auto max-w-5xl">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Preguntas frecuentes</p>
+              <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">
+                Lo que suele preguntar un dueño antes de probar
+              </h2>
+              <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
+                Respuestas claras para decidir si Super Gods App encaja con tu operación.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-4">
+              {faqItems.map((item) => (
+                <details key={item.question} className="group rounded-[26px] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-lg font-black text-slate-950">
+                    {item.question}
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition group-open:rotate-45">+</span>
+                  </summary>
+                  <p className="mt-4 max-w-3xl text-sm font-medium leading-7 text-slate-600">{item.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section id="contacto" className="px-4 py-20">
           <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[42px] bg-white shadow-[0_30px_90px_rgba(15,23,42,0.12)] lg:grid-cols-[0.92fr_1.08fr]">
             <div className="relative bg-slate-950 p-8 text-white md:p-12">
@@ -690,6 +896,20 @@ function PublicHomePage() {
 
 function LandingIcon({ icon: Icon, size = 24 }) {
   return <Icon size={size} strokeWidth={2.6} />;
+}
+
+function HeroSignal({ icon: Icon, title, text }) {
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm">
+          <Icon size={17} strokeWidth={2.6} />
+        </span>
+        <p className="text-sm font-black text-slate-950">{title}</p>
+      </div>
+      <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{text}</p>
+    </div>
+  );
 }
 
 function MetricCard({ value, label }) {
