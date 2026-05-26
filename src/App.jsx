@@ -609,6 +609,60 @@ function PublicHomePage() {
 
         <section id="rubros" className="px-4 py-20">
           <div className="mx-auto max-w-7xl">
+            <div className="rounded-[42px] bg-slate-950 p-6 text-white shadow-[0_34px_90px_rgba(15,23,42,0.20)] md:p-10">
+              <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-300">Ventas visibles</p>
+                  <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] md:text-6xl">
+                    Números que el dueño necesita ver todos los días
+                  </h2>
+                  <p className="mt-5 text-lg font-medium leading-8 text-slate-300">
+                    Super Gods App convierte reservas, ventas, caja y clientes en indicadores fáciles de revisar para tomar mejores decisiones.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {salesStats.map((item) => (
+                    <div key={item.label} className="rounded-[26px] border border-white/10 bg-white/8 p-5 backdrop-blur">
+                      <p className="text-3xl font-black tracking-[-0.04em] text-white md:text-4xl">{item.value}</p>
+                      <p className="mt-2 text-sm font-black text-blue-200">{item.label}</p>
+                      <p className="mt-2 text-xs font-medium leading-5 text-slate-300">{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-16 grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Rubros</p>
+                <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">
+                  Para negocios de belleza que viven de reservas y recurrencia
+                </h2>
+                <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
+                  La app no se presenta como un portafolio antiguo: muestra el sistema trabajando para cada tipo de negocio.
+                </p>
+              </div>
+
+              <div className="rounded-[34px] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+                <div className="grid grid-cols-3 gap-3">
+                  <img src="/landing/agenda-owner.png" alt="Agenda online para negocio de belleza" className="h-28 w-full rounded-2xl object-cover" />
+                  <img src="/landing/caja-owner.png" alt="Caja y ventas de Super Gods App" className="h-28 w-full rounded-2xl object-cover" />
+                  <img src="/landing/clientes-puntos.png" alt="Clientes, puntos y premios para fidelización" className="h-28 w-full rounded-2xl object-cover" />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              {verticalMarkets.map((item) => (
+                <VerticalMarketCard key={item.title} item={item} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="rubros-lista" className="hidden">
+          <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Rubros</p>
               <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">
@@ -909,6 +963,27 @@ function HeroSignal({ icon: Icon, title, text }) {
       </div>
       <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{text}</p>
     </div>
+  );
+}
+
+function VerticalMarketCard({ item }) {
+  return (
+    <article className="group overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:border-blue-200">
+      <div className="relative h-48 overflow-hidden bg-slate-100">
+        <img src={item.image} alt={`${item.title} con Super Gods App`} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
+        <div className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-2xl bg-white/95 px-3 py-2 text-xs font-black text-slate-950 shadow-lg">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+            <LandingIcon icon={item.icon} size={16} />
+          </span>
+          {item.stat}
+        </div>
+      </div>
+      <div className="p-6">
+        <h3 className="text-2xl font-black tracking-[-0.03em] text-slate-950">{item.title}</h3>
+        <p className="mt-3 text-sm font-medium leading-6 text-slate-600">{item.text}</p>
+      </div>
+    </article>
   );
 }
 
