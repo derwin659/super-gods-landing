@@ -1,7 +1,7 @@
 const PADDLE_SCRIPT_URL = 'https://cdn.paddle.com/paddle/v2/paddle.js';
 
 let scriptPromise = null;
-let initialized = false;
+let initializedToken = '';
 let paddleEventHandler = null;
 
 function loadPaddleScript() {
@@ -40,7 +40,7 @@ export async function openPaddleCheckout({
 
   paddleEventHandler = typeof onEvent === 'function' ? onEvent : null;
 
-  if (!initialized) {
+  if (initializedToken !== token) {
     if (environment === 'sandbox' && Paddle.Environment?.set) {
       Paddle.Environment.set('sandbox');
     }
@@ -57,15 +57,10 @@ export async function openPaddleCheckout({
       },
     });
 
-    initialized = true;
+    initializedToken = token;
   }
 
-  Paddle.Checkout.open({
-    settings: {
-      displayMode: 'overlay',
-      theme: 'light',
-      variant: 'one-page',
-    },
+  const checkoutOptions = {
     items: [
       {
         priceId,
@@ -78,5 +73,22 @@ export async function openPaddleCheckout({
       billingCycle: String(billingCycle || ''),
       currency: String(currency || ''),
     },
+  };
+
+  console.info('Opening Paddle checkout', {
+    priceId,
+    environment,
+    tenantId: tenantId || null,
+    plan,
+    billingCycle,
+    currency,
+  });
+
+  Paddle.Checkout.open({
+    settings: {
+      displayMode: 'overlay',
+      theme: 'light',
+    },
+    ...checkoutOptions,
   });
 }

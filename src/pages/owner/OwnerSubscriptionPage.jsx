@@ -159,6 +159,7 @@ function StatCard({ icon: Icon, label, value, helper, tone = 'neutral' }) {
 function PlanCard({ plan, selected, onSelect, currencyCode }) {
   const Icon = plan.icon;
   const tone = toneClasses(plan.tone);
+  const priceText = currency(plan.price, currencyCode);
 
   return (
     <button
@@ -184,9 +185,14 @@ function PlanCard({ plan, selected, onSelect, currencyCode }) {
 
       <h3 className="mt-5 text-xl font-black">{plan.name}</h3>
       <div className="mt-3 min-w-0">
-        <div className="flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
-          <span className="max-w-full break-words text-[clamp(1.65rem,2.2vw,2.25rem)] font-black leading-none tracking-tight">
-            {currency(plan.price, currencyCode)}
+        <div className="flex min-w-0 flex-col gap-1">
+          <span
+            className="max-w-full break-words font-black leading-none tracking-tight"
+            style={{
+              fontSize: priceText.length > 13 ? '1.85rem' : '2.25rem',
+            }}
+          >
+            {priceText}
           </span>
           <span className="text-xs font-black opacity-60">/ mes</span>
         </div>
@@ -503,7 +509,7 @@ export default function OwnerSubscriptionPage() {
                   <Sparkles className="text-amber-500" size={28} strokeWidth={2.5} />
                 </div>
 
-                <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
+                <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
                   {visiblePlans.map((plan) => (
                     <PlanCard
                       key={plan.id}
