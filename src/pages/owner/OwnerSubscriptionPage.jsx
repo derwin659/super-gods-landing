@@ -631,9 +631,7 @@ export default function OwnerSubscriptionPage() {
                     <div className="mt-1 text-2xl font-black text-neutral-950">
                       958062847
                     </div>
-                    <div className="mt-1 text-xs font-bold text-neutral-500">
-                      Aquí luego puedes colocar el QR real.
-                    </div>
+                
                   </div>
                 </div>
                 )}
