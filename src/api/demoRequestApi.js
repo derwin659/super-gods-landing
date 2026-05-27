@@ -8,6 +8,13 @@ export const demoRequestApi = {
     });
   },
 
+  activatePublicTrial(payload) {
+    return apiRequest('/api/public/demo-requests/activate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   getAll() {
     return apiRequest('/api/super-admin/demo-requests');
   },

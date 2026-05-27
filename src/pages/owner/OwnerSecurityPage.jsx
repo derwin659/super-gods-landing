@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { changeMyPassword } from '../../api/ownerSecurityApi';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { isGoogleLinkConfigured, startGoogleAccountLink } from '../../api/authApi';
+import { changeMyPassword, getGoogleLinkStatus } from '../../api/ownerSecurityApi';
 import { useAuth } from '../../context/AuthContext';
 
 function AccountInfoCard({ label, value, icon }) {
@@ -61,6 +62,7 @@ function PasswordField({
 
 export default function OwnerSecurityPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { session, signOut } = useAuth();
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -73,6 +75,38 @@ export default function OwnerSecurityPage() {
 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [googleStatus, setGoogleStatus] = useState(null);
+  const [loadingGoogleStatus, setLoadingGoogleStatus] = useState(true);
+  const googleLinkReady = isGoogleLinkConfigured();
+
+  const loadGoogleStatus = useCallback(async () => {
+    setLoadingGoogleStatus(true);
+    try {
+      const status = await getGoogleLinkStatus();
+      setGoogleStatus(status);
+    } catch {
+      setGoogleStatus(null);
+    } finally {
+      setLoadingGoogleStatus(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadGoogleStatus();
+  }, [loadGoogleStatus]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+
+    if (params.get('googleLinked') === '1') {
+      setMessage({
+        type: 'success',
+        text: 'Gmail vinculado correctamente. Desde ahora podras entrar con Google usando esta misma cuenta.',
+      });
+      loadGoogleStatus();
+      navigate(location.pathname, { replace: true });
+    }
+  }, [loadGoogleStatus, location.pathname, location.search, navigate]);
 
   const roleLabel = useMemo(() => {
     const role = String(session?.role || '').toUpperCase();
@@ -151,6 +185,24 @@ export default function OwnerSecurityPage() {
   function handleLogout() {
     signOut();
     navigate('/login', { replace: true });
+  }
+
+  async function handleGoogleLink() {
+    try {
+      const response = await startGoogleAccountLink();
+      if (!response?.url) {
+        throw new Error('No se recibio la URL de Google.');
+      }
+
+      window.location.href = response.url;
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text:
+          error?.message ||
+          'La vinculacion con Google no esta disponible en este momento.',
+      });
+    }
   }
 
   return (
@@ -313,6 +365,98 @@ export default function OwnerSecurityPage() {
             Gestionar administradores
           </button>
         </aside>
+      </section>
+
+      <section className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
+              Acceso con Google
+            </div>
+
+            <h3 className="mt-2 text-2xl font-black text-neutral-950">
+              Vincula tu Gmail sin perder tu usuario actual
+            </h3>
+
+            <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-neutral-500">
+              Los duenos y administradores que ya ingresan con correo y
+              contrasena podran asociar su cuenta de Google. Despues podran
+              entrar con un clic, manteniendo el mismo tenant, rol y permisos.
+            </p>
+
+            <div className="mt-5 rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
+              {loadingGoogleStatus ? (
+                <div className="h-16 animate-pulse rounded-2xl bg-white" />
+              ) : googleStatus?.linked ? (
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-4">
+                    {googleStatus.pictureUrl ? (
+                      <img
+                        src={googleStatus.pictureUrl}
+                        alt={googleStatus.name || googleStatus.email || 'Cuenta Google'}
+                        className="h-14 w-14 shrink-0 rounded-2xl object-cover ring-4 ring-white"
+                      />
+                    ) : (
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white text-xl font-black text-neutral-950 ring-1 ring-neutral-200">
+                        G
+                      </div>
+                    )}
+
+                    <div className="min-w-0">
+                      <div className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                        Gmail conectado
+                      </div>
+                      <p className="mt-2 truncate text-base font-black text-neutral-950">
+                        {googleStatus.name || 'Cuenta Google'}
+                      </p>
+                      <p className="truncate text-sm font-bold text-neutral-500">
+                        {googleStatus.email || 'Correo no disponible'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-black text-emerald-700">
+                    Activo
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-black text-neutral-950">
+                      Aun no hay Gmail vinculado
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-500">
+                      Vincula una cuenta para entrar mas rapido sin cambiar tu
+                      usuario actual.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-neutral-500 ring-1 ring-neutral-200">
+                    Pendiente
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {message.type === 'success' && message.text.includes('Gmail') && (
+              <div className="mt-4 inline-flex rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">
+                {message.text}
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleLink}
+            disabled={!googleLinkReady}
+            className="inline-flex items-center justify-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-950 px-6 py-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#0F2A5F] disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-base font-black text-neutral-950">
+              G
+            </span>
+            {googleStatus?.linked ? 'Cambiar Gmail' : googleLinkReady ? 'Vincular Gmail' : 'Google pronto'}
+          </button>
+        </div>
       </section>
     </div>
   );

@@ -184,6 +184,16 @@ import {
         redirectTo: resolveHomeByRole(saved?.role),
       };
     }, []);
+
+    const completeExternalSession = useCallback((finalRes) => {
+      const saved = saveSession(finalRes || {});
+      setSession(saved);
+
+      return {
+        session: saved,
+        redirectTo: resolveHomeByRole(saved?.role),
+      };
+    }, []);
   
     const signOut = useCallback(() => {
       clearSessionStorage();
@@ -196,10 +206,11 @@ import {
         checkingSession,
         isAuthenticated: Boolean(session?.token),
         signIn,
+        completeExternalSession,
         signOut,
         resolveHomeByRole,
       }),
-      [session, checkingSession, signIn, signOut]
+      [session, checkingSession, signIn, completeExternalSession, signOut]
     );
   
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

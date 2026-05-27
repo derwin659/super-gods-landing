@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { getMyOwnerPermissions } from '../../api/ownerPermissionsApi';
+import { getGoogleLinkStatus } from '../../api/ownerSecurityApi';
 import {
   getCurrentSubscription,
   isSubscriptionActive,
@@ -604,6 +605,7 @@ export default function OwnerLayout() {
   const [subscription, setSubscription] = useState(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
   const [subscriptionError, setSubscriptionError] = useState('');
+  const [googleStatus, setGoogleStatus] = useState(null);
 
   useEffect(() => {
     function handleResize() {
@@ -658,6 +660,29 @@ export default function OwnerLayout() {
       mounted = false;
     };
   }, [session?.token, session?.role]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadGoogleStatus() {
+      try {
+        const data = await getGoogleLinkStatus();
+        if (mounted) setGoogleStatus(data);
+      } catch {
+        if (mounted) setGoogleStatus(null);
+      }
+    }
+
+    if (session?.token && String(session?.role || '').toUpperCase() !== 'SUPER_ADMIN') {
+      loadGoogleStatus();
+    } else {
+      setGoogleStatus(null);
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [session?.token, session?.role, location.pathname]);
 
   useEffect(() => {
     let mounted = true;
@@ -802,6 +827,42 @@ export default function OwnerLayout() {
               <div className="rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-xs font-black text-neutral-600">
                 {session?.role || 'OWNER'}
               </div>
+
+              <button
+                type="button"
+                onClick={() => navigate('/owner/seguridad')}
+                className="group flex items-center gap-3 rounded-full border border-neutral-200 bg-white py-1.5 pl-2 pr-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md"
+                title={
+                  googleStatus?.linked
+                    ? `Gmail conectado: ${googleStatus.email || ''}`
+                    : 'Vincular Gmail'
+                }
+              >
+                {googleStatus?.linked && googleStatus?.pictureUrl ? (
+                  <img
+                    src={googleStatus.pictureUrl}
+                    alt={googleStatus.name || googleStatus.email || 'Cuenta Google'}
+                    className="h-9 w-9 rounded-full object-cover ring-2 ring-emerald-100"
+                  />
+                ) : (
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-950 text-sm font-black text-white">
+                    {(session?.userName || 'G').trim().slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+
+                <span className="hidden max-w-[170px] xl:block">
+                  <span className="block truncate text-xs font-black text-neutral-950">
+                    {googleStatus?.linked
+                      ? googleStatus.name || session?.userName || 'Cuenta Google'
+                      : session?.userName || 'Cuenta'}
+                  </span>
+                  <span className="block truncate text-[11px] font-bold text-neutral-400">
+                    {googleStatus?.linked
+                      ? googleStatus.email || 'Gmail conectado'
+                      : 'Vincular Gmail'}
+                  </span>
+                </span>
+              </button>
             </div>
 
             <button

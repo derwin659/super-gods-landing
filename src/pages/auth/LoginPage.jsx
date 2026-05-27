@@ -22,7 +22,12 @@ import {
   X,
   AlertCircle,
 } from 'lucide-react';
-import { forgotPassword, resetPassword } from '../../api/authApi';
+import {
+  forgotPassword,
+  googleLoginUrl,
+  isGoogleLoginConfigured,
+  resetPassword,
+} from '../../api/authApi';
 import { useAuth } from '../../context/AuthContext';
 
 export default function LoginPage() {
@@ -57,6 +62,8 @@ export default function LoginPage() {
     };
   }, [mode]);
 
+  const googleLoginReady = isGoogleLoginConfigured();
+
   async function handleSubmit(e) {
     e.preventDefault();
     setErrorMsg('');
@@ -81,6 +88,23 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleGoogleLogin() {
+    setErrorMsg('');
+
+    if (mode === 'SUPER_ADMIN') {
+      setErrorMsg('El acceso con Google esta disponible para duenos y administradores del negocio.');
+      return;
+    }
+
+    const url = googleLoginUrl({ mode });
+    if (!url) {
+      setErrorMsg('El acceso con Google se activara cuando configuremos OAuth en produccion.');
+      return;
+    }
+
+    window.location.href = url;
   }
 
   const ModeIcon = modeInfo.icon;
@@ -286,6 +310,33 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
+
+            <div className="mt-5">
+              <div className="relative flex items-center justify-center">
+                <div className="h-px flex-1 bg-slate-200" />
+                <span className="px-3 text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                  o acceso rapido
+                </span>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={loading || mode === 'SUPER_ADMIN' || !googleLoginReady}
+                className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-55"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-lg shadow-sm ring-1 ring-slate-200">
+                  G
+                </span>
+                {googleLoginReady ? 'Continuar con Google' : 'Google pronto'}
+              </button>
+
+              <p className="mt-3 text-center text-xs font-semibold leading-5 text-slate-500">
+                Si ya tienes cuenta con correo y contrasena, podras vincular tu
+                Gmail desde Seguridad cuando el backend confirme tu identidad.
+              </p>
+            </div>
 
             <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-center">
               <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#0F2A5F] shadow-sm">

@@ -24,16 +24,21 @@ import {
   ArrowRight,
   Clock3,
   MessageCircle,
+  Monitor,
+  QrCode,
+  Smartphone,
   TrendingUp,
 } from 'lucide-react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { demoRequestApi } from './api/demoRequestApi';
+import { googleSignupUrl } from './api/authApi';
 import OwnerSecurityPage from './pages/owner/OwnerSecurityPage';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 import OwnerPermissionRoute from './routes/OwnerPermissionRoute';
 import OwnerAdjustPointsPage from './pages/owner/OwnerAdjustPointsPage';
 import LoginPage from './pages/auth/LoginPage';
+import GoogleCallbackPage from './pages/auth/GoogleCallbackPage';
 import OwnerAdminsPage from './pages/owner/OwnerAdminsPage';
 import OwnerLayout from './pages/owner/OwnerLayout';
 import OwnerDashboardPage from './pages/owner/OwnerDashboardPage';
@@ -422,6 +427,7 @@ function PublicHomePage() {
             <a href="#rubros" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Rubros</a>
             <a href="#servicios" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Servicios</a>
             <a href="#producto" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Super Gods App</a>
+            <a href="#app" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">App</a>
             <a href="#planes" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Planes</a>
             <a href="#preguntas" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">FAQ</a>
             <a href="#contacto" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Contacto</a>
@@ -431,7 +437,7 @@ function PublicHomePage() {
             <a href="/login" className="hidden rounded-2xl border border-[#CBD5E1] bg-white px-5 py-3 text-sm font-black text-[#0F172A] transition hover:border-[#2563EB] hover:text-[#2563EB] sm:inline-flex">
               Iniciar sesión
             </a>
-            <a href="#contacto" className="rounded-2xl bg-[#0F2A5F] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84]">
+            <a href="/registro-negocio" className="rounded-2xl bg-[#0F2A5F] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84]">
               Probar 7 días gratis
             </a>
           </div>
@@ -458,7 +464,7 @@ function PublicHomePage() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a href="#contacto" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]">
+                <a href="/registro-negocio" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]">
                   Probar 7 días gratis
                   <ArrowRight size={18} strokeWidth={2.6} />
                 </a>
@@ -511,7 +517,7 @@ function PublicHomePage() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a href="#contacto" className="inline-flex justify-center rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]">
+                <a href="/registro-negocio" className="inline-flex justify-center rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]">
                   Solicitar demo gratis
                 </a>
                 <a href="#nosotros" className="inline-flex justify-center rounded-2xl border border-slate-200 bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1 hover:border-blue-600 hover:text-blue-700">
@@ -546,6 +552,72 @@ function PublicHomePage() {
             <MetricCard value="+Caja" label="Control de pagos y ventas" />
             <MetricCard value="+Puntos" label="Fidelización y premios" />
             <MetricCard value="+Reportes" label="Métricas para decidir mejor" />
+          </div>
+        </section>
+
+        <section id="app" className="px-4 py-16">
+          <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[42px] border border-slate-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.10)] lg:grid-cols-[1.02fr_0.98fr]">
+            <div className="p-8 md:p-12">
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Empieza como prefieras</p>
+              <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">
+                Usa Super Gods desde celular o computadora
+              </h2>
+              <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
+                El dueño puede revisar reservas, caja, clientes y reportes desde el panel web. El equipo puede operar desde la app móvil según sus permisos.
+              </p>
+
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                <a href="/login" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white transition hover:-translate-y-1">
+                  <Monitor size={18} strokeWidth={2.6} />
+                  Entrar desde web
+                </a>
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-6 py-4 text-sm font-black text-slate-950 transition hover:-translate-y-1 hover:border-blue-600 hover:text-blue-700">
+                  <Smartphone size={18} strokeWidth={2.6} />
+                  Recibir enlace de app
+                </a>
+              </div>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                <AppStep number="1" title="Regístrate" text="Crea tu cuenta o solicita tu demo." />
+                <AppStep number="2" title="Configura" text="Servicios, horarios y profesionales." />
+                <AppStep number="3" title="Opera" text="Agenda, caja, clientes y reportes." />
+              </div>
+            </div>
+
+            <div className="relative bg-slate-950 p-8 text-white md:p-12">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(59,130,246,0.35),transparent_35%),radial-gradient(circle_at_82%_78%,rgba(16,185,129,0.28),transparent_36%)]" />
+              <div className="relative grid gap-5">
+                <div className="rounded-[30px] border border-white/10 bg-white/10 p-5 backdrop-blur">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-950">
+                      <QrCode size={24} strokeWidth={2.6} />
+                    </span>
+                    <div>
+                      <p className="text-lg font-black">Descarga asistida</p>
+                      <p className="text-sm font-medium text-slate-300">Mientras publicamos enlaces oficiales, te enviamos el acceso correcto por WhatsApp.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[30px] bg-white p-4 text-slate-950 shadow-2xl shadow-slate-950/30">
+                  <img src="/landing/dashboard-owner.png" alt="Panel web de Super Gods App para dueños" className="rounded-[22px]" />
+                  <div className="mt-4 grid grid-cols-3 gap-3">
+                    <div className="rounded-2xl bg-blue-50 p-3">
+                      <p className="text-xs font-black text-blue-700">Agenda</p>
+                      <p className="mt-1 text-lg font-black">32</p>
+                    </div>
+                    <div className="rounded-2xl bg-green-50 p-3">
+                      <p className="text-xs font-black text-green-700">Caja</p>
+                      <p className="mt-1 text-lg font-black">OK</p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-100 p-3">
+                      <p className="text-xs font-black text-slate-600">Clientes</p>
+                      <p className="mt-1 text-lg font-black">148</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -845,7 +917,7 @@ function PublicHomePage() {
                       </div>
                     ))}
                   </div>
-                  <a href="#contacto" className={plan.highlighted ? 'mt-8 inline-flex w-full justify-center rounded-2xl bg-white px-6 py-4 text-sm font-black text-[#0F2A5F] transition hover:-translate-y-1' : 'mt-8 inline-flex w-full justify-center rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white transition hover:-translate-y-1 hover:bg-[#0F2A5F]'}>Solicitar demo gratis</a>
+                  <a href="/registro-negocio" className={plan.highlighted ? 'mt-8 inline-flex w-full justify-center rounded-2xl bg-white px-6 py-4 text-sm font-black text-[#0F2A5F] transition hover:-translate-y-1' : 'mt-8 inline-flex w-full justify-center rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white transition hover:-translate-y-1 hover:bg-[#0F2A5F]'}>Probar gratis</a>
                 </div>
               ))}
             </div>
@@ -921,7 +993,7 @@ function PublicHomePage() {
             <h2 className="mx-auto max-w-3xl text-4xl font-black tracking-[-0.05em] md:text-6xl">Más orden. Más control. Más clientes.</h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg font-medium leading-8 text-slate-300">Activa tu prueba gratis, recibe soporte y empieza a probar reservas, caja, clientes, puntos y reportes.</p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <a href="#contacto" className="rounded-2xl bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1">Solicitar demo gratis</a>
+              <a href="/registro-negocio" className="rounded-2xl bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1">Crear cuenta gratis</a>
               <a href="/login" className="rounded-2xl border border-white/30 px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 hover:bg-white/10">Iniciar sesión</a>
             </div>
           </div>
@@ -944,6 +1016,60 @@ function PublicHomePage() {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function PublicBusinessSignupPage() {
+  return (
+    <div className="min-h-screen bg-[#F6F7FB] text-slate-950">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+          <a href="/" className="flex items-center gap-3">
+            <img src="/logo-super-gods.png" alt="Super Gods App" className="h-12 w-12 rounded-2xl object-contain shadow-sm" />
+            <div>
+              <p className="text-lg font-black leading-5 tracking-[-0.03em]">Super Gods App</p>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Registro de negocio</p>
+            </div>
+          </a>
+          <a
+            href="/login"
+            className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-950 transition hover:border-blue-600 hover:text-blue-700"
+          >
+            Iniciar sesion
+          </a>
+        </div>
+      </header>
+
+      <main className="px-4 py-10">
+        <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[42px] bg-white shadow-[0_30px_90px_rgba(15,23,42,0.12)] lg:grid-cols-[0.9fr_1.1fr]">
+          <aside className="relative bg-slate-950 p-8 text-white md:p-12">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#2563EB_0,transparent_35%),radial-gradient(circle_at_90%_18%,rgba(34,197,94,0.22),transparent_28%)]" />
+            <div className="relative flex h-full flex-col justify-between">
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-200">
+                  Prueba gratis 7 dias
+                </p>
+                <h1 className="mt-4 text-4xl font-black tracking-[-0.05em] md:text-6xl">
+                  Crea tu negocio y entra al panel en minutos
+                </h1>
+                <p className="mt-5 text-lg font-medium leading-8 text-blue-100">
+                  Registra tu negocio, activa un trial Starter y configura servicios, profesionales, horarios, caja, puntos y reservas desde web o movil.
+                </p>
+              </div>
+
+              <div className="mt-10 grid gap-4">
+                <InfoLine text="Sin tarjeta para iniciar la prueba." />
+                <InfoLine text="Tenant, sede principal, usuario owner y moneda se crean automaticamente." />
+                <InfoLine text="Despues puedes vincular Gmail e iniciar sesion con un clic." />
+                <InfoLine text="Pago automatico internacional disponible al renovar." />
+              </div>
+            </div>
+          </aside>
+
+          <ContactLeadBox whatsappNumber={WHATSAPP_NUMBER} autoActivate />
+        </div>
+      </main>
     </div>
   );
 }
@@ -984,6 +1110,18 @@ function VerticalMarketCard({ item }) {
         <p className="mt-3 text-sm font-medium leading-6 text-slate-600">{item.text}</p>
       </div>
     </article>
+  );
+}
+
+function AppStep({ number, title, text }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-sm font-black text-blue-700 shadow-sm">
+        {number}
+      </span>
+      <p className="mt-3 text-sm font-black text-slate-950">{title}</p>
+      <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{text}</p>
+    </div>
   );
 }
 
@@ -1032,7 +1170,7 @@ function InfoLine({ text }) {
     </div>
   );
 }
-function ContactLeadBox({ whatsappNumber }) {
+function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
   const initialLead = {
     nombre: '',
     negocio: '',
@@ -1068,6 +1206,29 @@ function ContactLeadBox({ whatsappNumber }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [activation, setActivation] = useState(null);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { completeExternalSession } = useAuth();
+  const googleSignupToken = searchParams.get('googleSignupToken') || '';
+  const googleProfile = googleSignupToken
+    ? {
+        token: googleSignupToken,
+        email: searchParams.get('googleEmail') || '',
+        name: searchParams.get('googleName') || '',
+        picture: searchParams.get('googlePicture') || '',
+      }
+    : null;
+
+  useEffect(() => {
+    if (!autoActivate || !googleProfile) return;
+
+    setLead((prev) => ({
+      ...prev,
+      nombre: prev.nombre || googleProfile.name,
+      email: googleProfile.email || prev.email,
+    }));
+  }, [autoActivate, googleProfile?.email, googleProfile?.name, googleSignupToken]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -1129,16 +1290,28 @@ function ContactLeadBox({ whatsappNumber }) {
       socialLink: lead.socialLink.trim(),
       googleMapsLink: lead.googleMapsLink.trim(),
       message: buildLeadMessage(lead, businessTypeLabel),
+      googleSignupToken: googleProfile?.token || null,
     };
 
     try {
       setSaving(true);
       setError('');
       setSuccess(false);
+      setActivation(null);
 
-      await demoRequestApi.createPublicRequest(payload);
+      const response = autoActivate
+        ? await demoRequestApi.activatePublicTrial(payload)
+        : await demoRequestApi.createPublicRequest(payload);
 
+      setActivation(response);
       setSuccess(true);
+
+      if (autoActivate && response?.session) {
+        completeExternalSession(response.session);
+        setTimeout(() => {
+          navigate('/owner/dashboard', { replace: true });
+        }, 800);
+      }
     } catch (e) {
       setError(e.message || 'No se pudo enviar la solicitud. Inténtalo nuevamente.');
     } finally {
@@ -1149,34 +1322,104 @@ function ContactLeadBox({ whatsappNumber }) {
   return (
     <form onSubmit={handleSubmit} className="p-8 md:p-12">
       <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">
-        Solicita tu demo
+        {autoActivate ? 'Crea tu cuenta' : 'Solicita tu demo'}
       </p>
 
       <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-5xl">
-        Activa tu demo gratis
+        {autoActivate ? 'Activa tu prueba gratis' : 'Activa tu demo gratis'}
       </h2>
 
       <p className="mt-4 font-medium leading-7 text-slate-600">
-        Completa los datos de tu negocio. Revisaremos tu solicitud y, si todo está correcto, activaremos tu cuenta demo por 7 días.
+        {autoActivate
+          ? 'Continua con Google, completa los datos de tu negocio y crearemos una cuenta Starter de prueba por 7 dias.'
+          : 'Completa los datos de tu negocio. Revisaremos tu solicitud y, si todo esta correcto, activaremos tu cuenta demo por 7 dias.'}
       </p>
+
+      {autoActivate && (
+        <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          {googleProfile ? (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                {googleProfile.picture ? (
+                  <img
+                    src={googleProfile.picture}
+                    alt={googleProfile.name || googleProfile.email}
+                    className="h-12 w-12 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-sm">
+                    G
+                  </span>
+                )}
+                <div>
+                  <p className="text-sm font-black text-slate-950">
+                    Gmail verificado
+                  </p>
+                  <p className="text-xs font-bold text-slate-500">
+                    {googleProfile.email}
+                  </p>
+                </div>
+              </div>
+              <span className="rounded-2xl bg-emerald-100 px-4 py-2 text-xs font-black text-emerald-800">
+                Se vinculara al crear la cuenta
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-black text-slate-950">
+                  Registro recomendado con Google
+                </p>
+                <p className="mt-1 text-xs font-bold leading-5 text-slate-500">
+                  Usaremos tu Gmail verificado para crear el dueño y permitir ingreso con un clic.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = googleSignupUrl();
+                }}
+                className="inline-flex items-center justify-center gap-3 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#0F2A5F]"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-sm font-black text-slate-950">
+                  G
+                </span>
+                Registrarme con Google
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {success && (
         <div className="mt-6 rounded-3xl border border-emerald-100 bg-emerald-50 p-5 text-emerald-900">
-          <h3 className="text-xl font-black">Solicitud enviada correctamente 🎉</h3>
+          <h3 className="text-xl font-black">
+            {autoActivate ? 'Cuenta creada correctamente' : 'Solicitud enviada correctamente'}
+          </h3>
           <p className="mt-2 text-sm font-bold leading-6">
-            Revisaremos los datos de tu negocio. Si es aprobada, recibirás tus accesos por WhatsApp o correo.
+            {autoActivate
+              ? `Tu prueba de ${activation?.trialDays || 7} dias esta activa. Ya puedes entrar al panel web y terminar la configuracion.`
+              : 'Revisaremos los datos de tu negocio. Si es aprobada, recibiras tus accesos por WhatsApp o correo.'}
           </p>
           <div className="mt-4 rounded-2xl bg-white p-4 text-sm font-black text-slate-800">
-            Tu acceso será con tu correo registrado y contraseña temporal: 123456
+            Acceso: {activation?.accessEmail || lead.email.trim().toLowerCase()} · clave temporal: {activation?.temporaryPassword || '123456'}
           </div>
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 inline-flex rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700"
-          >
-            También enviar por WhatsApp
-          </a>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <a
+              href="/login"
+              className="inline-flex justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700"
+            >
+              Entrar al panel
+            </a>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex justify-center rounded-2xl border border-emerald-200 bg-white px-5 py-3 text-sm font-black text-emerald-800 transition hover:border-emerald-400"
+            >
+              Pedir ayuda por WhatsApp
+            </a>
+          </div>
         </div>
       )}
 
@@ -1335,7 +1578,9 @@ function ContactLeadBox({ whatsappNumber }) {
         disabled={saving}
         className="mt-8 w-full rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {saving ? 'Enviando solicitud...' : 'Enviar solicitud de demo'}
+        {saving
+          ? (autoActivate ? 'Creando cuenta...' : 'Enviando solicitud...')
+          : (autoActivate ? 'Crear mi cuenta gratis' : 'Enviar solicitud de demo')}
       </button>
 
       <a
@@ -1346,7 +1591,9 @@ function ContactLeadBox({ whatsappNumber }) {
       </a>
 
       <p className="mt-4 text-center text-xs font-semibold leading-5 text-slate-500">
-        No necesitas tarjeta. Primero revisamos tu solicitud para activar una demo real de Super Gods App.
+        {autoActivate
+          ? 'No necesitas tarjeta para iniciar. Al terminar la prueba podras renovar tu plan desde el panel.'
+          : 'No necesitas tarjeta. Primero revisamos tu solicitud para activar una demo real de Super Gods App.'}
       </p>
     </form>
   );
@@ -1593,6 +1840,8 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/" element={<PublicHomePage />} />
+        <Route path="/registro-negocio" element={<PublicBusinessSignupPage />} />
+        <Route path="/demo" element={<PublicBusinessSignupPage />} />
         <Route path="/soporte" element={<SimplePublicPage title="Soporte Super Gods App" />} />
         <Route path="/terms" element={<LegalPage type="terms" />} />
         <Route path="/privacy" element={<LegalPage type="privacy" />} />
@@ -1600,6 +1849,7 @@ export default function App() {
         <Route path="/datos" element={<SimplePublicPage title="Opciones de Privacidad y Datos" />} />
 
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
 
         <Route
           path="/owner"

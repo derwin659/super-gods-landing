@@ -1,4 +1,4 @@
-import { apiRequest } from './apiClient';
+import { apiRequest, getApiBaseUrl } from './apiClient';
 
 export async function loginBasic(email, password) {
   return apiRequest('/api/auth/login-basic', {
@@ -44,4 +44,62 @@ export async function resetPassword({ email, code, newPassword }) {
       newPassword: String(newPassword || '').trim(),
     }),
   });
+}
+
+export function googleLoginUrl({ mode = 'OWNER' } = {}) {
+  const configured = import.meta.env.VITE_GOOGLE_LOGIN_URL;
+  const redirectUri = `${window.location.origin}/auth/google/callback`;
+
+  if (!configured) {
+    const url = new URL('/api/auth/google/start', getApiBaseUrl());
+    url.searchParams.set('mode', String(mode || 'OWNER').toUpperCase());
+    url.searchParams.set('redirectUri', redirectUri);
+    return url.toString();
+  }
+
+  const url = new URL(configured);
+  url.searchParams.set('mode', String(mode || 'OWNER').toUpperCase());
+  url.searchParams.set('redirectUri', redirectUri);
+  return url.toString();
+}
+
+export function googleSignupUrl() {
+  const configured = import.meta.env.VITE_GOOGLE_LOGIN_URL;
+  const redirectUri = `${window.location.origin}/registro-negocio`;
+
+  if (!configured) {
+    const url = new URL('/api/auth/google/start', getApiBaseUrl());
+    url.searchParams.set('mode', 'SIGNUP');
+    url.searchParams.set('redirectUri', redirectUri);
+    return url.toString();
+  }
+
+  const url = new URL(configured);
+  url.searchParams.set('mode', 'SIGNUP');
+  url.searchParams.set('redirectUri', redirectUri);
+  return url.toString();
+}
+
+export function isGoogleLoginConfigured() {
+  return true;
+}
+
+export async function startGoogleAccountLink() {
+  const configured = import.meta.env.VITE_GOOGLE_LINK_URL;
+  const redirectUri = `${window.location.origin}/owner/seguridad`;
+
+  if (!configured) {
+    return apiRequest(
+      `/api/internal/me/google-link/start?redirectUri=${encodeURIComponent(redirectUri)}`,
+      { method: 'POST' },
+    );
+  }
+
+  const url = new URL(configured);
+  url.searchParams.set('redirectUri', redirectUri);
+  return { url: url.toString() };
+}
+
+export function isGoogleLinkConfigured() {
+  return true;
 }

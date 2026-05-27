@@ -1,5 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  ArrowRight,
+  CalendarCheck,
+  CheckCircle2,
+  CreditCard,
+  Gift,
+  ShieldCheck,
+  Scissors,
+  Store,
+  UserRoundPlus,
+} from 'lucide-react';
 import { apiRequest } from '../../api/apiClient';
+import { getGoogleLinkStatus } from '../../api/ownerSecurityApi';
 import { useAuth } from '../../context/AuthContext';
 import { formatTenantMoney } from '../../utils/tenantMoney';
 
@@ -73,6 +86,248 @@ function QuickAction({ title, text, label }) {
   );
 }
 
+function firstPositiveNumber(...values) {
+  for (const value of values) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+
+  return 0;
+}
+
+function OnboardingChecklist({
+  dashboard,
+  branches,
+  activeBarbers,
+  totalAppointments,
+  totalSales,
+}) {
+  const servicesCount = firstPositiveNumber(
+    dashboard?.servicesCount,
+    dashboard?.activeServices,
+    dashboard?.totalServices,
+    dashboard?.serviceCount,
+  );
+
+  const rewardsCount = firstPositiveNumber(
+    dashboard?.rewardsCount,
+    dashboard?.activeRewards,
+    dashboard?.promotionsCount,
+    dashboard?.activePromotions,
+  );
+
+  const items = [
+    {
+      title: 'Crea tu primera sede',
+      text: 'Define donde atiende tu negocio y desde donde se reporta la caja.',
+      to: '/owner/sedes',
+      label: 'Sedes',
+      icon: Store,
+      done: branches.length > 0,
+    },
+    {
+      title: 'Agrega servicios',
+      text: 'Carga cortes, estetica, spa u otros servicios con precio y duracion.',
+      to: '/owner/servicios',
+      label: 'Catalogo',
+      icon: Scissors,
+      done: servicesCount > 0 || dashboard?.hasServices === true,
+    },
+    {
+      title: 'Invita profesionales',
+      text: 'Crea barberos, estilistas o administradores para operar la agenda.',
+      to: '/owner/barberos',
+      label: 'Equipo',
+      icon: UserRoundPlus,
+      done: Number(activeBarbers || 0) > 0 || dashboard?.hasBarbers === true,
+    },
+    {
+      title: 'Configura horarios',
+      text: 'Activa disponibilidad para que las reservas entren sin friccion.',
+      to: '/owner/horarios',
+      label: 'Agenda',
+      icon: CalendarCheck,
+      done: dashboard?.scheduleConfigured === true || Number(totalAppointments || 0) > 0,
+    },
+    {
+      title: 'Abre caja o registra venta',
+      text: 'Valida efectivo, Yape, Plin, tarjeta y movimientos del dia.',
+      to: '/owner/caja',
+      label: 'Caja',
+      icon: CreditCard,
+      done: Number(totalSales || 0) > 0 || dashboard?.cashConfigured === true,
+    },
+    {
+      title: 'Prepara fidelizacion',
+      text: 'Crea premios, promociones o reglas de puntos para que vuelvan.',
+      to: '/owner/premios',
+      label: 'Puntos',
+      icon: Gift,
+      done: rewardsCount > 0 || dashboard?.loyaltyConfigured === true,
+    },
+  ];
+
+  const completed = items.filter((item) => item.done).length;
+  const progress = Math.round((completed / items.length) * 100);
+
+  return (
+    <section className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.055)]">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
+            Puesta en marcha
+          </div>
+          <h3 className="mt-2 text-2xl font-black text-neutral-950">
+            Primeros pasos para vender mejor
+          </h3>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
+            Completa lo esencial para que tu negocio quede listo en web y app:
+            servicios, equipo, agenda, caja y fidelizacion.
+          </p>
+        </div>
+
+        <div className="min-w-[210px] rounded-3xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+              Avance
+            </span>
+            <span className="text-lg font-black text-neutral-950">
+              {completed}/{items.length}
+            </span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+            <div
+              className="h-full rounded-full bg-[linear-gradient(90deg,#F59E0B,#111827)]"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        {items.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <Link
+              key={item.title}
+              to={item.to}
+              className="group rounded-[26px] border border-neutral-200 bg-neutral-50/60 p-4 transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-white hover:shadow-[0_14px_34px_rgba(15,23,42,0.07)]"
+            >
+              <div className="flex items-start gap-4">
+                <div
+                  className={
+                    item.done
+                      ? 'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700'
+                      : 'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-neutral-950 text-amber-400'
+                  }
+                >
+                  {item.done ? <CheckCircle2 size={21} /> : <Icon size={21} />}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <span
+                      className={
+                        item.done
+                          ? 'rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-700'
+                          : 'rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-700'
+                      }
+                    >
+                      {item.done ? 'Listo' : item.label}
+                    </span>
+
+                    <ArrowRight
+                      size={18}
+                      className="text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-950"
+                    />
+                  </div>
+
+                  <h4 className="mt-3 text-base font-black text-neutral-950">
+                    {item.title}
+                  </h4>
+                  <p className="mt-1 text-sm leading-6 text-neutral-500">
+                    {item.text}
+                  </p>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function GoogleSecurityCard({ status, loading }) {
+  const linked = status?.linked === true;
+
+  return (
+    <section className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.055)]">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-center gap-4">
+          <div
+            className={
+              linked
+                ? 'flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
+                : 'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-neutral-950 text-amber-400'
+            }
+          >
+            {linked && status?.pictureUrl ? (
+              <img
+                src={status.pictureUrl}
+                alt={status.name || status.email || 'Cuenta Google'}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <ShieldCheck size={24} strokeWidth={2.6} />
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <div className="text-xs font-black uppercase tracking-[0.2em] text-blue-700">
+              Acceso con Google
+            </div>
+            <h3 className="mt-1 text-xl font-black text-neutral-950">
+              {loading
+                ? 'Verificando Gmail...'
+                : linked
+                  ? 'Gmail conectado'
+                  : 'Conecta tu Gmail'}
+            </h3>
+            <p className="mt-1 truncate text-sm font-semibold text-neutral-500">
+              {loading
+                ? 'Estamos revisando el estado de tu cuenta.'
+                : linked
+                  ? `${status?.name || 'Cuenta Google'} · ${status?.email || 'correo no disponible'}`
+                  : 'Entra mas rapido y mantiene el mismo tenant, rol y permisos.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <span
+            className={
+              linked
+                ? 'rounded-full bg-emerald-100 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-emerald-700'
+                : 'rounded-full bg-amber-50 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-amber-700'
+            }
+          >
+            {linked ? 'Activo' : 'Pendiente'}
+          </span>
+          <Link
+            to="/owner/seguridad"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#0F2A5F]"
+          >
+            {linked ? 'Ver cuenta' : 'Vincular ahora'}
+            <ArrowRight size={17} strokeWidth={2.7} />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function OwnerDashboardPage() {
   const { session } = useAuth();
 
@@ -81,6 +336,8 @@ export default function OwnerDashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [googleStatus, setGoogleStatus] = useState(null);
+  const [loadingGoogleStatus, setLoadingGoogleStatus] = useState(true);
 
   async function loadDashboard({ silent = false } = {}) {
     if (silent) {
@@ -105,6 +362,27 @@ export default function OwnerDashboardPage() {
 
   useEffect(() => {
     loadDashboard();
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadGoogleStatus() {
+      setLoadingGoogleStatus(true);
+      try {
+        const status = await getGoogleLinkStatus();
+        if (alive) setGoogleStatus(status);
+      } catch {
+        if (alive) setGoogleStatus(null);
+      } finally {
+        if (alive) setLoadingGoogleStatus(false);
+      }
+    }
+
+    loadGoogleStatus();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const branches = useMemo(() => {
@@ -230,6 +508,19 @@ export default function OwnerDashboardPage() {
               tone="dark"
             />
           </section>
+
+          <OnboardingChecklist
+            dashboard={dashboard}
+            branches={branches}
+            activeBarbers={activeBarbers}
+            totalAppointments={totalAppointments}
+            totalSales={totalSales}
+          />
+
+          <GoogleSecurityCard
+            status={googleStatus}
+            loading={loadingGoogleStatus}
+          />
 
           <section className="grid gap-5 xl:grid-cols-[1.45fr_0.55fr]">
             <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">

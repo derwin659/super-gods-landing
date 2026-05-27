@@ -23,3 +23,7 @@ export async function changeMyPassword({
 export async function getInternalMe() {
   return apiRequest('/api/internal/me');
 }
+
+export async function getGoogleLinkStatus() {
+  return apiRequest('/api/internal/me/google-link/status');
+}
