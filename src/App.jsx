@@ -34,6 +34,7 @@ import { demoRequestApi } from './api/demoRequestApi';
 import { googleSignupUrl } from './api/authApi';
 import OwnerSecurityPage from './pages/owner/OwnerSecurityPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import GoogleLogo from './components/GoogleLogo';
 import ProtectedRoute from './routes/ProtectedRoute';
 import OwnerPermissionRoute from './routes/OwnerPermissionRoute';
 import OwnerAdjustPointsPage from './pages/owner/OwnerAdjustPointsPage';
@@ -401,43 +402,43 @@ function PublicHomePage() {
 
   return (
     <div className="min-h-screen bg-[#F5F7FB] text-[#0F172A]">
-      <header className="fixed left-0 right-0 top-0 z-50 px-4 py-4">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between rounded-[28px] border border-white/80 bg-white/95 px-4 py-3 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl md:px-6">
+      <header className="fixed left-0 right-0 top-0 z-50 px-3 py-3 sm:px-4">
+        <nav className="mx-auto flex max-w-7xl items-center gap-4 rounded-[26px] border border-white/80 bg-white/95 px-4 py-3 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:px-5">
   
-          <a href="/" className="flex items-center gap-3">
+          <a href="/" className="flex min-w-0 shrink-0 items-center gap-3">
   <img
     src="/logo-super-gods.png"
     alt="Gods Technologies S.A.C."
-    className="h-12 w-12 rounded-2xl object-cover shadow-sm"
+    className="h-11 w-11 rounded-2xl object-cover shadow-sm"
   />
 
-  <div>
-    <p className="text-lg font-black leading-none tracking-tight text-[#0F172A]">
+  <div className="min-w-0">
+    <p className="whitespace-nowrap text-base font-black leading-[0.95] tracking-tight text-[#0F172A] xl:text-lg">
       Gods Technologies
     </p>
-    <p className="text-xs font-bold text-[#64748B]">
+    <p className="whitespace-nowrap text-xs font-bold text-[#64748B]">
       Super Gods App
     </p>
   </div>
 </a>
      
 
-          <div className="hidden items-center gap-7 lg:flex">
-            <a href="#nosotros" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Nosotros</a>
-            <a href="#rubros" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Rubros</a>
-            <a href="#servicios" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Servicios</a>
-            <a href="#producto" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Super Gods App</a>
-            <a href="#app" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">App</a>
-            <a href="#planes" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Planes</a>
-            <a href="#preguntas" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">FAQ</a>
-            <a href="#contacto" className="text-sm font-black text-[#334155] transition hover:text-[#2563EB]">Contacto</a>
+          <div className="hidden min-w-0 flex-1 items-center justify-center gap-4 xl:flex 2xl:gap-6">
+            <a href="#nosotros" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Nosotros</a>
+            <a href="#rubros" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Rubros</a>
+            <a href="#servicios" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Servicios</a>
+            <a href="#producto" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Producto</a>
+            <a href="#app" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">App</a>
+            <a href="#planes" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Planes</a>
+            <a href="#preguntas" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">FAQ</a>
+            <a href="#contacto" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Contacto</a>
           </div>
 
-          <div className="flex items-center gap-2">
-            <a href="/login" className="hidden rounded-2xl border border-[#CBD5E1] bg-white px-5 py-3 text-sm font-black text-[#0F172A] transition hover:border-[#2563EB] hover:text-[#2563EB] sm:inline-flex">
+          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+            <a href="/login" className="hidden h-12 items-center justify-center whitespace-nowrap rounded-2xl border border-[#CBD5E1] bg-white px-5 text-sm font-black text-[#0F172A] transition hover:border-[#2563EB] hover:text-[#2563EB] md:inline-flex">
               Iniciar sesión
             </a>
-            <a href="/registro-negocio" className="rounded-2xl bg-[#0F2A5F] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84]">
+            <a href="/registro-negocio" className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-[#0F2A5F] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84] sm:px-6">
               Probar 7 días gratis
             </a>
           </div>
@@ -467,6 +468,10 @@ function PublicHomePage() {
                 <a href="/registro-negocio" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]">
                   Probar 7 días gratis
                   <ArrowRight size={18} strokeWidth={2.6} />
+                </a>
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white px-7 py-4 text-base font-black text-emerald-700 shadow-sm transition hover:-translate-y-1 hover:border-emerald-500 hover:bg-emerald-50">
+                  <MessageCircle size={18} strokeWidth={2.6} />
+                  Ayuda por WhatsApp
                 </a>
                 <a href="#capturas" className="inline-flex justify-center rounded-2xl border border-slate-200 bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1 hover:border-blue-600 hover:text-blue-700">
                   Ver cómo funciona
@@ -981,6 +986,16 @@ function PublicHomePage() {
                   <InfoLine text="Soporte inicial para configurar sedes, profesionales, servicios y horarios." />
                   <InfoLine text="Acceso desde Android, iPhone y panel web." />
                 </div>
+
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-10 inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1 hover:bg-emerald-400"
+                >
+                  <MessageCircle size={19} strokeWidth={2.8} />
+                  Quiero ayuda por WhatsApp
+                </a>
               </div>
             </div>
 
@@ -994,6 +1009,10 @@ function PublicHomePage() {
             <p className="mx-auto mt-5 max-w-2xl text-lg font-medium leading-8 text-slate-300">Activa tu prueba gratis, recibe soporte y empieza a probar reservas, caja, clientes, puntos y reportes.</p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <a href="/registro-negocio" className="rounded-2xl bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1">Crear cuenta gratis</a>
+              <a href={whatsappUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1 hover:bg-emerald-400">
+                <MessageCircle size={18} strokeWidth={2.7} />
+                Hablar por WhatsApp
+              </a>
               <a href="/login" className="rounded-2xl border border-white/30 px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 hover:bg-white/10">Iniciar sesión</a>
             </div>
           </div>
@@ -1016,6 +1035,16 @@ function PublicHomePage() {
           </div>
         </div>
       </footer>
+
+      <a
+        href={whatsappUrl}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Hablar por WhatsApp"
+        className="fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_18px_45px_rgba(16,185,129,0.42)] ring-4 ring-white transition hover:-translate-y-1 hover:bg-emerald-600 md:bottom-7 md:right-7 md:h-16 md:w-16"
+      >
+        <MessageCircle size={28} strokeWidth={2.7} />
+      </a>
     </div>
   );
 }
@@ -1348,7 +1377,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
                   />
                 ) : (
                   <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-sm">
-                    G
+                    <GoogleLogo className="h-6 w-6" />
                   </span>
                 )}
                 <div>
@@ -1382,7 +1411,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
                 className="inline-flex items-center justify-center gap-3 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#0F2A5F]"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-sm font-black text-slate-950">
-                  G
+                  <GoogleLogo className="h-4 w-4" />
                 </span>
                 Registrarme con Google
               </button>

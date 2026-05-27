@@ -35,6 +35,7 @@ import {
 } from '../../api/ownerSubscriptionApi';
 import { getOwnerLoyaltySettings } from '../../api/ownerLoyaltySettingsApi';
 import { useAuth } from '../../context/AuthContext';
+import GoogleLogo from '../../components/GoogleLogo';
 import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
 import { saveTenantMoneySettings } from '../../utils/tenantMoney';
 
@@ -846,7 +847,11 @@ export default function OwnerLayout() {
                   />
                 ) : (
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-950 text-sm font-black text-white">
-                    {(session?.userName || 'G').trim().slice(0, 1).toUpperCase()}
+                    {googleStatus?.linked ? (
+                      <GoogleLogo className="h-5 w-5" />
+                    ) : (
+                      (session?.userName || 'G').trim().slice(0, 1).toUpperCase()
+                    )}
                   </span>
                 )}
 

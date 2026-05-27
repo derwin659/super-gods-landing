@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { isGoogleLinkConfigured, startGoogleAccountLink } from '../../api/authApi';
 import { changeMyPassword, getGoogleLinkStatus } from '../../api/ownerSecurityApi';
 import { useAuth } from '../../context/AuthContext';
+import GoogleLogo from '../../components/GoogleLogo';
 
 function AccountInfoCard({ label, value, icon }) {
   return (
@@ -452,7 +453,7 @@ export default function OwnerSecurityPage() {
             className="inline-flex items-center justify-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-950 px-6 py-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#0F2A5F] disabled:cursor-not-allowed disabled:opacity-55"
           >
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-base font-black text-neutral-950">
-              G
+              <GoogleLogo className="h-4 w-4" />
             </span>
             {googleStatus?.linked ? 'Cambiar Gmail' : googleLinkReady ? 'Vincular Gmail' : 'Google pronto'}
           </button>

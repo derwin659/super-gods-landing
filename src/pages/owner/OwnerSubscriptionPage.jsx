@@ -610,7 +610,7 @@ export default function OwnerSubscriptionPage() {
                   </div>
                 </div>
 
-                {isPeruManualPayment ? (
+                {isPeruManualPayment && (
                 <div className="mt-5 rounded-[26px] border border-blue-100 bg-blue-50 p-5">
                   <div className="flex items-center gap-3">
                     <CreditCard size={22} strokeWidth={2.5} className="text-blue-700" />
@@ -636,31 +636,37 @@ export default function OwnerSubscriptionPage() {
                     </div>
                   </div>
                 </div>
-                ) : (
+                )}
                 <div className="mt-5 rounded-[26px] border border-emerald-100 bg-emerald-50 p-5">
                   <div className="flex items-center gap-3">
                     <CreditCard size={22} strokeWidth={2.5} className="text-emerald-700" />
                     <div>
                       <div className="text-sm font-black text-emerald-900">
-                        Pago automático internacional
+                        Pago automatico con tarjeta
                       </div>
                       <div className="text-xs font-bold text-emerald-700">
-                        Registra tu tarjeta una sola vez y la renovación se cobra automáticamente.
+                        Registra tu tarjeta una sola vez y la renovacion mensual se cobra automaticamente.
                       </div>
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleInternationalCheckout}
-                    disabled={openingCheckout}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <CreditCard size={17} strokeWidth={2.5} />
-                    {openingCheckout ? 'Abriendo checkout...' : `Pagar con tarjeta · ${currency(amount, activeCurrency)}`}
-                  </button>
+                  {selectedBilling === 'MONTHLY' ? (
+                    <button
+                      type="button"
+                      onClick={handleInternationalCheckout}
+                      disabled={openingCheckout}
+                      className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <CreditCard size={17} strokeWidth={2.5} />
+                      {openingCheckout ? 'Abriendo checkout...' : `Pagar con tarjeta · ${currency(amount, activeCurrency)}`}
+                    </button>
+                  ) : (
+                    <div className="mt-4 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-xs font-black leading-5 text-emerald-800">
+                      El cobro automatico con tarjeta esta disponible por ahora para el ciclo mensual. Para semestral o anual usa el reporte de pago local.
+                    </div>
+                  )}
                 </div>
-                )}
+                )
               </section>
 
               {isPeruManualPayment ? (

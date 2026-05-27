@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '../../api/apiClient';
 import { getGoogleLinkStatus } from '../../api/ownerSecurityApi';
+import GoogleLogo from '../../components/GoogleLogo';
 import { useAuth } from '../../context/AuthContext';
 import { formatTenantMoney } from '../../utils/tenantMoney';
 
@@ -280,7 +281,7 @@ function GoogleSecurityCard({ status, loading }) {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <ShieldCheck size={24} strokeWidth={2.6} />
+              linked ? <GoogleLogo className="h-7 w-7" /> : <ShieldCheck size={24} strokeWidth={2.6} />
             )}
           </div>
 

@@ -29,6 +29,7 @@ import {
   resetPassword,
 } from '../../api/authApi';
 import { useAuth } from '../../context/AuthContext';
+import GoogleLogo from '../../components/GoogleLogo';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -327,7 +328,7 @@ export default function LoginPage() {
                 className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-55"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-lg shadow-sm ring-1 ring-slate-200">
-                  G
+                  <GoogleLogo className="h-4 w-4" />
                 </span>
                 {googleLoginReady ? 'Continuar con Google' : 'Google pronto'}
               </button>
