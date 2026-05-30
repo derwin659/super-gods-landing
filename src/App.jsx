@@ -36,6 +36,7 @@ import OwnerSecurityPage from './pages/owner/OwnerSecurityPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import GoogleLogo from './components/GoogleLogo';
 import ProtectedRoute from './routes/ProtectedRoute';
+import PublicBookingPage from './pages/public/PublicBookingPage';
 import OwnerPermissionRoute from './routes/OwnerPermissionRoute';
 import OwnerAdjustPointsPage from './pages/owner/OwnerAdjustPointsPage';
 import LoginPage from './pages/auth/LoginPage';
@@ -1876,6 +1877,8 @@ export default function App() {
         <Route path="/privacy" element={<LegalPage type="privacy" />} />
         <Route path="/refund" element={<LegalPage type="refund" />} />
         <Route path="/datos" element={<SimplePublicPage title="Opciones de Privacidad y Datos" />} />
+
+        <Route path="/reservar/:codigoNegocio" element={<PublicBookingPage />} />
 
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
