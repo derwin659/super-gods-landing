@@ -746,6 +746,17 @@ export default function OwnerLayout() {
     };
   }, [session?.token, session?.role]);
 
+  useEffect(() => {
+    if (
+      !loadingSubscription &&
+      subscription &&
+      isExpiredSubscription(subscription) &&
+      location.pathname !== '/owner/plan-pagos'
+    ) {
+      navigate('/owner/plan-pagos', { replace: true });
+    }
+  }, [loadingSubscription, subscription, location.pathname, navigate]);
+
   function handleLogout() {
     signOut();
     navigate('/login', { replace: true });
