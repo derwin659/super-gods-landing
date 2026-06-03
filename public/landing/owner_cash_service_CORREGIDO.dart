@@ -43,6 +43,58 @@ class OwnerCashService {
     }
   }
 
+  Future<List<OwnerCashBarberOptionModel>> getCashBarbers(int branchId) async {
+    final dio = await _dio();
+
+    Future<List<OwnerCashBarberOptionModel>> fetch(String path) async {
+      final res = await dio.get(path, queryParameters: {'branchId': branchId});
+      final raw = _extractList(res.data);
+
+      return raw
+          .map((e) => OwnerCashBarberOptionModel.fromJson(Map<String, dynamic>.from(e)))
+          .where((item) => item.id > 0)
+          .toList();
+    }
+
+    try {
+      final barbers = await fetch('/api/owner/sale-catalog/barbers');
+      return _withOwnerAsBarber(barbers);
+    } on DioException catch (firstError) {
+      try {
+        final barbers = await fetch('/api/owner/catalog/barbers');
+        return _withOwnerAsBarber(barbers);
+      } catch (_) {
+        throw Exception(_prettyError(firstError));
+      }
+    }
+  }
+
+  Future<List<OwnerCashBarberOptionModel>> _withOwnerAsBarber(
+    List<OwnerCashBarberOptionModel> barbers,
+  ) async {
+    final role = (await SessionService.getRole() ?? '').trim().toUpperCase();
+    if (role != 'OWNER') return barbers;
+
+    final rawOwnerId = await SessionService.getUserId();
+    final ownerId = rawOwnerId is int
+        ? rawOwnerId
+        : int.tryParse(rawOwnerId?.toString() ?? '');
+    final ownerName = (await SessionService.getUserName() ?? '').trim();
+    if (ownerId == null || ownerId <= 0) return barbers;
+
+    final exists = barbers.any((item) => item.id == ownerId);
+    if (exists) return barbers;
+
+    return [
+      OwnerCashBarberOptionModel(
+        id: ownerId,
+        name: ownerName.isNotEmpty ? '$ownerName (Dueno)' : 'Dueno del negocio',
+        isOwner: true,
+      ),
+      ...barbers,
+    ];
+  }
+
   Future<CashRegisterModel?> getCurrentCashRegister(int branchId) async {
     final dio = await _dio();
 

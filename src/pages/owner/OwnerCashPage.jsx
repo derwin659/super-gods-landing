@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  approveCashMovement,
+  approveSalePayment,
   closeCashRegister,
   createBarberPayment,
   createCashMovement,
@@ -15,9 +17,12 @@ import {
   getCurrentCashRegister,
   getOwnerBranches,
   getOwnerPaymentMethods,
+  getPendingValidationSales,
   getSalesByCashRegister,
   getTodayCashSales,
   openCashRegister,
+  rejectCashMovement,
+  rejectSalePayment,
   updateCashMovement,
   updateCashSale,
 } from '../../api/ownerCashApi';
@@ -77,6 +82,35 @@ function methodLabel(value) {
   return labels[code] || code || 'Otro';
 }
 
+function ownerAsBarberOption(session) {
+  const role = String(session?.role || '').trim().toUpperCase();
+  const id = Number(session?.userId || 0);
+
+  if (role !== 'OWNER' || !id) return null;
+
+  const name = String(session?.userName || '').trim();
+
+  return {
+    id,
+    name: name ? `${name} (Dueño)` : 'Dueño del negocio',
+    owner: true,
+  };
+}
+
+function mergeOwnerIntoBarbers(barbers, session) {
+  const cleanBarbers = Array.isArray(barbers)
+    ? barbers.filter((item) => Number(item?.id || 0) > 0)
+    : [];
+  const ownerOption = ownerAsBarberOption(session);
+
+  if (!ownerOption) return cleanBarbers;
+
+  const exists = cleanBarbers.some((item) => String(item.id) === String(ownerOption.id));
+  if (exists) return cleanBarbers;
+
+  return [ownerOption, ...cleanBarbers];
+}
+
 function parseMoneyInput(value) {
   const parsed = Number(String(value ?? '').replace(',', '.'));
   return Number.isNaN(parsed) ? 0 : parsed;
@@ -119,6 +153,68 @@ function salePaymentSummary(sale) {
   return payments
     .map((payment) => `${methodLabel(payment.method)} ${formatMoney(payment.amount)}`)
     .join(' + ');
+}
+
+function customerWhatsappUrlOf(sale) {
+  const provided = String(
+    sale?.customerWhatsappUrl ??
+      sale?.whatsappUrl ??
+      sale?.customerWhatsappLink ??
+      ''
+  ).trim();
+
+  if (provided) return provided;
+
+  const phone = normalizeWhatsappPhone(
+    sale?.customerPhone ??
+      sale?.telefono ??
+      sale?.phone ??
+      ''
+  );
+
+  if (!phone) return '';
+
+  const message = customerWhatsappMessageOf(sale);
+  const query = message ? `?text=${encodeURIComponent(message)}` : '';
+  return `https://wa.me/${phone}${query}`;
+}
+
+function customerWhatsappMessageOf(sale) {
+  return String(
+    sale?.customerWhatsappMessage ??
+      sale?.whatsappMessage ??
+      sale?.message ??
+      ''
+  ).trim();
+}
+
+function normalizeWhatsappPhone(value) {
+  let digits = String(value || '').replace(/\D/g, '');
+
+  if (digits.length === 9) {
+    digits = `51${digits}`;
+  }
+
+  return digits;
+}
+
+function offerCustomerWhatsappFollowUp(sale) {
+  const url = customerWhatsappUrlOf(sale);
+  if (!url) return;
+
+  const customer = String(sale?.customerName || 'cliente').trim();
+  const message = customerWhatsappMessageOf(sale);
+  const preview = message ? `\n\nMensaje:\n${message}` : '';
+  const shouldOpen = window.confirm(
+    `Venta registrada. ¿Enviar WhatsApp a ${customer}?${preview}`
+  );
+
+  if (!shouldOpen) return;
+
+  const opened = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!opened) {
+    window.prompt('Copia este enlace para abrir WhatsApp:', url);
+  }
 }
 
 const DEFAULT_PAYMENT_METHODS = [
@@ -286,6 +382,79 @@ function movementTypeLabel(type) {
   };
 
   return labels[type] || type || 'Movimiento';
+}
+
+function saleValidationStatus(sale) {
+  return String(
+    sale?.paymentValidationStatus ??
+      sale?.validationStatus ??
+      sale?.estadoValidacionPago ??
+      sale?.estadoPago ??
+      ''
+  )
+    .trim()
+    .toUpperCase();
+}
+
+function isPendingSaleValidation(sale) {
+  const status = saleValidationStatus(sale);
+
+  if (!status) return true;
+
+  return (
+    status === 'PENDING_VALIDATION' ||
+    status === 'PENDING_APPROVAL' ||
+    status === 'PENDING_REVIEW' ||
+    status === 'PENDING' ||
+    status === 'PENDIENTE' ||
+    status === 'PENDIENTE_VALIDACION'
+  );
+}
+
+function saleCreatedBy(sale) {
+  return (
+    sale?.createdByUserName ||
+    sale?.createdByName ||
+    sale?.createdBy ||
+    sale?.barberName ||
+    saleBarberName(sale)
+  );
+}
+
+function movementStatusCode(movement) {
+  return String(
+    movement?.status ??
+      movement?.approvalStatus ??
+      movement?.estado ??
+      movement?.estadoAprobacion ??
+      ''
+  )
+    .trim()
+    .toUpperCase();
+}
+
+function isPendingOwnerApproval(movement) {
+  const code = movementStatusCode(movement);
+
+  return (
+    code === 'PENDING' ||
+    code === 'PENDING_REVIEW' ||
+    code === 'PENDING_APPROVAL' ||
+    code === 'REQUESTED' ||
+    code === 'SOLICITADO' ||
+    code === 'PENDIENTE' ||
+    code === 'PENDIENTE_APROBACION'
+  );
+}
+
+function movementRequestedBy(movement) {
+  return (
+    movement?.requestedByUserName ||
+    movement?.createdByUserName ||
+    movement?.userName ||
+    movement?.adminName ||
+    'Usuario'
+  );
 }
 
 function movementAmountClass(type) {
@@ -551,7 +720,7 @@ function EmptyCard({ title, text, action }) {
   }
 
 
-  function CashNegativeAlert({ expected, cashSalesTotal, expense }) {
+function CashNegativeAlert({ expected, cashSalesTotal, expense }) {
     if (Number(expected || 0) >= 0) return null;
   
     return (
@@ -578,8 +747,221 @@ function EmptyCard({ title, text, action }) {
           </div>
         </div>
       </div>
-    );
-  }
+  );
+}
+
+function PendingCashApprovalsSection({
+  items,
+  processingId,
+  onApprove,
+  onReject,
+}) {
+  if (!items.length) return null;
+
+  return (
+    <section className="rounded-[34px] border border-amber-200 bg-[linear-gradient(135deg,#FFFBEB_0%,#FFFFFF_70%)] p-6 shadow-[0_16px_45px_rgba(251,191,36,0.10)]">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-700">
+            Aprobacion del dueno
+          </div>
+          <h3 className="mt-2 text-2xl font-black text-neutral-950">
+            Movimientos pendientes de caja
+          </h3>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-600">
+            Revisa ingresos u otros movimientos antes de que afecten el saldo esperado de caja.
+          </p>
+        </div>
+
+        <div className="rounded-2xl bg-amber-100 px-4 py-3 text-sm font-black text-amber-800">
+          {items.length} pendiente{items.length === 1 ? '' : 's'}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        {items.map((movement) => {
+          const busy = processingId === movement.id;
+
+          return (
+            <article
+              key={movement.id}
+              className="rounded-[26px] border border-amber-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+                    {movementTypeLabel(movement.type)} solicitado
+                  </div>
+                  <h4 className="mt-2 truncate text-lg font-black text-neutral-950">
+                    {movement.concept || 'Movimiento pendiente'}
+                  </h4>
+                  <p className="mt-1 text-sm font-semibold text-neutral-500">
+                    Solicitado por {movementRequestedBy(movement)}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <div className={`text-2xl font-black ${movementAmountClass(movement.type)}`}>
+                    {formatMoney(movement.amount)}
+                  </div>
+                  <div className="mt-1 text-xs font-bold text-neutral-400">
+                    {methodLabel(movement.paymentMethod)}
+                  </div>
+                </div>
+              </div>
+
+              {movement.note && (
+                <div className="mt-4 rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-600">
+                  {movement.note}
+                </div>
+              )}
+
+              <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onReject(movement)}
+                  className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+                >
+                  Rechazar
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onApprove(movement)}
+                  className="rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white transition hover:scale-[1.01] disabled:opacity-60"
+                >
+                  {busy ? 'Procesando...' : 'Aprobar movimiento'}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function PendingSaleValidationsSection({
+  items,
+  processingId,
+  labels = readBusinessLabels(),
+  onView,
+  onApprove,
+  onReject,
+}) {
+  if (!items.length) return null;
+
+  return (
+    <section className="rounded-[34px] border border-blue-200 bg-[linear-gradient(135deg,#EFF6FF_0%,#FFFFFF_72%)] p-6 shadow-[0_16px_45px_rgba(37,99,235,0.08)]">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.22em] text-blue-700">
+            Ventas por validar
+          </div>
+          <h3 className="mt-2 text-2xl font-black text-neutral-950">
+            Aprobar ventas del equipo
+          </h3>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-600">
+            Revisa ventas registradas por {labels.professionalsPlural} antes de confirmarlas en caja y puntos.
+          </p>
+        </div>
+
+        <div className="rounded-2xl bg-blue-100 px-4 py-3 text-sm font-black text-blue-800">
+          {items.length} venta{items.length === 1 ? '' : 's'} pendiente{items.length === 1 ? '' : 's'}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        {items.map((sale) => {
+          const saleId = saleIdOf(sale);
+          const busy = processingId === `sale-${saleId}`;
+          const payments = salePaymentSummary(sale);
+
+          return (
+            <article
+              key={saleId || `${saleDateOf(sale)}-${sale.total}`}
+              className="rounded-[26px] border border-blue-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="text-xs font-black uppercase tracking-[0.16em] text-blue-700">
+                    Venta #{saleId || '-'}
+                  </div>
+                  <h4 className="mt-2 truncate text-lg font-black text-neutral-950">
+                    {sale.customerName || 'Cliente ocasional'}
+                  </h4>
+                  <p className="mt-1 text-sm font-semibold text-neutral-500">
+                    Registrada por {saleCreatedBy(sale)}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-2xl font-black text-emerald-700">
+                    {formatMoney(sale.total)}
+                  </div>
+                  <div className="mt-1 text-xs font-bold text-neutral-400">
+                    {methodLabel(sale.metodoPago)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <div className="rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3">
+                  <div className="text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
+                    {labels.professionalSingular}
+                  </div>
+                  <div className="mt-1 truncate text-sm font-black text-neutral-800">
+                    {saleBarberName(sale)}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3">
+                  <div className="text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
+                    Fecha
+                  </div>
+                  <div className="mt-1 truncate text-sm font-black text-neutral-800">
+                    {formatDateTime(saleDateOf(sale))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-neutral-100 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-600">
+                {payments}
+              </div>
+
+              <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onView(sale)}
+                  className="rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-sm font-black text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-60"
+                >
+                  Ver detalle
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onReject(sale)}
+                  className="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+                >
+                  Rechazar
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onApprove(sale)}
+                  className="rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white transition hover:scale-[1.01] disabled:opacity-60"
+                >
+                  {busy ? 'Procesando...' : 'Aprobar venta'}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 function OpenCashModal({ branch, onClose, onSaved }) {
   const [openingAmount, setOpeningAmount] = useState('0');
@@ -2050,7 +2432,7 @@ function AppointmentSaleBanner({ appointment, isOpen, onOpenSale, onDismiss }) {
   );
 }
 
-function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethods = DEFAULT_PAYMENT_METHODS, labels = readBusinessLabels(), onClose, onSaved }) {
+function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethods = DEFAULT_PAYMENT_METHODS, labels = readBusinessLabels(), session = null, onClose, onSaved }) {
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -2129,16 +2511,20 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
           getCashProducts(branch.id).catch(() => []),
         ]);
 
+        const availableBarbers = mergeOwnerIntoBarbers(barberData, session);
+
         setServices(serviceData);
-        setBarbers(barberData.filter((item) => item.id > 0));
+        setBarbers(availableBarbers);
         setProducts(productData);
 
         const initialService = serviceData.find(
           (item) => String(item.id) === String(appointment?.serviceId)
         );
-        const initialBarber = barberData.find(
-          (item) => String(item.id) === String(appointment?.barberUserId)
-        );
+        const initialBarber =
+          availableBarbers.find((item) => String(item.id) === String(appointment?.barberUserId)) ||
+          (String(session?.role || '').trim().toUpperCase() === 'OWNER'
+            ? ownerAsBarberOption(session)
+            : null);
 
         if (initialService && initialBarber) {
           setItems([
@@ -2311,7 +2697,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
     setSaving(true);
 
     try {
-      await createCashSale({
+      const createdSale = await createCashSale({
         branchId: branch.id,
         customerId: appointment.customerId || null,
         appointmentId: appointment.appointmentId || null,
@@ -2340,6 +2726,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
       });
 
       clearAttendAppointmentFromStorage();
+      offerCustomerWhatsappFollowUp(createdSale);
       onSaved();
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo registrar la venta.');
@@ -2563,7 +2950,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
 }
 
 
-function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, labels = readBusinessLabels(), onClose, onSaved }) {
+function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, labels = readBusinessLabels(), session = null, onClose, onSaved }) {
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -2638,7 +3025,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         ]);
 
         setServices(serviceData);
-        setBarbers(barberData.filter((item) => item.id > 0));
+        setBarbers(mergeOwnerIntoBarbers(barberData, session));
         setProducts(productData);
       } catch (error) {
         setErrorMsg(error.message || `No se pudieron cargar servicios, productos y ${labels.professionalsPlural}.`);
@@ -2648,7 +3035,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     }
 
     loadCatalogs();
-  }, [branch.id]);
+  }, [branch.id, session]);
 
   useEffect(() => {
     const q = customerName.trim();
@@ -2914,7 +3301,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     setSaving(true);
 
     try {
-      await createCashSale({
+      const createdSale = await createCashSale({
         branchId: branch.id,
         customerId: selectedCustomer?.id || null,
         appointmentId: null,
@@ -2937,6 +3324,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         })),
       });
 
+      offerCustomerWhatsappFollowUp(createdSale);
       onSaved();
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo registrar la venta.');
@@ -3982,6 +4370,7 @@ export default function OwnerCashPage() {
   const [cashRegister, setCashRegister] = useState(null);
   const [movements, setMovements] = useState([]);
   const [sales, setSales] = useState([]);
+  const [pendingValidationSales, setPendingValidationSales] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState(DEFAULT_PAYMENT_METHODS);
 
   const [loadingBranches, setLoadingBranches] = useState(true);
@@ -4001,6 +4390,7 @@ export default function OwnerCashPage() {
   const [pendingAppointment, setPendingAppointment] = useState(null);
   const [showAppointmentSaleModal, setShowAppointmentSaleModal] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [processingApprovalId, setProcessingApprovalId] = useState(null);
 
   const canManageSales = String(session?.role || '').trim().toUpperCase() === 'OWNER';
   const labels = useMemo(
@@ -4059,6 +4449,14 @@ export default function OwnerCashPage() {
       const current = await getCurrentCashRegister(branchId);
       setCashRegister(current);
 
+      let dataPendingSales = [];
+      try {
+        dataPendingSales = await getPendingValidationSales(branchId);
+      } catch {
+        dataPendingSales = [];
+      }
+      setPendingValidationSales(Array.isArray(dataPendingSales) ? dataPendingSales : []);
+
       if (current?.id) {
         const [dataMovements, dataSales] = await Promise.all([
           getCashMovements({
@@ -4077,6 +4475,7 @@ export default function OwnerCashPage() {
 
       setLastUpdatedAt(new Date());
     } catch (error) {
+      setPendingValidationSales([]);
       setErrorMsg(error.message || 'No se pudo cargar la caja.');
     } finally {
       setLoadingCash(false);
@@ -4117,7 +4516,8 @@ export default function OwnerCashPage() {
         editingMovement ||
         editingSale ||
         viewingSale ||
-        showAppointmentSaleModal
+        showAppointmentSaleModal ||
+        processingApprovalId
       ) {
         return;
       }
@@ -4138,6 +4538,7 @@ export default function OwnerCashPage() {
     editingSale,
     viewingSale,
     showAppointmentSaleModal,
+    processingApprovalId,
   ]);
 
   
@@ -4190,6 +4591,119 @@ export default function OwnerCashPage() {
     }
   }
 
+  async function handleApproveMovement(movement) {
+    if (!selectedBranch || !movement?.id) return;
+
+    const ok = window.confirm(
+      `¿Aprobar el movimiento "${movement.concept || 'Movimiento'}" por ${formatMoney(movement.amount)}?`
+    );
+    if (!ok) return;
+
+    setErrorMsg('');
+    setProcessingApprovalId(movement.id);
+
+    try {
+      await approveCashMovement({
+        branchId: selectedBranch.id,
+        movementId: movement.id,
+        note: 'Ingreso aprobado desde caja web',
+      });
+
+      await loadCash(selectedBranchId);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo aprobar el movimiento pendiente.');
+    } finally {
+      setProcessingApprovalId(null);
+    }
+  }
+
+  async function handleRejectMovement(movement) {
+    if (!selectedBranch || !movement?.id) return;
+
+    const ok = window.confirm(
+      `¿Rechazar el movimiento "${movement.concept || 'Movimiento'}" por ${formatMoney(movement.amount)}?`
+    );
+    if (!ok) return;
+
+    setErrorMsg('');
+    setProcessingApprovalId(movement.id);
+
+    try {
+      await rejectCashMovement({
+        branchId: selectedBranch.id,
+        movementId: movement.id,
+        note: 'Ingreso rechazado desde caja web',
+      });
+
+      await loadCash(selectedBranchId);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo rechazar el movimiento pendiente.');
+    } finally {
+      setProcessingApprovalId(null);
+    }
+  }
+
+  async function handleApproveSalePayment(sale) {
+    if (!selectedBranch) return;
+
+    const saleId = saleIdOf(sale);
+    if (!saleId) return;
+
+    const ok = window.confirm(
+      `Aprobar la venta #${saleId} por ${formatMoney(sale.total)}?`
+    );
+    if (!ok) return;
+
+    setErrorMsg('');
+    setProcessingApprovalId(`sale-${saleId}`);
+
+    try {
+      const approvedSale = await approveSalePayment({
+        branchId: selectedBranch.id,
+        saleId,
+      });
+
+      offerCustomerWhatsappFollowUp(approvedSale);
+      await loadCash(selectedBranchId);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo aprobar la venta pendiente.');
+    } finally {
+      setProcessingApprovalId(null);
+    }
+  }
+
+  async function handleRejectSalePayment(sale) {
+    if (!selectedBranch) return;
+
+    const saleId = saleIdOf(sale);
+    if (!saleId) return;
+
+    const reason = window.prompt(
+      `Motivo para rechazar la venta #${saleId}:`,
+      'Pago no validado'
+    );
+    if (reason === null) return;
+
+    const cleanReason = reason.trim() || 'Pago rechazado desde caja web';
+
+    setErrorMsg('');
+    setProcessingApprovalId(`sale-${saleId}`);
+
+    try {
+      await rejectSalePayment({
+        branchId: selectedBranch.id,
+        saleId,
+        reason: cleanReason,
+      });
+
+      await loadCash(selectedBranchId);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo rechazar la venta pendiente.');
+    } finally {
+      setProcessingApprovalId(null);
+    }
+  }
+
   const isOpen = String(cashRegister?.status || '').toUpperCase() === 'OPEN';
 
   const paymentSalesSource = Array.isArray(cashRegister?.paymentMethodsSummary)
@@ -4217,6 +4731,9 @@ export default function OwnerCashPage() {
   const income = Number(cashRegister?.movementsIncome || 0);
   const expense = Number(cashRegister?.movementsExpense || 0);
   const courtesySummary = buildCourtesySummary(sales);
+  const pendingSales = pendingValidationSales.filter(isPendingSaleValidation);
+  const pendingApprovalMovements = movements.filter(isPendingOwnerApproval);
+  const visibleMovements = movements.filter((movement) => !isPendingOwnerApproval(movement));
 
   return (
     <div className="space-y-7">
@@ -4385,7 +4902,17 @@ export default function OwnerCashPage() {
           text="No se encontraron sedes conectadas al usuario actual."
         />
       ) : !cashRegister ? (
-        <EmptyCard
+        <>
+          <PendingSaleValidationsSection
+            items={pendingSales}
+            processingId={processingApprovalId}
+            labels={labels}
+            onView={(sale) => setViewingSale(sale)}
+            onApprove={handleApproveSalePayment}
+            onReject={handleRejectSalePayment}
+          />
+
+          <EmptyCard
         title="No hay caja abierta"
         text="Abre una caja para empezar a registrar ventas, ingresos, gastos y movimientos del día."
         action={
@@ -4397,7 +4924,8 @@ export default function OwnerCashPage() {
             Abrir caja ahora
           </button>
         }
-      />
+          />
+        </>
       ) : (
         <>
           <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
@@ -4414,6 +4942,22 @@ export default function OwnerCashPage() {
           </section>
 
           <CourtesySummarySection summary={courtesySummary} labels={labels} />
+
+          <PendingSaleValidationsSection
+            items={pendingSales}
+            processingId={processingApprovalId}
+            labels={labels}
+            onView={(sale) => setViewingSale(sale)}
+            onApprove={handleApproveSalePayment}
+            onReject={handleRejectSalePayment}
+          />
+
+          <PendingCashApprovalsSection
+            items={pendingApprovalMovements}
+            processingId={processingApprovalId}
+            onApprove={handleApproveMovement}
+            onReject={handleRejectMovement}
+          />
 
           <section className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -4522,7 +5066,7 @@ export default function OwnerCashPage() {
                 </div>
 
                 <div className="rounded-2xl bg-neutral-100 px-4 py-3 text-sm font-black text-neutral-700">
-                  {movements.length} movimiento{movements.length === 1 ? '' : 's'}
+                  {visibleMovements.length} movimiento{visibleMovements.length === 1 ? '' : 's'}
                 </div>
               </div>
 
@@ -4540,14 +5084,14 @@ export default function OwnerCashPage() {
                   </thead>
 
                   <tbody>
-                    {movements.length === 0 ? (
+                    {visibleMovements.length === 0 ? (
                       <tr>
                         <td className="px-5 py-6 text-neutral-500" colSpan="6">
                           No hay movimientos registrados.
                         </td>
                       </tr>
                     ) : (
-                      movements.map((movement) => (
+                      visibleMovements.map((movement) => (
                         <tr key={movement.id} className="border-t border-neutral-200 transition hover:bg-amber-50/50">
                           <td className="px-5 py-5 font-black text-neutral-950">
                             {movementTypeLabel(movement.type)}
@@ -4653,6 +5197,7 @@ export default function OwnerCashPage() {
           cashRegister={cashRegister}
           paymentMethods={paymentMethods}
           labels={labels}
+          session={session}
           onClose={() => setShowSaleModal(false)}
           onSaved={async () => {
             setShowSaleModal(false);
@@ -4708,6 +5253,7 @@ export default function OwnerCashPage() {
           appointment={pendingAppointment}
           paymentMethods={paymentMethods}
           labels={labels}
+          session={session}
           onClose={() => setShowAppointmentSaleModal(false)}
           onSaved={() => {
             setShowAppointmentSaleModal(false);

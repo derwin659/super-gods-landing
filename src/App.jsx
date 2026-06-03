@@ -59,6 +59,7 @@ import OwnerReservationSettingsPage from './pages/owner/OwnerReservationSettings
 import OwnerPromotionsPage from './pages/owner/OwnerPromotionsPage';
 import OwnerSubscriptionPage from './pages/owner/OwnerSubscriptionPage';
 import OwnerLoyaltySettingsPage from './pages/owner/OwnerLoyaltySettingsPage';
+import OwnerWhatsappSettingsPage from './pages/owner/OwnerWhatsappSettingsPage';
 import { getPublicSubscriptionPrices } from './api/publicSubscriptionPricingApi';
 import {
   buildPriceMap,
@@ -1837,6 +1838,92 @@ function LegalPage({ type }) {
   );
 }
 
+function PublicAppDownloadPage() {
+  const androidUrl = import.meta.env.VITE_ANDROID_APP_URL || 'https://play.google.com/store/apps/details?id=com.gods.barberia';
+  const iosUrl = import.meta.env.VITE_IOS_APP_URL || buildWhatsAppUrl(
+    'Hola, quiero descargar la app movil de Super Gods para iPhone.'
+  );
+
+  return (
+    <div className="min-h-screen bg-[#F5F7FB] px-6 py-12 text-slate-950">
+      <main className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1fr_0.86fr] lg:items-center">
+        <section className="rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl shadow-slate-200/70 md:p-10">
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo-super-gods.png"
+              alt="Super Gods App"
+              className="h-14 w-14 rounded-2xl object-cover shadow-sm"
+            />
+            <div>
+              <p className="text-lg font-black leading-tight text-slate-950">Super Gods App</p>
+              <p className="text-sm font-bold text-slate-500">Clientes, puntos, premios y reservas</p>
+            </div>
+          </div>
+
+          <h1 className="mt-10 max-w-3xl text-4xl font-black leading-[1.02] tracking-[-0.04em] text-slate-950 md:text-6xl">
+            Lleva tus puntos y reservas en el celular
+          </h1>
+
+          <p className="mt-5 max-w-2xl text-base font-semibold leading-8 text-slate-600 md:text-lg">
+            Desde la app podras revisar tus puntos, ver premios disponibles, reservar tu proxima cita y recibir beneficios del negocio donde te atiendes.
+          </p>
+
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            <a
+              href={androidUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-3 rounded-2xl bg-[#111827] px-5 py-4 text-sm font-black text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-0.5"
+            >
+              <Smartphone size={19} strokeWidth={2.7} />
+              Descargar para Android
+            </a>
+            <a
+              href={iosUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black text-slate-950 transition hover:-translate-y-0.5 hover:border-blue-400"
+            >
+              <Smartphone size={19} strokeWidth={2.7} />
+              Descargar para iPhone
+            </a>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-bold leading-6 text-emerald-900">
+            Si el enlace de tienda aun no esta disponible, te atenderemos por WhatsApp y te enviaremos el acceso correcto para tu pais.
+          </div>
+        </section>
+
+        <section className="rounded-[34px] bg-[#0F172A] p-7 text-white shadow-2xl shadow-slate-900/20 md:p-10">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
+            <QrCode size={26} strokeWidth={2.5} />
+          </div>
+          <h2 className="mt-7 text-3xl font-black tracking-[-0.03em]">Que podras hacer</h2>
+          <div className="mt-7 grid gap-4">
+            {[
+              'Ver tus puntos disponibles y movimientos.',
+              'Canjear premios y beneficios del negocio.',
+              'Reservar una cita sin escribir por WhatsApp.',
+              'Recibir recordatorios y promociones relevantes.',
+            ].map((item) => (
+              <div key={item} className="flex gap-3 rounded-2xl bg-white/8 p-4">
+                <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-300" size={20} />
+                <p className="text-sm font-bold leading-6 text-white/85">{item}</p>
+              </div>
+            ))}
+          </div>
+          <a
+            href="/"
+            className="mt-8 inline-flex rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 transition hover:-translate-y-0.5"
+          >
+            Volver al inicio
+          </a>
+        </section>
+      </main>
+    </div>
+  );
+}
+
 function SimplePublicPage({ title }) {
   return (
     <div className="min-h-screen bg-[#F5F7FB] px-6 py-16 text-slate-950">
@@ -1877,6 +1964,7 @@ export default function App() {
         <Route path="/privacy" element={<LegalPage type="privacy" />} />
         <Route path="/refund" element={<LegalPage type="refund" />} />
         <Route path="/datos" element={<SimplePublicPage title="Opciones de Privacidad y Datos" />} />
+        <Route path="/app" element={<PublicAppDownloadPage />} />
 
         <Route path="/reservar/:codigoNegocio" element={<PublicBookingPage />} />
 
@@ -2027,6 +2115,15 @@ export default function App() {
             element={
               <OwnerPermissionRoute permissions={['CONFIG_ACCESS']}>
                 <OwnerLoyaltySettingsPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="whatsapp-mensajes"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_ACCESS']}>
+                <OwnerWhatsappSettingsPage />
               </OwnerPermissionRoute>
             }
           />

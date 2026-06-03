@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   buildCustomerWhatsappUrl,
@@ -618,6 +618,35 @@ function CustomerCard({ customer, onOpen }) {
   );
 }
 
+function CustomerSearchResult({ customer, onOpen }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(customer)}
+      className="flex w-full items-center gap-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-left transition hover:border-amber-300 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)]"
+    >
+      <CustomerAvatar customer={customer} size="h-12 w-12" />
+
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-lg font-black text-neutral-950">
+          {customer.nombreCompleto}
+        </div>
+        <div className="mt-1 text-sm font-bold text-neutral-500">
+          {customer.telefono || 'Sin telefono'}
+        </div>
+      </div>
+
+      <div className="hidden rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-black text-amber-700 sm:block">
+        {customer.puntosDisponibles || 0} pts
+      </div>
+
+      <span className="shrink-0 rounded-2xl bg-neutral-950 px-4 py-3 text-sm font-black text-white">
+        Ver ficha
+      </span>
+    </button>
+  );
+}
+
 function InactiveCustomersPanel({
   days,
   onDaysChange,
@@ -756,6 +785,8 @@ function InactiveCustomersPanel({
 
 export default function OwnerCustomersPage() {
   const navigate = useNavigate();
+  const customersRequestId = useRef(0);
+  const customerResultsRef = useRef(null);
 
   const [customers, setCustomers] = useState([]);
   const [query, setQuery] = useState('');
@@ -788,7 +819,13 @@ export default function OwnerCustomersPage() {
     return customers.filter((item) => String(item.telefono || '').trim()).length;
   }, [customers]);
 
+  const cleanQuery = query.trim();
+  const isSearching = cleanQuery.length > 0;
+
   async function loadCustomers(nextQuery = query) {
+    const requestId = customersRequestId.current + 1;
+    customersRequestId.current = requestId;
+
     setLoading(true);
     setErrorMsg('');
 
@@ -798,12 +835,18 @@ export default function OwnerCustomersPage() {
         limit: 80,
       });
 
+      if (requestId !== customersRequestId.current) return;
+
       setCustomers(Array.isArray(data) ? data : []);
     } catch (error) {
+      if (requestId !== customersRequestId.current) return;
+
       setCustomers([]);
       setErrorMsg(error.message || 'No se pudieron cargar los clientes.');
     } finally {
-      setLoading(false);
+      if (requestId === customersRequestId.current) {
+        setLoading(false);
+      }
     }
   }
 
@@ -851,11 +894,6 @@ export default function OwnerCustomersPage() {
 
   function openCreateForm() {
     setEditingCustomer(null);
-    setShowForm(true);
-  }
-
-  function openEditForm(customer) {
-    setEditingCustomer(customer);
     setShowForm(true);
   }
 
@@ -908,6 +946,19 @@ export default function OwnerCustomersPage() {
 
     return () => window.clearTimeout(timer);
   }, [query]);
+
+  useEffect(() => {
+    if (!isSearching || loading) return;
+
+    const frameId = window.requestAnimationFrame(() => {
+      customerResultsRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [isSearching, loading, cleanQuery]);
 
   return (
     <div className="space-y-7">
@@ -962,8 +1013,11 @@ export default function OwnerCustomersPage() {
               Buscar
             </div>
             <h3 className="mt-1 text-2xl font-black text-neutral-950">
-              Clientes registrados
+              Encuentra un cliente
             </h3>
+            <p className="mt-1 text-sm font-bold text-neutral-500">
+              Escribe nombre o telefono y los resultados apareceran aqui mismo.
+            </p>
           </div>
 
           <input
@@ -973,21 +1027,99 @@ export default function OwnerCustomersPage() {
             className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-400 xl:max-w-md"
           />
         </div>
+
+        {isSearching && (
+          <div ref={customerResultsRef} className="mt-5 scroll-mt-28 rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
+            <div className="flex flex-col gap-2 text-sm font-black text-neutral-700 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                {loading
+                  ? `Buscando "${cleanQuery}"...`
+                  : `${customers.length} resultado${customers.length === 1 ? '' : 's'} para "${cleanQuery}"`}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                className="text-left text-sm font-black text-amber-700 hover:text-amber-800"
+              >
+                Limpiar busqueda
+              </button>
+            </div>
+
+            {!loading && customers.length > 0 && (
+              <div className="mt-4 grid gap-3">
+                {customers.slice(0, 6).map((customer) => (
+                  <CustomerSearchResult
+                    key={customer.id}
+                    customer={customer}
+                    onOpen={openCustomerDetail}
+                  />
+                ))}
+              </div>
+            )}
+
+            {!loading && customers.length === 0 && (
+              <div className="mt-4 rounded-2xl border border-dashed border-neutral-300 bg-white p-5">
+                <div className="text-lg font-black text-neutral-950">
+                  No encontramos ese cliente
+                </div>
+                <p className="mt-1 text-sm font-bold text-neutral-500">
+                  Revisa el telefono o crea el cliente manualmente.
+                </p>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    className="rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-sm font-black text-neutral-700 transition hover:bg-neutral-50"
+                  >
+                    Ver todos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openCreateForm}
+                    className="rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white transition hover:scale-[1.01]"
+                  >
+                    Crear cliente
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
-      <InactiveCustomersPanel
-        days={inactiveDays}
-        onDaysChange={setInactiveDays}
-        customers={inactiveCustomers}
-        loading={inactiveLoading}
-        errorMsg={inactiveErrorMsg}
-        onRefresh={() => loadInactiveCustomers(inactiveDays)}
-      />
+      {!isSearching && (
+      <section className="rounded-[24px] border border-neutral-200 bg-white px-5 py-4 shadow-[0_10px_25px_rgba(15,23,42,0.04)]">
+        <div className="flex flex-col gap-2 text-sm font-black text-neutral-700 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            {loading
+              ? isSearching
+                ? `Buscando "${cleanQuery}"...`
+                : 'Cargando clientes...'
+              : isSearching
+                ? `${customers.length} resultado${customers.length === 1 ? '' : 's'} para "${cleanQuery}"`
+                : `${customers.length} clientes registrados`}
+          </span>
 
-     
+          {isSearching ? (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="text-left text-sm font-black text-amber-700 hover:text-amber-800"
+            >
+              Limpiar busqueda
+            </button>
+          ) : (
+            <span className="text-neutral-500">Toca un cliente para ver su ficha.</span>
+          )}
+        </div>
+      </section>
+      )}
 
       <ErrorBox message={errorMsg} />
 
+      {!isSearching && (
+      <div className="scroll-mt-28">
       {loading ? (
         <div className="rounded-[28px] border border-neutral-200 bg-white p-6 font-bold text-neutral-700 shadow-sm">
           Cargando clientes...
@@ -998,29 +1130,79 @@ export default function OwnerCustomersPage() {
             👤
           </div>
           <div className="mt-4 text-xl font-black text-neutral-950">
-            No hay clientes para mostrar
+            {isSearching ? 'No encontramos ese cliente' : 'No hay clientes para mostrar'}
           </div>
           <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-neutral-500">
-            Puedes crear uno manualmente o esperar a que se registre desde una venta, reserva o caja.
+            {isSearching
+              ? 'Revisa si el nombre o telefono esta escrito correctamente, o crea el cliente manualmente.'
+              : 'Puedes crear uno manualmente o esperar a que se registre desde una venta, reserva o caja.'}
           </p>
-          <button
-            type="button"
-            onClick={openCreateForm}
-            className="mt-5 rounded-2xl bg-neutral-950 px-5 py-4 text-sm font-black text-white transition hover:scale-[1.01]"
-          >
-            Crear cliente
-          </button>
+          <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
+            {isSearching && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm font-black text-neutral-700 transition hover:bg-neutral-50"
+              >
+                Ver todos
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={openCreateForm}
+              className="rounded-2xl bg-neutral-950 px-5 py-4 text-sm font-black text-white transition hover:scale-[1.01]"
+            >
+              Crear cliente
+            </button>
+          </div>
         </div>
       ) : (
-        <section className="grid gap-5 xl:grid-cols-2 2xl:grid-cols-3">
-          {customers.map((customer) => (
-            <CustomerCard
-              key={customer.id}
-              customer={customer}
-              onOpen={openCustomerDetail}
-            />
-          ))}
+        <section className="space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-600">
+                {isSearching ? 'Resultados' : 'Directorio'}
+              </div>
+              <h3 className="mt-1 text-2xl font-black text-neutral-950">
+                {isSearching ? `Busqueda: ${cleanQuery}` : 'Clientes registrados'}
+              </h3>
+            </div>
+
+            {isSearching && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                className="rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-sm font-black text-neutral-700 transition hover:bg-neutral-50"
+              >
+                Volver al listado completo
+              </button>
+            )}
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-2 2xl:grid-cols-3">
+            {customers.map((customer) => (
+              <CustomerCard
+                key={customer.id}
+                customer={customer}
+                onOpen={openCustomerDetail}
+              />
+            ))}
+          </div>
         </section>
+      )}
+      </div>
+      )}
+
+      {!isSearching && (
+        <InactiveCustomersPanel
+          days={inactiveDays}
+          onDaysChange={setInactiveDays}
+          customers={inactiveCustomers}
+          loading={inactiveLoading}
+          errorMsg={inactiveErrorMsg}
+          onRefresh={() => loadInactiveCustomers(inactiveDays)}
+        />
       )}
 
       {showForm && (

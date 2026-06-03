@@ -1,15 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createElement, isValidElement, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
+  Banknote,
+  Bot,
   CalendarCheck,
+  CalendarDays,
   CheckCircle2,
   CreditCard,
   Gift,
+  ChartNoAxesCombined,
   ShieldCheck,
   Scissors,
   Store,
   UserRoundPlus,
+  UsersRound,
 } from 'lucide-react';
 import { apiRequest } from '../../api/apiClient';
 import { getGoogleLinkStatus } from '../../api/ownerSecurityApi';
@@ -84,6 +89,131 @@ function QuickAction({ title, text, label }) {
       <h3 className="mt-4 text-lg font-black text-neutral-950">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-neutral-500">{text}</p>
     </div>
+  );
+}
+
+function QuickActionLink({ title, text, label, to, icon = ArrowRight, locked = false }) {
+  const Icon = icon || ArrowRight;
+  const iconNode = isValidElement(Icon) ? (
+    Icon
+  ) : (
+    <Icon size={20} strokeWidth={2.7} />
+  );
+
+  return (
+    <Link
+      to={to}
+      className="group block rounded-[26px] border border-neutral-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.045)] transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-neutral-950 text-amber-400">
+          {iconNode}
+        </div>
+
+        <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">
+          {locked ? 'Proximo' : label}
+        </span>
+      </div>
+
+      <h3 className="mt-4 text-lg font-black text-neutral-950">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-neutral-500">{text}</p>
+      <div className="mt-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-neutral-400 transition group-hover:text-neutral-950">
+        Abrir
+        <ArrowRight size={15} strokeWidth={3} />
+      </div>
+    </Link>
+  );
+}
+
+function StartHereCard({ title, text, to, icon, tone = 'dark' }) {
+  const tones = {
+    dark: 'border-neutral-900 bg-neutral-950 text-white',
+    green: 'border-emerald-200 bg-emerald-50 text-emerald-950',
+    blue: 'border-blue-200 bg-blue-50 text-blue-950',
+    amber: 'border-amber-200 bg-amber-50 text-amber-950',
+  };
+  const iconNode = isValidElement(icon)
+    ? icon
+    : createElement(icon, { size: 22, strokeWidth: 2.7 });
+
+  return (
+    <Link
+      to={to}
+      className={`group rounded-[26px] border p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 ${tones[tone]}`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className={tone === 'dark'
+          ? 'flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-amber-300'
+          : 'flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-neutral-950 shadow-sm'}
+        >
+          {iconNode}
+        </div>
+        <ArrowRight
+          size={18}
+          className={tone === 'dark'
+            ? 'text-white/35 transition group-hover:translate-x-0.5 group-hover:text-white'
+            : 'text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-950'}
+        />
+      </div>
+      <h3 className="mt-4 text-xl font-black">{title}</h3>
+      <p className={tone === 'dark'
+        ? 'mt-2 text-sm font-semibold leading-6 text-white/60'
+        : 'mt-2 text-sm font-semibold leading-6 text-neutral-600'}
+      >
+        {text}
+      </p>
+    </Link>
+  );
+}
+
+function StartHereSection() {
+  return (
+    <section className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.055)]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
+            Empieza aqui
+          </div>
+          <h3 className="mt-2 text-2xl font-black text-neutral-950">
+            Que quieres hacer ahora?
+          </h3>
+          <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-neutral-500">
+            Estas son las acciones que un dueno usa todos los dias. El resto queda como configuracion.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StartHereCard
+          title="Cobrar una venta"
+          text="Abre caja, registra servicios, productos y pagos."
+          to="/owner/caja"
+          icon={Banknote}
+          tone="dark"
+        />
+        <StartHereCard
+          title="Revisar citas"
+          text="Mira reservas, confirma atenciones y cobra una cita."
+          to="/owner/agenda"
+          icon={CalendarDays}
+          tone="blue"
+        />
+        <StartHereCard
+          title="Buscar cliente"
+          text="Consulta historial, puntos y recupera clientes."
+          to="/owner/clientes"
+          icon={UsersRound}
+          tone="green"
+        />
+        <StartHereCard
+          title="Configurar negocio"
+          text="Servicios, equipo, sedes, pagos y WhatsApp."
+          to="/owner/configuracion"
+          icon={Store}
+          tone="amber"
+        />
+      </div>
+    </section>
   );
 }
 
@@ -329,6 +459,80 @@ function GoogleSecurityCard({ status, loading }) {
   );
 }
 
+function AppointmentList({ appointments }) {
+  const items = Array.isArray(appointments) ? appointments.slice(0, 5) : [];
+
+  return (
+    <section className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
+            Agenda de hoy
+          </div>
+          <h3 className="mt-2 text-2xl font-black text-neutral-950">
+            Proximas citas
+          </h3>
+          <p className="mt-1 text-sm text-neutral-500">
+            Accesos rapidos para revisar la atencion del dia.
+          </p>
+        </div>
+
+        <Link
+          to="/owner/agenda"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5"
+        >
+          Ver agenda
+          <ArrowRight size={17} strokeWidth={2.7} />
+        </Link>
+      </div>
+
+      <div className="mt-5 grid gap-3">
+        {items.length === 0 ? (
+          <div className="rounded-[24px] border border-neutral-200 bg-neutral-50 p-5 text-sm font-bold text-neutral-500">
+            No hay citas proximas para mostrar.
+          </div>
+        ) : (
+          items.map((item, index) => (
+            <Link
+              key={item.id || item.appointmentId || `${item.time}-${index}`}
+              to="/owner/agenda"
+              className="group flex items-center gap-4 rounded-[24px] border border-neutral-200 bg-neutral-50 p-4 transition hover:border-amber-300 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)]"
+            >
+              <div className="flex h-14 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-neutral-950 text-white">
+                <span className="text-sm font-black">
+                  {item.time || item.hora || '--:--'}
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-[0.12em] text-white/45">
+                  Hora
+                </span>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-base font-black text-neutral-950">
+                  {item.customerName || item.cliente || 'Cliente'}
+                </div>
+                <div className="mt-1 truncate text-sm font-semibold text-neutral-500">
+                  {item.serviceName || item.servicio || 'Servicio'}
+                </div>
+                {(item.barberName || item.branchName) && (
+                  <div className="mt-1 truncate text-xs font-bold text-neutral-400">
+                    {[item.barberName, item.branchName].filter(Boolean).join(' - ')}
+                  </div>
+                )}
+              </div>
+
+              <ArrowRight
+                size={18}
+                className="shrink-0 text-neutral-400 transition group-hover:translate-x-0.5 group-hover:text-neutral-950"
+              />
+            </Link>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function OwnerDashboardPage() {
   const { session } = useAuth();
 
@@ -363,6 +567,14 @@ export default function OwnerDashboardPage() {
 
   useEffect(() => {
     loadDashboard();
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      loadDashboard({ silent: true });
+    }, 25000);
+
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -402,6 +614,9 @@ export default function OwnerDashboardPage() {
 
   const activeBarbers = dashboard?.activeBarbers ?? 0;
   const averageTicket = dashboard?.averageTicket ?? 0;
+  const newClients = dashboard?.newClients ?? dashboard?.newCustomers ?? 0;
+  const todayExpenses = dashboard?.todayExpenses ?? dashboard?.expensesToday ?? 0;
+  const upcomingAppointments = dashboard?.upcomingAppointments ?? dashboard?.nextAppointments ?? [];
 
   return (
     <div className="space-y-7">
@@ -482,7 +697,9 @@ export default function OwnerDashboardPage() {
 
       {!loading && !errorMsg && (
         <>
-          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <StartHereSection />
+
+          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             <MetricCard
               title="Ventas de hoy"
               value={formatMoney(totalSales)}
@@ -508,6 +725,18 @@ export default function OwnerDashboardPage() {
               helper="Promedio por venta"
               tone="dark"
             />
+
+            <MetricCard
+              title="Clientes nuevos"
+              value={newClients}
+              helper="Altas del dia"
+            />
+
+            <MetricCard
+              title="Gastos de hoy"
+              value={formatMoney(todayExpenses)}
+              helper="Egresos registrados"
+            />
           </section>
 
           <OnboardingChecklist
@@ -522,6 +751,8 @@ export default function OwnerDashboardPage() {
             status={googleStatus}
             loading={loadingGoogleStatus}
           />
+
+          <AppointmentList appointments={upcomingAppointments} />
 
           <section className="grid gap-5 xl:grid-cols-[1.45fr_0.55fr]">
             <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
@@ -608,21 +839,52 @@ export default function OwnerDashboardPage() {
               </h3>
 
               <div className="mt-5 space-y-4">
-                <QuickAction
+                <QuickActionLink
+                  icon={Banknote}
                   title="Revisar caja"
                   label="Caja"
+                  to="/owner/caja"
                   text="Consulta caja abierta, efectivo, Yape, tarjeta, ingresos y gastos."
                 />
 
-                <QuickAction
+                <QuickActionLink
+                  icon={CalendarDays}
                   title="Ver agenda"
                   label="Agenda"
+                  to="/owner/agenda"
                   text="Revisa reservas del día, pagos iniciales y estados de atención."
                 />
 
-                <QuickAction
+                <QuickActionLink
+                  icon={Gift}
+                  title="Validar canjes"
+                  label="Puntos"
+                  to="/owner/premios"
+                  text="Revisa premios activos y prepara los canjes del programa de fidelizacion."
+                />
+
+                <QuickActionLink
+                  icon={UsersRound}
+                  title="Clientes"
+                  label="CRM"
+                  to="/owner/clientes"
+                  text="Consulta historial, puntos, visitas y clientes que puedes recuperar."
+                />
+
+                <QuickActionLink
+                  icon={Bot}
+                  title="Asesor IA"
+                  label="IA"
+                  to="/owner/configuracion"
+                  locked
+                  text="Accede a la configuracion del modulo IA cuando este disponible para el plan."
+                />
+
+                <QuickActionLink
+                  icon={ChartNoAxesCombined}
                   title="Analizar reportes"
                   label="Reportes"
+                  to="/owner/reportes"
                   text="Visualiza ventas por sede, barbero, método de pago y rentabilidad."
                 />
               </div>

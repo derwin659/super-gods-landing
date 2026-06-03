@@ -345,6 +345,36 @@ function findNavItemByPath(pathname) {
     .find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
 }
 
+const starterActions = [
+  {
+    to: '/owner/caja',
+    label: 'Cobrar venta',
+    icon: Banknote,
+    permissions: ['CASH_ACCESS'],
+    feature: 'core',
+  },
+  {
+    to: '/owner/agenda',
+    label: 'Ver citas',
+    icon: CalendarDays,
+    permissions: ['AGENDA_ACCESS'],
+    feature: 'core',
+  },
+  {
+    to: '/owner/clientes',
+    label: 'Buscar cliente',
+    icon: UsersRound,
+    permissions: ['CUSTOMERS_ACCESS'],
+    feature: 'core',
+  },
+  {
+    to: '/owner/configuracion',
+    label: 'Configurar',
+    icon: Settings,
+    permissions: ['CONFIG_ACCESS'],
+  },
+];
+
 function SubscriptionStatusBanner({ subscription, error }) {
   if (error) {
     return (
@@ -491,6 +521,12 @@ function SidebarContent({ session, permissions, subscription, handleLogout, clos
       .filter((group) => group.items.length > 0);
   }, [session, permissions, subscription]);
 
+  const visibleStarterActions = useMemo(() => {
+    return starterActions.filter((item) => (
+      canSeeItem(item, session, permissions) && canUseFeature(item, subscription)
+    ));
+  }, [session, permissions, subscription]);
+
   return (
     <div className="flex h-full flex-col overflow-y-auto px-4 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-amber-300/70 hover:scrollbar-thumb-amber-400">
       <div className="flex shrink-0 items-center justify-between gap-3 rounded-[28px] border border-amber-200/70 bg-white p-3 shadow-[0_18px_42px_rgba(15,23,42,0.09)]">
@@ -547,6 +583,35 @@ function SidebarContent({ session, permissions, subscription, handleLogout, clos
           </div>
         </div>
       </div>
+
+      {visibleStarterActions.length > 0 && (
+        <section className="mt-4 rounded-[26px] border border-neutral-900 bg-neutral-950 p-3 text-white shadow-[0_18px_40px_rgba(15,23,42,0.16)]">
+          <div className="px-1 text-[11px] font-black uppercase tracking-[0.18em] text-white/45">
+            Empieza aqui
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {visibleStarterActions.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `rounded-2xl px-3 py-3 transition ${
+                    isActive
+                      ? 'bg-amber-400 text-neutral-950'
+                      : 'bg-white/8 text-white hover:bg-white/14'
+                  }`
+                }
+              >
+                <item.icon size={18} strokeWidth={2.7} />
+                <div className="mt-2 text-xs font-black leading-4">
+                  {item.label}
+                </div>
+              </NavLink>
+            ))}
+          </div>
+        </section>
+      )}
 
       <nav className="mt-5 grid shrink-0 gap-5 pb-5">
         {visibleGroups.map((group) => (

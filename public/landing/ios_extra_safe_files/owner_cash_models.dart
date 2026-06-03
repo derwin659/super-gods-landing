@@ -16,6 +16,31 @@ class BranchOptionModel {
   }
 }
 
+class OwnerCashBarberOptionModel {
+  final int id;
+  final String name;
+  final bool isOwner;
+
+  OwnerCashBarberOptionModel({
+    required this.id,
+    required this.name,
+    this.isOwner = false,
+  });
+
+  factory OwnerCashBarberOptionModel.fromJson(Map<String, dynamic> json) {
+    return OwnerCashBarberOptionModel(
+      id: _asInt(json['id'] ?? json['userId'] ?? json['barberUserId']),
+      name: (json['nombre'] ??
+              json['name'] ??
+              json['fullName'] ??
+              json['nombreCompleto'] ??
+              'Barbero')
+          .toString(),
+      isOwner: json['isOwner'] == true || json['owner'] == true,
+    );
+  }
+}
+
 class CashMovementModel {
   final int id;
   final String type;

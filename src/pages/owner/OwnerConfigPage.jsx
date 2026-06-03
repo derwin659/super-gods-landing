@@ -7,6 +7,7 @@ import {
     CreditCard,
     Gift,
     Megaphone,
+    MessageCircle,
     Package,
     ReceiptText,
     Scissors,
@@ -368,6 +369,15 @@ import {
             onClick={() => navigate('/owner/clientes')}
           />
   
+          <ConfigTile
+            icon={MessageCircle}
+            title="WhatsApp y mensajes"
+            subtitle="Activa mensajes post-venta, link de app, reservas y recordatorios."
+            badge="CRM"
+            tone="green"
+            onClick={() => navigate('/owner/whatsapp-mensajes')}
+          />
+
           <ConfigTile
             icon={Star}
             title="Moneda y puntos"

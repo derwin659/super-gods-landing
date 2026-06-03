@@ -195,6 +195,34 @@ export async function deleteCashMovement({ branchId, movementId }) {
   );
 }
 
+export async function approveCashMovement({ branchId, movementId, note = null }) {
+  return apiRequest(
+    `/api/owner/cash-registers/movements/${movementId}/approve${toQuery({
+      branchId,
+    })}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        note,
+      }),
+    }
+  );
+}
+
+export async function rejectCashMovement({ branchId, movementId, note = null }) {
+  return apiRequest(
+    `/api/owner/cash-registers/movements/${movementId}/reject${toQuery({
+      branchId,
+    })}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        note,
+      }),
+    }
+  );
+}
+
 export async function getCashBarbers(branchId) {
   try {
     const data = await apiRequest(
@@ -306,6 +334,35 @@ export async function getTodayCashSales(branchId) {
   );
 
   return extractList(data);
+}
+
+export async function getPendingValidationSales(branchId) {
+  const data = await apiRequest(
+    `/api/owner/cash-sales/pending-validation${toQuery({ branchId })}`
+  );
+
+  return extractList(data);
+}
+
+export async function approveSalePayment({ branchId, saleId }) {
+  return apiRequest(
+    `/api/owner/cash-sales/${saleId}/approve-payment${toQuery({ branchId })}`,
+    {
+      method: 'POST',
+    }
+  );
+}
+
+export async function rejectSalePayment({ branchId, saleId, reason = null }) {
+  return apiRequest(
+    `/api/owner/cash-sales/${saleId}/reject-payment${toQuery({ branchId })}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        reason,
+      }),
+    }
+  );
 }
 
 export async function getSalesByCashRegister({ branchId, cashRegisterId }) {
