@@ -1059,7 +1059,7 @@ function AppointmentFormModal({
                           key={service.id}
                           selected={String(service.id) === String(serviceId)}
                           title={service.name}
-                          subtitle={`${formatMoney(service.price)} · ${service.durationMinutes} min`}
+                          subtitle={`${service.variablePrice ? 'Desde ' : ''}${formatMoney(service.price)} · ${service.durationMinutes} min`}
                           imageUrl={service.imageUrl}
                           icon="✂️"
                           onClick={() => {

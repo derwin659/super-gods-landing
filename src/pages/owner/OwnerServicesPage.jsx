@@ -174,6 +174,14 @@ function ServiceFormModal({ service, onClose, onSaved }) {
   const [precio, setPrecio] = useState(
     service ? String(service.precio || '') : ''
   );
+  const [precioVariable, setPrecioVariable] = useState(
+    Boolean(
+      service?.precioVariable ??
+        service?.variablePrice ??
+        service?.isVariablePrice ??
+        service?.allowPriceOverride
+    )
+  );
   const [categoria, setCategoria] = useState(service?.categoria || '');
   const [activo, setActivo] = useState(service?.activo !== false);
   const [imageFile, setImageFile] = useState(null);
@@ -219,6 +227,10 @@ function ServiceFormModal({ service, onClose, onSaved }) {
         descripcion: descripcion.trim() || null,
         duracionMinutos: Math.round(duration),
         precio: price,
+        precioVariable,
+        variablePrice: precioVariable,
+        isVariablePrice: precioVariable,
+        allowPriceOverride: precioVariable,
         categoria: categoria.trim() || null,
         activo,
       };
@@ -339,7 +351,7 @@ function ServiceFormModal({ service, onClose, onSaved }) {
                 />
 
                 <InputField
-                  label="Precio"
+                  label={precioVariable ? 'Precio desde' : 'Precio'}
                   value={precio}
                   onChange={setPrecio}
                   placeholder="25.00"
@@ -348,6 +360,32 @@ function ServiceFormModal({ service, onClose, onSaved }) {
                   prefix={getTenantCurrencySymbol()}
                 />
               </div>
+
+              <button
+                type="button"
+                onClick={() => setPrecioVariable((value) => !value)}
+                className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${
+                  precioVariable
+                    ? 'border-amber-300 bg-amber-50 text-amber-900'
+                    : 'border-neutral-200 bg-white text-neutral-700'
+                }`}
+              >
+                <span>
+                  <span className="block text-sm font-black">
+                    Precio variable
+                  </span>
+                  <span className="mt-1 block text-xs font-bold opacity-70">
+                    Muestra el servicio como desde y permite cobrar otro monto en caja.
+                  </span>
+                </span>
+                <span className={`h-6 w-11 rounded-full p-1 transition ${
+                  precioVariable ? 'bg-amber-500' : 'bg-neutral-300'
+                }`}>
+                  <span className={`block h-4 w-4 rounded-full bg-white transition ${
+                    precioVariable ? 'translate-x-5' : ''
+                  }`} />
+                </span>
+              </button>
 
               <InputField
                 label="Categoría"
@@ -464,6 +502,11 @@ function ToggleConfirmModal({ service, onCancel, onConfirm, saving }) {
 
 function ServiceCard({ service, onEdit, onToggle }) {
   const active = service.activo !== false;
+  const variablePrice =
+    service.precioVariable ??
+    service.variablePrice ??
+    service.isVariablePrice ??
+    service.allowPriceOverride;
 
   return (
     <div className={`rounded-[30px] border bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.045)] ${
@@ -499,7 +542,9 @@ function ServiceCard({ service, onEdit, onToggle }) {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="rounded-full bg-neutral-100 px-3 py-2 text-xs font-black text-neutral-700">
-              {formatMoney(service.precio)}
+              {variablePrice
+                ? `Desde ${formatMoney(service.precio)}`
+                : formatMoney(service.precio)}
             </span>
 
             <span className="rounded-full bg-neutral-100 px-3 py-2 text-xs font-black text-neutral-700">

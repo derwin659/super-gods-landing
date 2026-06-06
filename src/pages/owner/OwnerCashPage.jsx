@@ -169,6 +169,10 @@ function customerWhatsappUrlOf(sale) {
     sale?.customerPhone ??
       sale?.telefono ??
       sale?.phone ??
+      sale?.customerTelefono ??
+      sale?.whatsappPhone ??
+      sale?.customer?.telefono ??
+      sale?.customer?.phone ??
       ''
   );
 
@@ -188,6 +192,32 @@ function customerWhatsappMessageOf(sale) {
   ).trim();
 }
 
+function saleWithWhatsappFallback(primary, fallback) {
+  const merged = { ...(fallback || {}), ...(primary || {}) };
+
+  for (const key of [
+    'customerWhatsappUrl',
+    'whatsappUrl',
+    'customerWhatsappLink',
+    'customerWhatsappMessage',
+    'whatsappMessage',
+    'message',
+    'customerPhone',
+    'telefono',
+    'phone',
+    'customerTelefono',
+    'whatsappPhone',
+    'customerName',
+  ]) {
+    const value = String(primary?.[key] ?? '').trim();
+    if (!value && fallback?.[key] !== undefined) {
+      merged[key] = fallback[key];
+    }
+  }
+
+  return merged;
+}
+
 function normalizeWhatsappPhone(value) {
   let digits = String(value || '').replace(/\D/g, '');
 
@@ -202,7 +232,12 @@ function offerCustomerWhatsappFollowUp(sale) {
   const url = customerWhatsappUrlOf(sale);
   if (!url) return;
 
-  const customer = String(sale?.customerName || 'cliente').trim();
+  const customer = String(
+    sale?.customerName ||
+      sale?.customer?.fullName ||
+      sale?.customer?.nombre ||
+      'cliente'
+  ).trim();
   const message = customerWhatsappMessageOf(sale);
   const preview = message ? `\n\nMensaje:\n${message}` : '';
   const shouldOpen = window.confirm(
@@ -700,6 +735,20 @@ function clearAttendAppointmentFromStorage() {
 
 function servicePriceOf(service) {
   return Number(service?.price ?? service?.precio ?? 0);
+}
+
+function serviceAllowsVariablePrice(service) {
+  return Boolean(
+    service?.variablePrice ??
+      service?.precioVariable ??
+      service?.isVariablePrice ??
+      service?.allowPriceOverride
+  );
+}
+
+function servicePriceLabel(service) {
+  const price = formatMoney(servicePriceOf(service));
+  return serviceAllowsVariablePrice(service) ? `Desde ${price}` : price;
 }
 
 function itemSubtotal(item) {
@@ -2538,6 +2587,8 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
               name: initialService.name,
               quantity: 1,
               unitPrice: servicePriceOf(initialService),
+              baseUnitPrice: servicePriceOf(initialService),
+              variablePrice: serviceAllowsVariablePrice(initialService),
             },
           ]);
           setSelectedServiceId(String(initialService.id));
@@ -2640,6 +2691,8 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
         name: service.name,
         quantity: qty,
         unitPrice: servicePriceOf(service),
+        baseUnitPrice: servicePriceOf(service),
+        variablePrice: serviceAllowsVariablePrice(service),
       },
     ]);
   }
@@ -2672,6 +2725,17 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
 
   function removeItem(key) {
     setItems((prev) => prev.filter((item) => item.key !== key));
+  }
+
+  function updateItemUnitPrice(key, value) {
+    const nextPrice = Number(String(value).replace(',', '.'));
+    setItems((prev) =>
+      prev.map((item) =>
+        item.key === key
+          ? { ...item, unitPrice: Number.isNaN(nextPrice) ? 0 : Math.max(0, nextPrice) }
+          : item
+      )
+    );
   }
 
   async function handleSubmit(e) {
@@ -2774,7 +2838,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                     { value: '', label: 'Selecciona servicio' },
                     ...services.map((service) => ({
                       value: String(service.id),
-                      label: `${service.name} · ${formatMoney(service.price)}`,
+                      label: `${service.name} · ${servicePriceLabel(service)}`,
                     })),
                   ]}
                 />
@@ -2900,11 +2964,37 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center justify-end gap-3">
+                        {item.type === 'service' && item.variablePrice ? (
+                          <label className="min-w-[220px] rounded-2xl border border-amber-200 bg-amber-50 p-3 text-left">
+                            <span className="inline-flex rounded-full bg-neutral-950 px-2.5 py-1 text-[10px] font-black uppercase text-white">
+                              Variable
+                            </span>
+                            <span className="ml-2 text-[11px] font-black text-amber-700">
+                              Desde {formatMoney(item.baseUnitPrice)}
+                            </span>
+                            <span className="mt-2 block text-[11px] font-black uppercase tracking-[0.12em] text-neutral-500">
+                              Precio final a cobrar
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.unitPrice}
+                              onChange={(event) => updateItemUnitPrice(item.key, event.target.value)}
+                              className="mt-1 h-12 w-full rounded-xl border border-amber-200 bg-white px-3 text-lg font-black text-neutral-950 outline-none focus:border-violet-500"
+                            />
+                            <span className="mt-1 block text-xs font-bold text-neutral-500">
+                              Escribe el monto real del servicio.
+                            </span>
+                          </label>
+                        ) : null}
                         <div className="text-right">
                           <div className="font-black text-neutral-950">{formatMoney(itemSubtotal(item))}</div>
                           <div className="text-xs font-bold text-neutral-500">
-                            {item.quantity} x {formatMoney(item.unitPrice)}
+                            {item.variablePrice && item.baseUnitPrice !== item.unitPrice
+                              ? `${item.quantity} x ${formatMoney(item.unitPrice)} · desde ${formatMoney(item.baseUnitPrice)}`
+                              : `${item.quantity} x ${formatMoney(item.unitPrice)}`}
                           </div>
                         </div>
                         <button
@@ -3196,6 +3286,8 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         name: service.name,
         quantity: qty,
         unitPrice: servicePriceOf(service),
+        baseUnitPrice: servicePriceOf(service),
+        variablePrice: serviceAllowsVariablePrice(service),
       },
     ]);
 
@@ -3249,6 +3341,17 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
 
   function removeItem(key) {
     setItems((prev) => prev.filter((item) => item.key !== key));
+  }
+
+  function updateItemUnitPrice(key, value) {
+    const nextPrice = Number(String(value).replace(',', '.'));
+    setItems((prev) =>
+      prev.map((item) =>
+        item.key === key
+          ? { ...item, unitPrice: Number.isNaN(nextPrice) ? 0 : Math.max(0, nextPrice) }
+          : item
+      )
+    );
   }
 
   async function handleSubmit(e) {
@@ -3476,7 +3579,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       { value: '', label: 'Selecciona servicio' },
                       ...services.map((service) => ({
                         value: String(service.id),
-                        label: `${service.name} · ${formatMoney(service.price)}`,
+                        label: `${service.name} · ${servicePriceLabel(service)}`,
                       })),
                     ]}
                   />
@@ -3762,11 +3865,37 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center justify-end gap-3">
+                        {item.type === 'service' && item.variablePrice ? (
+                          <label className="min-w-[220px] rounded-2xl border border-amber-200 bg-amber-50 p-3 text-left">
+                            <span className="inline-flex rounded-full bg-neutral-950 px-2.5 py-1 text-[10px] font-black uppercase text-white">
+                              Variable
+                            </span>
+                            <span className="ml-2 text-[11px] font-black text-amber-700">
+                              Desde {formatMoney(item.baseUnitPrice)}
+                            </span>
+                            <span className="mt-2 block text-[11px] font-black uppercase tracking-[0.12em] text-neutral-500">
+                              Precio final a cobrar
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.unitPrice}
+                              onChange={(event) => updateItemUnitPrice(item.key, event.target.value)}
+                              className="mt-1 h-12 w-full rounded-xl border border-amber-200 bg-white px-3 text-lg font-black text-neutral-950 outline-none focus:border-violet-500"
+                            />
+                            <span className="mt-1 block text-xs font-bold text-neutral-500">
+                              Escribe el monto real del servicio.
+                            </span>
+                          </label>
+                        ) : null}
                         <div className="text-right">
                           <div className="font-black text-neutral-950">{formatMoney(itemSubtotal(item))}</div>
                           <div className="text-xs font-bold text-neutral-500">
-                            {item.quantity} x {formatMoney(item.unitPrice)}
+                            {item.variablePrice && item.baseUnitPrice !== item.unitPrice
+                              ? `${item.quantity} x ${formatMoney(item.unitPrice)} · desde ${formatMoney(item.baseUnitPrice)}`
+                              : `${item.quantity} x ${formatMoney(item.unitPrice)}`}
                           </div>
                         </div>
                         <button
@@ -4663,7 +4792,7 @@ export default function OwnerCashPage() {
         saleId,
       });
 
-      offerCustomerWhatsappFollowUp(approvedSale);
+      offerCustomerWhatsappFollowUp(saleWithWhatsappFallback(approvedSale, sale));
       await loadCash(selectedBranchId);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo aprobar la venta pendiente.');

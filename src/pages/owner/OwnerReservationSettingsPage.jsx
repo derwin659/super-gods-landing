@@ -53,6 +53,7 @@ function createMethod(template, sortOrder) {
     instructions: template.instructions || '',
     accountLabel: template.accountLabel || '',
     accountValue: '',
+    accountHolderName: '',
     qrImageUrl: '',
     requiresOperationCode: true,
     requiresEvidence: false,
@@ -79,6 +80,16 @@ function ErrorBox({ message }) {
 
   return (
     <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700">
+      {message}
+    </div>
+  );
+}
+
+function SuccessBox({ message }) {
+  if (!message) return null;
+
+  return (
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-800">
       {message}
     </div>
   );
@@ -252,6 +263,13 @@ function MethodEditor({ method, index, onChange, onRemove }) {
         />
 
         <InputField
+          label="Titular / nombre del dueño"
+          value={method.accountHolderName || ''}
+          onChange={(value) => update('accountHolderName', value)}
+          placeholder="Ej. Derwin Nieves"
+        />
+
+        <InputField
           label="URL de QR"
           value={method.qrImageUrl}
           onChange={(value) => update('qrImageUrl', value)}
@@ -307,6 +325,7 @@ export default function OwnerReservationSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   async function loadSettings() {
     setLoading(true);
@@ -331,9 +350,10 @@ export default function OwnerReservationSettingsPage() {
           : ''
       );
 
-      setMethods(Array.isArray(data?.paymentMethods) ? data.paymentMethods : []);
+      setMethods(Array.isArray(data?.paymentMethods) ? data.paymentMethods.map(normalizeMethod) : []);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo cargar la configuración.');
+      setSuccessMsg('');
     } finally {
       setLoading(false);
     }
@@ -372,6 +392,7 @@ export default function OwnerReservationSettingsPage() {
         instructions: 'Realiza el pago y escribe el número de operación.',
         accountLabel: 'Cuenta / número / QR',
         accountValue: '',
+        accountHolderName: '',
         qrImageUrl: '',
         requiresOperationCode: true,
         requiresEvidence: false,
@@ -426,11 +447,13 @@ export default function OwnerReservationSettingsPage() {
 
     if (validation) {
       setErrorMsg(validation);
+      setSuccessMsg('');
       return;
     }
 
     setSaving(true);
     setErrorMsg('');
+    setSuccessMsg('');
 
     try {
       const payload = {
@@ -453,18 +476,26 @@ export default function OwnerReservationSettingsPage() {
           instructions: String(item.instructions || '').trim() || null,
           accountLabel: String(item.accountLabel || '').trim() || null,
           accountValue: String(item.accountValue || '').trim() || null,
+          accountHolderName: String(item.accountHolderName || '').trim() || null,
+          accountName: String(item.accountHolderName || '').trim() || null,
+          holderName: String(item.accountHolderName || '').trim() || null,
+          titular: String(item.accountHolderName || '').trim() || null,
           qrImageUrl: String(item.qrImageUrl || '').trim() || null,
           requiresOperationCode: item.requiresOperationCode === true,
           requiresEvidence: item.requiresEvidence === true,
           active: item.active !== false,
+          enabled: item.active !== false,
+          isActive: item.active !== false,
           sortOrder: index + 1,
         })),
       };
 
       await updateOwnerReservationSettings(payload);
       await loadSettings();
+      setSuccessMsg('Configuracion guardada correctamente. Los clientes ya veran estos datos al reservar.');
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo guardar la configuración.');
+      setSuccessMsg('');
     } finally {
       setSaving(false);
     }
@@ -533,6 +564,7 @@ export default function OwnerReservationSettingsPage() {
       </section>
 
       <ErrorBox message={errorMsg} />
+      <SuccessBox message={successMsg} />
 
       {loading ? (
         <div className="rounded-[30px] border border-neutral-200 bg-white p-8 shadow-sm">
@@ -719,4 +751,20 @@ export default function OwnerReservationSettingsPage() {
       )}
     </div>
   );
+}
+
+function normalizeMethod(method = {}, index = 0) {
+  return {
+    ...method,
+    accountHolderName:
+      method.accountHolderName ??
+      method.accountName ??
+      method.holderName ??
+      method.ownerName ??
+      method.titular ??
+      method.nombreTitular ??
+      '',
+    active: method.active !== false && method.enabled !== false && method.isActive !== false,
+    sortOrder: method.sortOrder ?? index + 1,
+  };
 }

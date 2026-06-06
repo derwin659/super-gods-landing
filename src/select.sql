@@ -73,6 +73,32 @@ set
 where tenant_id = 27;
 
 
+ACTIBVAR UN PLAN POR MES 
+
+
+
+UPDATE subscription
+SET
+    plan = 'STARTER',
+    estado = 'ACTIVE',
+    trial = false,
+    fecha_inicio = NOW(),
+    fecha_fin = NOW() + INTERVAL '1 month'
+WHERE tenant_id = 59;
+
+
+
+UPDATE subscription
+SET 
+    plan = 'STARTER',
+    estado = 'ACTIVE',
+    trial = false,
+    fecha_inicio = NOW(),
+    fecha_fin = NOW() + INTERVAL '1 month',
+    fecha_renovacion = NOW() + INTERVAL '1 month',
+    precio_mensual = 39
+WHERE tenant_id = 73;
+
 WITH barberias_por_vencer AS (
     SELECT
         t.tenant_id,

@@ -258,6 +258,12 @@ export async function getAgendaServices() {
       id: toNumber(item.id ?? item.serviceId),
       name: String(item.nombre ?? item.name ?? item.serviceName ?? 'Servicio'),
       price: toNumber(item.precio ?? item.price ?? item.amount),
+      variablePrice: Boolean(
+        item.variablePrice ??
+          item.precioVariable ??
+          item.isVariablePrice ??
+          item.allowPriceOverride
+      ),
       durationMinutes: toNumber(
         item.duracionMinutos ??
           item.durationMinutes ??

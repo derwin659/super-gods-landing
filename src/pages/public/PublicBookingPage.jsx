@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createElement, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import {
   CalendarDays,
@@ -94,6 +94,12 @@ function normalizeService(raw) {
     name: firstText(raw.serviceName, raw.nombre, raw.name, 'Servicio'),
     description: firstText(raw.description, raw.descripcion, raw.detail),
     price: asNumber(raw.price ?? raw.precio ?? raw.amount),
+    variablePrice: Boolean(
+      raw.variablePrice ??
+        raw.precioVariable ??
+        raw.isVariablePrice ??
+        raw.allowPriceOverride
+    ),
     durationMinutes: asNumber(raw.durationMinutes ?? raw.duracionMinutos ?? raw.duration, 30),
     imageUrl: firstText(raw.imageUrl, raw.serviceImageUrl, raw.photoUrl),
   };
@@ -104,8 +110,21 @@ function normalizePaymentMethod(raw) {
     id: asNumber(raw.id ?? raw.paymentMethodId),
     name: firstText(raw.displayName, raw.name, raw.nombre, 'Método de pago'),
     code: firstText(raw.code, raw.codigo),
+    accountLabel: firstText(raw.accountLabel, raw.label, raw.etiqueta, 'Cuenta'),
+    accountValue: firstText(raw.accountValue, raw.accountNumber, raw.phone, raw.telefono, raw.numero),
+    accountHolderName: firstText(
+      raw.accountHolderName,
+      raw.accountName,
+      raw.holderName,
+      raw.ownerName,
+      raw.titular,
+      raw.nombreTitular
+    ),
+    instructions: firstText(raw.instructions, raw.instrucciones),
+    qrImageUrl: firstText(raw.qrImageUrl, raw.qrUrl, raw.qr),
     requiresOperationCode: Boolean(raw.requiresOperationCode),
     requiresEvidence: Boolean(raw.requiresEvidence),
+    active: raw.active !== false && raw.enabled !== false && raw.isActive !== false,
   };
 }
 
@@ -230,7 +249,7 @@ export default function PublicBookingPage() {
   );
 
   const paymentMethods = useMemo(
-    () => asArray(bootstrap?.paymentMethods).map(normalizePaymentMethod),
+    () => asArray(bootstrap?.paymentMethods).map(normalizePaymentMethod).filter((method) => method.active),
     [bootstrap]
   );
 
@@ -337,10 +356,10 @@ export default function PublicBookingPage() {
       if (!deposit.depositAmount || Number(deposit.depositAmount) <= 0) {
         return 'Ingresa un monto de adelanto válido.';
       }
-      if (!deposit.depositOperationCode.trim()) {
+      if (selectedMethod?.requiresOperationCode && !deposit.depositOperationCode.trim()) {
         return 'Ingresa el número de operación del adelanto.';
       }
-      if (!deposit.depositEvidenceUrl.trim()) {
+      if (selectedMethod?.requiresEvidence && !deposit.depositEvidenceUrl.trim()) {
         return 'Sube la imagen del comprobante del adelanto.';
       }
     }
@@ -374,8 +393,14 @@ export default function PublicBookingPage() {
         depositRequired: depositEnabled,
         depositPaymentMethodId: depositEnabled ? Number(deposit.depositPaymentMethodId) : null,
         depositAmount: depositEnabled ? Number(deposit.depositAmount) : null,
-        depositOperationCode: depositEnabled ? deposit.depositOperationCode.trim() || null : null,
-        depositEvidenceUrl: depositEnabled ? deposit.depositEvidenceUrl.trim() || null : null,
+        depositOperationCode:
+          depositEnabled && selectedMethod?.requiresOperationCode
+            ? deposit.depositOperationCode.trim() || null
+            : null,
+        depositEvidenceUrl:
+          depositEnabled && selectedMethod?.requiresEvidence
+            ? deposit.depositEvidenceUrl.trim() || null
+            : null,
         depositNote: depositEnabled ? deposit.depositNote.trim() || null : null,
       };
 
@@ -583,7 +608,7 @@ export default function PublicBookingPage() {
                       <div className="flex gap-3">
                         <p className="min-w-0 flex-1 truncate text-base font-black">{service.name}</p>
                         <p className="shrink-0 text-base font-black text-emerald-700">
-                          {formatMoney(service.price)}
+                          {service.variablePrice ? 'Desde ' : ''}{formatMoney(service.price)}
                         </p>
                       </div>
                       <p className="mt-1 line-clamp-2 text-xs font-bold text-slate-500">
@@ -722,6 +747,36 @@ export default function PublicBookingPage() {
                     </select>
                   </label>
 
+                  {selectedMethod ? (
+                    <div className="md:col-span-2 rounded-3xl border border-amber-200 bg-amber-50 p-4">
+                      <div className="text-sm font-black text-amber-900">
+                        Datos para pagar por {selectedMethod.name}
+                      </div>
+                      {selectedMethod.accountHolderName ? (
+                        <p className="mt-2 text-sm font-bold text-amber-900">
+                          Titular: {selectedMethod.accountHolderName}
+                        </p>
+                      ) : null}
+                      {selectedMethod.accountValue ? (
+                        <p className="mt-1 text-sm font-bold text-amber-900">
+                          {selectedMethod.accountLabel || 'Cuenta'}: {selectedMethod.accountValue}
+                        </p>
+                      ) : null}
+                      {selectedMethod.instructions ? (
+                        <p className="mt-2 text-sm font-semibold leading-6 text-amber-800">
+                          {selectedMethod.instructions}
+                        </p>
+                      ) : null}
+                      {selectedMethod.qrImageUrl ? (
+                        <img
+                          src={selectedMethod.qrImageUrl}
+                          alt={`QR ${selectedMethod.name}`}
+                          className="mt-3 h-40 w-40 rounded-2xl border border-amber-200 bg-white object-contain p-2"
+                        />
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   <PremiumInput
                     label="Monto del anticipo"
                     value={deposit.depositAmount}
@@ -730,13 +785,16 @@ export default function PublicBookingPage() {
                     type="number"
                   />
 
+                  {selectedMethod?.requiresOperationCode ? (
                   <PremiumInput
                     label="N° operación"
                     value={deposit.depositOperationCode}
                     onChange={(value) => updateDeposit('depositOperationCode', value)}
                     placeholder="Obligatorio"
                   />
+                  ) : null}
 
+                  {selectedMethod?.requiresEvidence ? (
                   <label className="block">
                     <span className="mb-2 block text-xs font-black uppercase tracking-[0.22em] text-slate-500">
                       Captura del comprobante
@@ -759,8 +817,9 @@ export default function PublicBookingPage() {
                       )}
                     </div>
                   </label>
+                  ) : null}
 
-                  {deposit.depositEvidenceUrl ? (
+                  {selectedMethod?.requiresEvidence && deposit.depositEvidenceUrl ? (
                     <div className="md:col-span-2">
                       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-3">
                         <p className="mb-2 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Vista previa</p>
@@ -796,7 +855,10 @@ export default function PublicBookingPage() {
               <SummaryLine label="Sede" value={selectedBranch?.name || 'Por elegir'} />
               <SummaryLine label="Profesional" value={selectedBarber?.name || 'Cualquiera disponible'} />
               <SummaryLine label="Servicio" value={selectedService?.name || 'Por elegir'} />
-              <SummaryLine label="Precio" value={selectedService ? formatMoney(selectedService.price) : 'Por definir'} />
+              <SummaryLine
+                label="Precio"
+                value={selectedService ? `${selectedService.variablePrice ? 'Desde ' : ''}${formatMoney(selectedService.price)}` : 'Por definir'}
+              />
               <SummaryLine label="Fecha" value={displayDate(selectedDate)} />
               <SummaryLine label="Hora" value={selectedTime || 'Por elegir'} />
 
@@ -805,7 +867,15 @@ export default function PublicBookingPage() {
                   <div className="my-4 h-px bg-slate-100" />
                   <SummaryLine label="Adelanto obligatorio" value={formatMoney(deposit.depositAmount) || 'Por definir'} />
                   <SummaryLine label="Método" value={selectedMethod?.name || 'Por elegir'} />
-                  <SummaryLine label="Comprobante" value={deposit.depositEvidenceFileName || 'Pendiente'} />
+                  {selectedMethod?.accountHolderName ? (
+                    <SummaryLine label="Titular" value={selectedMethod.accountHolderName} />
+                  ) : null}
+                  {selectedMethod?.accountValue ? (
+                    <SummaryLine label={selectedMethod.accountLabel || 'Cuenta'} value={selectedMethod.accountValue} />
+                  ) : null}
+                  {selectedMethod?.requiresEvidence ? (
+                    <SummaryLine label="Comprobante" value={deposit.depositEvidenceFileName || 'Pendiente'} />
+                  ) : null}
                 </>
               ) : null}
 
@@ -830,12 +900,12 @@ export default function PublicBookingPage() {
   );
 }
 
-function PremiumSection({ number, title, subtitle, icon: Icon, children }) {
+function PremiumSection({ number, title, subtitle, icon, children }) {
   return (
     <section className="rounded-[34px] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.06)] md:p-6">
       <div className="mb-5 flex items-start gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white">
-          <Icon size={22} />
+          {createElement(icon, { size: 22 })}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -873,7 +943,7 @@ function SelectableCard({ selected, disabled = false, onClick, children, large =
   );
 }
 
-function ImageThumb({ src, fallbackIcon: Icon = ImageIcon, roundedFull = false }) {
+function ImageThumb({ src, fallbackIcon = ImageIcon, roundedFull = false }) {
   return (
     <div
       className={[
@@ -891,7 +961,7 @@ function ImageThumb({ src, fallbackIcon: Icon = ImageIcon, roundedFull = false }
           }}
         />
       ) : null}
-      <Icon className={src ? 'absolute opacity-0' : ''} size={24} />
+      {createElement(fallbackIcon, { className: src ? 'absolute opacity-0' : '', size: 24 })}
     </div>
   );
 }

@@ -395,6 +395,7 @@ function CustomerDetailModal({
   loading,
   onClose,
   onEdit,
+  onWhatsapp,
   onCreateAppointment,
 }) {
   const pointsAvailable =
@@ -463,6 +464,14 @@ function CustomerDetailModal({
                 </div>
 
                 <div className="mt-5 grid gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onWhatsapp(customer)}
+                    className="rounded-2xl bg-emerald-500 px-5 py-4 text-sm font-black text-white shadow-[0_16px_35px_rgba(16,185,129,0.18)] transition hover:scale-[1.01] hover:bg-emerald-600"
+                  >
+                    Enviar WhatsApp
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => onCreateAppointment(customer)}
@@ -562,12 +571,16 @@ function CustomerDetailModal({
   );
 }
 
-function CustomerCard({ customer, onOpen }) {
+function CustomerCard({ customer, onOpen, onWhatsapp }) {
   return (
-    <button
-      type="button"
+    <article
       onClick={() => onOpen(customer)}
-      className="group rounded-[28px] border border-neutral-200 bg-white p-5 text-left shadow-[0_14px_35px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-amber-200 hover:shadow-[0_20px_55px_rgba(15,23,42,0.08)]"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') onOpen(customer);
+      }}
+      className="group cursor-pointer rounded-[28px] border border-neutral-200 bg-white p-5 text-left shadow-[0_14px_35px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-amber-200 hover:shadow-[0_20px_55px_rgba(15,23,42,0.08)]"
     >
       <div className="flex items-start gap-4">
         <CustomerAvatar customer={customer} />
@@ -614,16 +627,43 @@ function CustomerCard({ customer, onOpen }) {
           {customer.ultimoBarbero || 'Sin barbero'} · {prettyDate(customer.ultimaVisita)}
         </div>
       </div>
-    </button>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onWhatsapp(customer);
+          }}
+          className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-white transition hover:bg-emerald-600"
+        >
+          WhatsApp
+        </button>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpen(customer);
+          }}
+          className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-black text-neutral-700 transition hover:bg-neutral-50"
+        >
+          Ver historial
+        </button>
+      </div>
+    </article>
   );
 }
 
-function CustomerSearchResult({ customer, onOpen }) {
+function CustomerSearchResult({ customer, onOpen, onWhatsapp }) {
   return (
-    <button
-      type="button"
+    <article
       onClick={() => onOpen(customer)}
-      className="flex w-full items-center gap-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-left transition hover:border-amber-300 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)]"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') onOpen(customer);
+      }}
+      className="flex w-full cursor-pointer items-center gap-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-left transition hover:border-amber-300 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)]"
     >
       <CustomerAvatar customer={customer} size="h-12 w-12" />
 
@@ -640,10 +680,29 @@ function CustomerSearchResult({ customer, onOpen }) {
         {customer.puntosDisponibles || 0} pts
       </div>
 
-      <span className="shrink-0 rounded-2xl bg-neutral-950 px-4 py-3 text-sm font-black text-white">
-        Ver ficha
-      </span>
-    </button>
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onWhatsapp(customer);
+          }}
+          className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-white transition hover:bg-emerald-600"
+        >
+          WhatsApp
+        </button>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpen(customer);
+          }}
+          className="rounded-2xl bg-neutral-950 px-4 py-3 text-sm font-black text-white"
+        >
+          Ver ficha
+        </button>
+      </div>
+    </article>
   );
 }
 
@@ -931,6 +990,20 @@ export default function OwnerCustomersPage() {
     navigate('/owner/agenda');
   }
 
+  function openCustomerWhatsapp(customer) {
+    const whatsappUrl = buildCustomerWhatsappUrl({
+      telefono: customer?.telefono,
+      nombre: customer?.nombreCompleto || customer?.nombre || 'cliente',
+    });
+
+    if (!whatsappUrl) {
+      window.alert('Este cliente no tiene telefono para WhatsApp.');
+      return;
+    }
+
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+  }
+
   useEffect(() => {
     loadCustomers('');
   }, []);
@@ -1053,6 +1126,7 @@ export default function OwnerCustomersPage() {
                     key={customer.id}
                     customer={customer}
                     onOpen={openCustomerDetail}
+                    onWhatsapp={openCustomerWhatsapp}
                   />
                 ))}
               </div>
@@ -1186,6 +1260,7 @@ export default function OwnerCustomersPage() {
                 key={customer.id}
                 customer={customer}
                 onOpen={openCustomerDetail}
+                onWhatsapp={openCustomerWhatsapp}
               />
             ))}
           </div>
@@ -1233,6 +1308,7 @@ export default function OwnerCustomersPage() {
             setEditingCustomer(customer);
             setShowForm(true);
           }}
+          onWhatsapp={openCustomerWhatsapp}
           onCreateAppointment={createAppointmentForCustomer}
         />
       )}
