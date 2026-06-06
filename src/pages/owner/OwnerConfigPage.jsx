@@ -6,6 +6,7 @@ import {
     Clock3,
     CreditCard,
     Gift,
+    Image,
     Megaphone,
     MessageCircle,
     Package,
@@ -23,7 +24,7 @@ import {
   import { useNavigate } from 'react-router-dom';
   
   function ConfigTile({
-    icon: Icon,
+    icon,
     title,
     subtitle,
     badge,
@@ -31,6 +32,7 @@ import {
     onClick,
     disabled = false,
   }) {
+    const IconComponent = icon;
     const tones = {
       default: {
         iconBox: 'bg-neutral-100 text-neutral-700 ring-neutral-200',
@@ -97,7 +99,7 @@ import {
           <div
             className={`flex h-14 w-14 items-center justify-center rounded-[20px] ring-1 transition-all duration-200 ${selectedTone.iconBox} ${!disabled ? selectedTone.iconActive : ''}`}
           >
-            <Icon size={24} strokeWidth={2.45} />
+            <IconComponent size={24} strokeWidth={2.45} />
           </div>
   
           <span
@@ -283,6 +285,15 @@ import {
           title="Estructura y equipo"
           subtitle="Define cómo opera tu negocio: sedes, barberos, horarios, reservas y permisos."
         >
+          <ConfigTile
+            icon={Image}
+            title="Marca y logo"
+            subtitle="Sube el logo que verán tus clientes en la reserva pública web."
+            badge="Premium"
+            tone="blue"
+            onClick={() => navigate('/owner/marca')}
+          />
+
           <ConfigTile
             icon={Store}
             title="Sedes"

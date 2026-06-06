@@ -50,6 +50,7 @@ import OwnerCashPage from './pages/owner/OwnerCashPage';
 import OwnerProductsPage from './pages/owner/OwnerProductsPage';
 import OwnerReportsPage from './pages/owner/OwnerReportsPage';
 import OwnerConfigPage from './pages/owner/OwnerConfigPage';
+import OwnerBrandingPage from './pages/owner/OwnerBrandingPage';
 import OwnerServicesPage from './pages/owner/OwnerServicesPage';
 import OwnerBranchesPage from './pages/owner/OwnerBranchesPage';
 import OwnerRewardsPage from './pages/owner/OwnerRewardsPage';
@@ -2124,6 +2125,15 @@ export default function App() {
             element={
               <OwnerPermissionRoute permissions={['CONFIG_ACCESS']}>
                 <OwnerWhatsappSettingsPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="marca"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_ACCESS']}>
+                <OwnerBrandingPage />
               </OwnerPermissionRoute>
             }
           />

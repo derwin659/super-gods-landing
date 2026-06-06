@@ -128,6 +128,28 @@ function normalizePaymentMethod(raw) {
   };
 }
 
+function BrandLogo({ src, name }) {
+  const [failed, setFailed] = useState(false);
+  const cleanSrc = firstText(src);
+
+  return (
+    <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-[28px] border border-white/25 bg-white shadow-2xl shadow-black/20 md:h-28 md:w-28">
+      {cleanSrc && !failed ? (
+        <img
+          src={cleanSrc}
+          alt={name}
+          className="h-full w-full object-cover"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-slate-950 text-white">
+          <Scissors size={34} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function fullCustomerName(data) {
   return `${data.customerName || ''} ${data.customerLastName || ''}`.trim();
 }
@@ -458,51 +480,72 @@ export default function PublicBookingPage() {
   return (
     <div className="min-h-screen bg-[#F4F7FB] px-4 py-6 text-slate-950 md:py-10">
       <div className="mx-auto max-w-6xl">
-        <section className="relative overflow-hidden rounded-[38px] bg-slate-950 p-5 text-white shadow-[0_30px_90px_rgba(15,23,42,0.18)] md:p-8">
+        <section className="relative overflow-hidden rounded-[34px] bg-slate-950 text-white shadow-[0_30px_90px_rgba(15,23,42,0.18)] md:rounded-[42px]">
           {businessCover ? (
             <img
               src={businessCover}
               alt={businessName}
-              className="absolute inset-0 h-full w-full object-cover opacity-25"
+              className="absolute inset-0 h-full w-full object-cover opacity-70"
             />
           ) : null}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(37,99,235,.35),transparent_32%),linear-gradient(110deg,rgba(2,6,23,.98),rgba(15,23,42,.88))]" />
+          <div className="absolute inset-0 bg-slate-950/65" />
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
 
-          <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
-            <div className="flex items-start gap-4">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-white/10 ring-1 ring-white/10">
-                <img
-                  src={businessLogo}
-                  alt={businessName}
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                <Scissors className="absolute" size={28} />
-              </div>
+          <div className="relative flex min-h-[360px] flex-col justify-between p-5 md:min-h-[430px] md:p-8">
+            <div className="flex items-start justify-between gap-4">
+              <BrandLogo src={businessLogo} name={businessName} />
 
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.34em] text-blue-200">
-                  {codigoNegocio}
-                </p>
-                <h1 className="mt-2 text-4xl font-black tracking-[-0.05em] md:text-6xl">
-                  Reserva en {businessName}
-                </h1>
-                <p className="mt-3 max-w-2xl text-base font-semibold leading-7 text-slate-200">
-                  Elige sede, profesional, servicio y horario. Confirma tu cita en segundos.
+              <div className="hidden rounded-2xl border border-white/20 bg-white/15 px-4 py-3 backdrop-blur md:block">
+                <div className="flex items-center gap-2 text-sm font-black text-emerald-100">
+                  <ShieldCheck size={18} />
+                  Reserva segura
+                </div>
+                <p className="mt-1 text-xs font-semibold text-white/75">
+                  Confirmación directa con el negocio.
                 </p>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-              <div className="flex items-center gap-2 text-sm font-black text-emerald-200">
-                <ShieldCheck size={18} />
-                Reserva segura
-              </div>
-              <p className="mt-1 text-xs font-semibold text-slate-300">
-                Tus datos se usan solo para confirmar tu cita.
+            <div className="mt-12 max-w-4xl md:mt-16">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-amber-200">
+                Reserva online
               </p>
+              <h1 className="mt-3 text-4xl font-black leading-none md:text-6xl">
+                {businessName}
+              </h1>
+              <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-white/85 md:text-lg">
+                Elige sede, profesional, servicio y horario. Tu cita queda lista en segundos.
+              </p>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-white/15 bg-white/15 p-4 backdrop-blur">
+                  <div className="flex items-center gap-2 text-sm font-black">
+                    <Store size={17} />
+                    {selectedBranch?.name || branches[0]?.name || 'Sede disponible'}
+                  </div>
+                  <p className="mt-1 text-xs font-semibold text-white/70">
+                    {selectedBranch?.address || branches[0]?.address || 'Selecciona dónde atenderte.'}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/15 p-4 backdrop-blur">
+                  <div className="flex items-center gap-2 text-sm font-black">
+                    <Scissors size={17} />
+                    {services.length} servicios
+                  </div>
+                  <p className="mt-1 text-xs font-semibold text-white/70">
+                    Precios y tiempos visibles antes de confirmar.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/15 bg-white/15 p-4 backdrop-blur">
+                  <div className="flex items-center gap-2 text-sm font-black">
+                    <CalendarDays size={17} />
+                    Horarios reales
+                  </div>
+                  <p className="mt-1 text-xs font-semibold text-white/70">
+                    Elige una hora disponible.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
