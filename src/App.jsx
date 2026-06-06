@@ -505,7 +505,7 @@ function PublicHomePage() {
           </div>
         </section>
 
-        {false && (
+        {Boolean(import.meta.env.VITE_SHOW_OLD_HERO) && (
         <section className="hidden">
           <div className="absolute inset-x-0 top-0 h-[720px] bg-[radial-gradient(circle_at_20%_10%,#DCEBFF_0,#F5F7FB_42%,transparent_70%),radial-gradient(circle_at_85%_22%,rgba(34,197,94,0.16),transparent_30%)]" />
 
@@ -1106,16 +1106,18 @@ function PublicBusinessSignupPage() {
   );
 }
 
-function LandingIcon({ icon: Icon, size = 24 }) {
-  return <Icon size={size} strokeWidth={2.6} />;
+function LandingIcon({ icon, size = 24 }) {
+  const IconComponent = icon;
+  return <IconComponent size={size} strokeWidth={2.6} />;
 }
 
-function HeroSignal({ icon: Icon, title, text }) {
+function HeroSignal({ icon, title, text }) {
+  const IconComponent = icon;
   return (
     <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
       <div className="flex items-center gap-2">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm">
-          <Icon size={17} strokeWidth={2.6} />
+          <IconComponent size={17} strokeWidth={2.6} />
         </span>
         <p className="text-sm font-black text-slate-950">{title}</p>
       </div>
@@ -1209,6 +1211,8 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
     businessType: 'BARBERSHOP',
     email: '',
     whatsapp: '',
+    password: '',
+    confirmPassword: '',
     country: 'Perú',
     city: '',
     profesionales: '',
@@ -1294,6 +1298,8 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
     if (!lead.negocio.trim()) return 'Ingresa el nombre del negocio.';
     if (!lead.email.trim() || !lead.email.includes('@')) return 'Ingresa un correo válido.';
     if (!lead.whatsapp.trim()) return 'Ingresa el WhatsApp del dueño.';
+    if (autoActivate && lead.password.trim().length < 6) return 'Crea una contrasena de al menos 6 caracteres.';
+    if (autoActivate && lead.password !== lead.confirmPassword) return 'Las contrasenas no coinciden.';
     if (!lead.city.trim()) return 'Ingresa la ciudad.';
     if (!lead.country.trim()) return 'Ingresa el país.';
     return '';
@@ -1315,6 +1321,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
       ownerName: lead.nombre.trim(),
       ownerEmail: lead.email.trim().toLowerCase(),
       ownerPhone: lead.whatsapp.trim(),
+      password: autoActivate ? lead.password.trim() : null,
       country: lead.country.trim(),
       city: lead.city.trim(),
       branchesCount: parseCount(lead.sedes),
@@ -1433,9 +1440,14 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
               ? `Tu prueba de ${activation?.trialDays || 7} dias esta activa. Ya puedes entrar al panel web y terminar la configuracion.`
               : 'Revisaremos los datos de tu negocio. Si es aprobada, recibiras tus accesos por WhatsApp o correo.'}
           </p>
-          <div className="mt-4 rounded-2xl bg-white p-4 text-sm font-black text-slate-800">
+          <div className="hidden">
             Acceso: {activation?.accessEmail || lead.email.trim().toLowerCase()} · clave temporal: {activation?.temporaryPassword || '123456'}
           </div>
+          {autoActivate && (
+            <div className="mt-4 rounded-2xl bg-white p-4 text-sm font-black text-slate-800">
+              Acceso: {activation?.accessEmail || lead.email.trim().toLowerCase()} · entra con la contrasena que acabas de crear.
+            </div>
+          )}
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
             <a
               href="/login"
@@ -1516,6 +1528,35 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
             placeholder="Ej: Perú"
           />
         </div>
+
+        {autoActivate && (
+          <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4">
+            <p className="text-sm font-black text-slate-950">
+              Crea tu contrasena de acceso
+            </p>
+            <p className="mt-1 text-xs font-bold leading-5 text-slate-500">
+              La usaras para entrar al panel web junto con tu correo. No se mostrara ni se enviara por WhatsApp.
+            </p>
+            <div className="mt-4 grid gap-5 md:grid-cols-2">
+              <LandingInput
+                label="Contrasena"
+                name="password"
+                type="password"
+                value={lead.password}
+                onChange={handleChange}
+                placeholder="Minimo 6 caracteres"
+              />
+              <LandingInput
+                label="Confirmar contrasena"
+                name="confirmPassword"
+                type="password"
+                value={lead.confirmPassword}
+                onChange={handleChange}
+                placeholder="Repite tu contrasena"
+              />
+            </div>
+          </div>
+        )}
 
         <LandingInput
           label="Ciudad"

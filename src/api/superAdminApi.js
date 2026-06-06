@@ -82,4 +82,29 @@ export const superAdminApi = {
       body: JSON.stringify(payload),
     });
   },
+
+  updateTenant(tenantId, payload) {
+    return request(`/api/super-admin/tenants/${tenantId}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  activateTenant(tenantId) {
+    return request(`/api/super-admin/tenants/${tenantId}/activate`, {
+      method: "PUT",
+    });
+  },
+
+  suspendTenant(tenantId) {
+    return request(`/api/super-admin/tenants/${tenantId}/suspend`, {
+      method: "PUT",
+    });
+  },
+
+  deleteTenant(tenantId) {
+    return request(`/api/super-admin/tenants/${tenantId}`, {
+      method: "DELETE",
+    });
+  },
 };
