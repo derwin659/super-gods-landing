@@ -4858,7 +4858,13 @@ export default function OwnerCashPage() {
   const cashSalesTotal = Number(cashRow?.salesAmount ?? cashRegister?.cashSalesTotal ?? 0);
   const cashBalance = Number(cashRow?.balanceAmount ?? expected);
   const income = Number(cashRegister?.movementsIncome || 0);
-  const expense = Number(cashRegister?.movementsExpense || 0);
+  const derivedCashExpense = movements
+    .filter((movement) =>
+      ['EXPENSE', 'ADVANCE_BARBER', 'PAYMENT_BARBER'].includes(String(movement?.type || '').toUpperCase())
+    )
+    .filter((movement) => normalizeMethod(movement?.paymentMethod) === 'CASH')
+    .reduce((sum, movement) => sum + Number(movement?.amount || 0), 0);
+  const cashExpense = Number(cashRegister?.cashMovementsExpense ?? derivedCashExpense);
   const courtesySummary = buildCourtesySummary(sales);
   const pendingSales = pendingValidationSales.filter(isPendingSaleValidation);
   const pendingApprovalMovements = movements.filter(isPendingOwnerApproval);
@@ -5125,7 +5131,7 @@ export default function OwnerCashPage() {
 <CashNegativeAlert
   expected={expected}
   cashSalesTotal={cashSalesTotal}
-  expense={expense}
+  expense={cashExpense}
 />
 
 <section className="grid gap-5 xl:grid-cols-[0.78fr_1.22fr]">
@@ -5157,7 +5163,7 @@ export default function OwnerCashPage() {
                     Salidas de efectivo
                   </div>
                   <div className="mt-2 text-2xl font-black text-red-700">
-                    {formatMoney(expense)}
+                    {formatMoney(cashExpense)}
                   </div>
                   <div className="mt-1 text-xs text-red-500">
                     Gastos, adelantos, pagos de barbero y salidas registradas.
