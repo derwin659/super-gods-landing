@@ -624,16 +624,8 @@ function saleDateOf(sale) {
 
 function saleBarberName(sale) {
   const labels = readBusinessLabels();
-  const direct = String(
-    sale?.barberName ??
-      sale?.barbero ??
-      sale?.barberUserName ??
-      ''
-  ).trim();
-
-  if (direct) return direct;
-
   const items = Array.isArray(sale?.items) ? sale.items : [];
+  const itemBarbers = [];
 
   for (const item of items) {
     const candidate = String(
@@ -643,8 +635,21 @@ function saleBarberName(sale) {
         ''
     ).trim();
 
-    if (candidate) return candidate;
+    if (candidate && !itemBarbers.includes(candidate)) {
+      itemBarbers.push(candidate);
+    }
   }
+
+  if (itemBarbers.length > 0) return itemBarbers.join(', ');
+
+  const direct = String(
+    sale?.barberName ??
+      sale?.barbero ??
+      sale?.barberUserName ??
+      ''
+  ).trim();
+
+  if (direct) return direct;
 
   return `${labels.professionalSingular[0].toUpperCase()}${labels.professionalSingular.slice(1)} no registrado`;
 }

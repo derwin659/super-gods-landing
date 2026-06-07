@@ -750,8 +750,8 @@ function BranchDetailModal({ branch, onClose }) {
                   <tr>
                     <th className="px-4 py-4">Barbero</th>
                     <th className="px-4 py-4 text-right">Ventas</th>
-                    <th className="px-4 py-4 text-right">Cantidad</th>
-                    <th className="px-4 py-4 text-right">Ticket</th>
+                    <th className="px-4 py-4 text-right">Servicios</th>
+                    <th className="px-4 py-4 text-right">Promedio</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
@@ -1332,8 +1332,8 @@ export default function OwnerReportsPage() {
                   <tr>
                     <th className="px-4 py-4">Barbero</th>
                     <th className="px-4 py-4 text-right">Ventas</th>
-                    <th className="px-4 py-4 text-right">Cantidad</th>
-                    <th className="px-4 py-4 text-right">Ticket promedio</th>
+                    <th className="px-4 py-4 text-right">Servicios</th>
+                    <th className="px-4 py-4 text-right">Promedio</th>
                     <th className="px-4 py-4 text-right">% participación</th>
                     <th className="px-4 py-4 text-right">Detalle</th>
                   </tr>
