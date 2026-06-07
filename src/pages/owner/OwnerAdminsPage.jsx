@@ -79,7 +79,16 @@ function ModalShell({ title, subtitle, children, onClose, maxWidth = 'max-w-3xl'
   );
 }
 
-function InputField({ label, value, onChange, placeholder, type = 'text', disabled = false }) {
+function InputField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  disabled = false,
+  autoComplete,
+  inputMode,
+}) {
   return (
     <label className="block">
       <span className="text-sm font-black text-neutral-700">{label}</span>
@@ -88,6 +97,8 @@ function InputField({ label, value, onChange, placeholder, type = 'text', disabl
         value={value}
         disabled={disabled}
         placeholder={placeholder}
+        autoComplete={autoComplete}
+        inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-400 disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-400"
       />
@@ -112,6 +123,26 @@ function SelectField({ label, value, onChange, options, disabled = false }) {
         ))}
       </select>
     </label>
+  );
+}
+
+function StickyFormActions({ errorMsg, saving, editing }) {
+  return (
+    <div className="sticky bottom-0 -mx-2 space-y-3 border-t border-neutral-200 bg-white/95 px-2 pb-1 pt-4 backdrop-blur">
+      {errorMsg && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black leading-5 text-red-700">
+          {errorMsg}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={saving}
+        className="w-full rounded-2xl bg-neutral-950 px-5 py-4 font-black text-white shadow-[0_14px_35px_rgba(15,23,42,0.18)] transition hover:scale-[1.01] disabled:opacity-60"
+      >
+        {saving ? 'Guardando...' : editing ? 'Guardar cambios' : 'Guardar administrador'}
+      </button>
+    </div>
   );
 }
 
@@ -148,24 +179,32 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (saving) return;
+
     setErrorMsg('');
+
+    const cleanNombre = String(nombre || '').trim();
+    const cleanApellido = String(apellido || '').trim();
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    const cleanPhone = String(phone || '').trim();
+    const cleanPassword = String(password || '').trim();
 
     if (!branchId) {
       setErrorMsg('Selecciona una sede.');
       return;
     }
 
-    if (!String(nombre).trim()) {
+    if (!cleanNombre) {
       setErrorMsg('Ingresa el nombre.');
       return;
     }
 
-    if (!editing && !usingBarber && !String(email).includes('@')) {
+    if (!editing && !usingBarber && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       setErrorMsg('Ingresa un email válido.');
       return;
     }
 
-    if (!editing && !usingBarber && String(password).trim().length < 6) {
+    if (!editing && !usingBarber && cleanPassword.length < 6) {
       setErrorMsg('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
@@ -183,26 +222,26 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
       if (editing) {
         saved = await updateOwnerAdmin({
           userId: admin.id,
-          nombre,
-          apellido,
-          phone,
+          nombre: cleanNombre,
+          apellido: cleanApellido,
+          phone: cleanPhone,
           branchId,
         });
       } else if (usingBarber) {
         saved = await updateOwnerAdmin({
           userId: selectedBarberId,
-          nombre,
-          apellido,
-          phone,
+          nombre: cleanNombre,
+          apellido: cleanApellido,
+          phone: cleanPhone,
           branchId,
         });
       } else {
         saved = await createOwnerAdmin({
-          nombre,
-          apellido,
-          email,
-          phone,
-          password,
+          nombre: cleanNombre,
+          apellido: cleanApellido,
+          email: cleanEmail,
+          phone: cleanPhone,
+          password: cleanPassword,
           branchId,
         });
       }
@@ -222,7 +261,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
       onClose={onClose}
       maxWidth="max-w-3xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <ErrorBox message={errorMsg} />
 
         {!editing && (
@@ -274,11 +313,11 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <InputField label="Nombre" value={nombre} onChange={setNombre} placeholder="Ej. Anthony" disabled={usingBarber} />
-          <InputField label="Apellido" value={apellido} onChange={setApellido} placeholder="Opcional" disabled={usingBarber} />
+          <InputField label="Nombre" value={nombre} onChange={setNombre} placeholder="Ej. Anthony" autoComplete="given-name" disabled={usingBarber} />
+          <InputField label="Apellido" value={apellido} onChange={setApellido} placeholder="Opcional" autoComplete="family-name" disabled={usingBarber} />
         </div>
 
-        <InputField label="Email" value={email} onChange={setEmail} placeholder="admin@barberia.com" type="email" disabled={editing || usingBarber} />
+        <InputField label="Email" value={email} onChange={setEmail} placeholder="admin@barberia.com" type="email" autoComplete="email" inputMode="email" disabled={editing || usingBarber} />
 
         <InputField label="Teléfono" value={phone} onChange={setPhone} placeholder="987654321" disabled={usingBarber} />
 
@@ -299,13 +338,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           ]}
         />
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full rounded-2xl bg-neutral-950 px-5 py-4 font-black text-white transition hover:scale-[1.01] disabled:opacity-60"
-        >
-          {saving ? 'Guardando...' : editing ? 'Guardar cambios' : 'Guardar administrador'}
-        </button>
+        <StickyFormActions errorMsg={errorMsg} saving={saving} editing={editing} />
       </form>
     </ModalShell>
   );

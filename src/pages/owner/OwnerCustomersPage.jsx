@@ -4,6 +4,7 @@ import {
   buildCustomerWhatsappUrl,
   createOwnerCustomer,
   getInactiveOwnerCustomers,
+  getOwnerCustomerCutHistory,
   getOwnerCustomerDetail,
   getOwnerCustomerHistory,
   getOwnerCustomerLoyalty,
@@ -387,10 +388,49 @@ function HistoryVisitCard({ item }) {
   );
 }
 
+function CutHistoryCard({ item }) {
+  const subtitle = [item.descripcion, item.barbero, item.sede]
+    .filter(Boolean)
+    .join(' - ');
+
+  return (
+    <div className="rounded-[22px] border border-amber-100 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-lg font-black text-amber-700">
+          C
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-base font-black text-neutral-950">
+            {item.nombre}
+          </div>
+
+          {subtitle && (
+            <div className="mt-1 line-clamp-2 text-sm font-bold text-neutral-500">
+              {subtitle}
+            </div>
+          )}
+
+          <div className="mt-2 text-xs font-black uppercase tracking-[0.12em] text-neutral-400">
+            {prettyDate(item.fecha)}
+          </div>
+
+          {item.observacion && (
+            <div className="mt-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-bold text-neutral-600">
+              Obs: {item.observacion}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CustomerDetailModal({
   customer,
   detail,
   history,
+  cutHistory,
   loyalty,
   loading,
   onClose,
@@ -413,6 +453,20 @@ function CustomerDetailModal({
     const count = Array.isArray(item.items) && item.items.length > 0 ? item.items.length : 1;
     return acc + count;
   }, 0);
+
+  const visibleCutHistory = cutHistory.length > 0
+    ? cutHistory
+    : history
+        .filter((item) => String(item.servicio || '').trim())
+        .map((item) => ({
+          id: item.id,
+          fecha: item.fecha,
+          nombre: item.servicio,
+          descripcion: '',
+          observacion: item.observacion,
+          barbero: item.barbero,
+          sede: '',
+        }));
 
   return (
     <ModalShell
@@ -521,7 +575,45 @@ function CustomerDetailModal({
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-neutral-200 bg-white p-5">
+          <div className="space-y-5">
+            <div className="rounded-[28px] border border-amber-100 bg-amber-50/45 p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+                    Historial tecnico
+                  </div>
+                  <h3 className="mt-1 text-2xl font-black text-neutral-950">
+                    Cortes del cliente
+                  </h3>
+                </div>
+
+                <span className="rounded-full bg-white px-4 py-2 text-sm font-black text-amber-700">
+                  {visibleCutHistory.length} cortes
+                </span>
+              </div>
+
+              {visibleCutHistory.length === 0 ? (
+                <div className="mt-5 rounded-2xl border border-dashed border-amber-200 bg-white/80 p-6 text-center">
+                  <div className="text-base font-black text-neutral-950">
+                    Sin cortes tecnicos guardados
+                  </div>
+                  <p className="mt-2 text-sm font-bold text-neutral-500">
+                    Cuando se registre el corte realizado, aparecera aqui.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-5 space-y-3">
+                  {visibleCutHistory.map((item) => (
+                    <CutHistoryCard
+                      key={`${item.id}-${item.fecha}-${item.nombre}`}
+                      item={item}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[28px] border border-neutral-200 bg-white p-5">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-600">
@@ -564,6 +656,7 @@ function CustomerDetailModal({
                 ))}
               </div>
             )}
+            </div>
           </div>
         </div>
       )}
@@ -859,6 +952,7 @@ export default function OwnerCustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerDetail, setCustomerDetail] = useState(null);
   const [customerHistory, setCustomerHistory] = useState([]);
+  const [customerCutHistory, setCustomerCutHistory] = useState([]);
   const [customerLoyalty, setCustomerLoyalty] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
@@ -929,22 +1023,26 @@ export default function OwnerCustomersPage() {
     setSelectedCustomer(customer);
     setCustomerDetail(null);
     setCustomerHistory([]);
+    setCustomerCutHistory([]);
     setCustomerLoyalty(null);
     setLoadingDetail(true);
 
     try {
-      const [detail, history, loyalty] = await Promise.all([
+      const [detail, history, cutHistory, loyalty] = await Promise.all([
         getOwnerCustomerDetail(customer.id),
         getOwnerCustomerHistory(customer.id),
+        getOwnerCustomerCutHistory(customer.id),
         getOwnerCustomerLoyalty(customer.id),
       ]);
 
       setCustomerDetail(detail);
       setCustomerHistory(history);
+      setCustomerCutHistory(cutHistory);
       setCustomerLoyalty(loyalty);
     } catch {
       setCustomerDetail(null);
       setCustomerHistory([]);
+      setCustomerCutHistory([]);
       setCustomerLoyalty(null);
     } finally {
       setLoadingDetail(false);
@@ -1296,6 +1394,7 @@ export default function OwnerCustomersPage() {
           customer={selectedCustomer}
           detail={customerDetail}
           history={customerHistory}
+          cutHistory={customerCutHistory}
           loyalty={customerLoyalty}
           loading={loadingDetail}
           onClose={() => {

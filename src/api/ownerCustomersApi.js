@@ -147,6 +147,51 @@ function normalizeHistoryItem(raw = {}) {
   };
 }
 
+function normalizeCutHistoryItem(raw = {}) {
+  const cutName = text(
+    raw.cutName ??
+      raw.cutType ??
+      raw.serviceName ??
+      raw.servicio ??
+      raw.corte ??
+      raw.name ??
+      ''
+  ).trim();
+
+  const cutDescription = text(
+    raw.cutDescription ??
+      raw.cutDetail ??
+      raw.description ??
+      raw.descripcion ??
+      raw.detail ??
+      ''
+  ).trim();
+
+  return {
+    id: toNumber(raw.id ?? raw.customerCutHistoryId ?? raw.historyId),
+    fecha: text(raw.fechaCorte ?? raw.createdAt ?? raw.fecha ?? raw.date ?? ''),
+    nombre: cutName || cutDescription || 'Corte sin detalle',
+    descripcion: cutDescription,
+    observacion: text(
+      raw.observations ??
+        raw.cutObservations ??
+        raw.observacion ??
+        raw.observaciones ??
+        raw.notes ??
+        ''
+    ).trim(),
+    barbero: text(
+      raw.barberUserName ??
+        raw.barberName ??
+        raw.barbero ??
+        raw.barber ??
+        'Sin asignar'
+    ).trim(),
+    sede: text(raw.branchName ?? raw.sede ?? raw.branch ?? '').trim(),
+    raw,
+  };
+}
+
 async function tryRequest(path, options) {
   try {
     return await apiRequest(path, options);
@@ -267,6 +312,25 @@ export async function getOwnerCustomerHistory(customerId) {
 
     if (!data.__error) {
       return extractList(data).map(normalizeHistoryItem);
+    }
+  }
+
+  return [];
+}
+
+export async function getOwnerCustomerCutHistory(customerId) {
+  const endpoints = [
+    `/api/owner/customers/${customerId}/cut-history${toQuery({ limit: 20 })}`,
+    `/api/owner/customers/${customerId}/cuts`,
+    `/api/owner/customer-cut-history${toQuery({ customerId })}`,
+    `/api/customer-cut-history${toQuery({ customerId })}`,
+  ];
+
+  for (const endpoint of endpoints) {
+    const data = await tryRequest(endpoint);
+
+    if (!data.__error) {
+      return extractList(data).map(normalizeCutHistoryItem);
     }
   }
 
