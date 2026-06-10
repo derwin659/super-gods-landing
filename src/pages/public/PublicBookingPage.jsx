@@ -8,7 +8,10 @@ import {
   CreditCard,
   Image as ImageIcon,
   MapPin,
+  Minus,
+  Package,
   Phone,
+  Plus,
   Scissors,
   ShieldCheck,
   Sparkles,
@@ -18,9 +21,11 @@ import {
 } from 'lucide-react';
 import {
   createPublicBookingAppointment,
+  createPublicProductOrder,
   getPublicBookingAvailability,
   getPublicBookingBootstrap,
   getPublicBookingLinkInfo,
+  getPublicBookingProducts,
 } from '../../api/publicBookingApi';
 
 const DEFAULT_LOGO = '/logo-super-gods.png';
@@ -105,6 +110,24 @@ function normalizeService(raw) {
   };
 }
 
+function normalizePublicProduct(raw) {
+  const price = asNumber(raw.precioVenta ?? raw.price ?? raw.precio);
+  const stock = asNumber(raw.stockActual ?? raw.stock ?? raw.quantity);
+
+  return {
+    id: asNumber(raw.productId ?? raw.id),
+    branchId: raw.branchId === undefined || raw.branchId === null ? null : asNumber(raw.branchId),
+    name: firstText(raw.productName, raw.nombre, raw.name, 'Producto'),
+    description: firstText(raw.description, raw.descripcion, raw.detail),
+    category: firstText(raw.category, raw.categoria),
+    price,
+    stock,
+    imageUrl: firstText(raw.productImageUrl, raw.imageUrl, raw.imagenUrl, raw.photoUrl),
+    publicFeatured: Boolean(raw.publicFeatured ?? raw.featured),
+    publicAvailable: raw.publicAvailable !== false && (Boolean(raw.permiteVentaSinStock) || stock > 0),
+  };
+}
+
 function normalizePaymentMethod(raw) {
   return {
     id: asNumber(raw.id ?? raw.paymentMethodId),
@@ -160,6 +183,13 @@ export default function PublicBookingPage() {
 
   const branchIdFromUrl = searchParams.get('branchId');
   const barberIdFromUrl = searchParams.get('barberId');
+  const rawMode = firstText(searchParams.get('mode'), searchParams.get('modo')).toLowerCase();
+  const isWalkInMode =
+    rawMode === 'walkin' ||
+    rawMode === 'local' ||
+    rawMode === 'preventa' ||
+    searchParams.get('walkin') === '1' ||
+    searchParams.get('atencion') === '1';
 
   const [bootstrap, setBootstrap] = useState(null);
   const [linkInfo, setLinkInfo] = useState(null);
@@ -174,6 +204,9 @@ export default function PublicBookingPage() {
   const [selectedTime, setSelectedTime] = useState('');
 
   const [slots, setSlots] = useState([]);
+  const [publicProducts, setPublicProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [productQuantities, setProductQuantities] = useState({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
 
@@ -289,10 +322,25 @@ export default function PublicBookingPage() {
   const selectedMethod = paymentMethods.find(
     (p) => String(p.id) === String(deposit.depositPaymentMethodId)
   );
+  const selectedProductLines = useMemo(() => {
+    return publicProducts
+      .map((product) => ({
+        product,
+        quantity: asNumber(productQuantities[product.id], 0),
+      }))
+      .filter((line) => line.quantity > 0);
+  }, [publicProducts, productQuantities]);
+  const selectedProductsTotal = selectedProductLines.reduce(
+    (sum, line) => sum + line.product.price * line.quantity,
+    0
+  );
 
   const depositEnabled = Boolean(bootstrap?.bookingDepositEnabled);
+  const appointmentDepositEnabled = depositEnabled && (!isWalkInMode || Boolean(selectedServiceId));
   const forcedBranch = Boolean(branchIdFromUrl);
   const forcedBarber = Boolean(barberIdFromUrl);
+  const currencySymbol = firstText(bootstrap?.currencySymbol, linkInfo?.currencySymbol, 'S/');
+  const money = (value) => formatMoney(value, currencySymbol);
 
   useEffect(() => {
     let active = true;
@@ -330,12 +378,71 @@ export default function PublicBookingPage() {
     };
   }, [codigoNegocio, selectedBranchId, selectedServiceId, selectedDate, selectedBarberId]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadProducts() {
+      if (!selectedBranchId) {
+        setPublicProducts([]);
+        setProductQuantities({});
+        return;
+      }
+
+      setProductsLoading(true);
+
+      try {
+        const data = await getPublicBookingProducts(codigoNegocio, {
+          branchId: selectedBranchId,
+        });
+
+        if (!active) return;
+        const products = asArray(data)
+          .map(normalizePublicProduct)
+          .filter((product) => product.id);
+
+        products.sort((a, b) => Number(b.publicFeatured) - Number(a.publicFeatured));
+        setPublicProducts(products);
+        setProductQuantities((prev) => {
+          const next = {};
+          products.forEach((product) => {
+            if (prev[product.id]) next[product.id] = prev[product.id];
+          });
+          return next;
+        });
+      } catch {
+        if (active) setPublicProducts([]);
+      } finally {
+        if (active) setProductsLoading(false);
+      }
+    }
+
+    loadProducts();
+
+    return () => {
+      active = false;
+    };
+  }, [codigoNegocio, selectedBranchId]);
+
   function updateCustomer(key, value) {
     setCustomer((prev) => ({ ...prev, [key]: value }));
   }
 
   function updateDeposit(key, value) {
     setDeposit((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function changeProductQuantity(product, delta) {
+    if (!product?.publicAvailable) return;
+
+    setProductQuantities((prev) => {
+      const current = asNumber(prev[product.id], 0);
+      const max = product.stock > 0 ? product.stock : 99;
+      const nextQuantity = Math.max(0, Math.min(max, current + delta));
+      return {
+        ...prev,
+        [product.id]: nextQuantity,
+      };
+    });
   }
 
   function handleDepositEvidenceFile(file) {
@@ -367,13 +474,16 @@ export default function PublicBookingPage() {
 
   function validate() {
     if (!selectedBranchId) return 'Selecciona una sede.';
-    if (!selectedServiceId) return 'Selecciona un servicio.';
-    if (!selectedDate) return 'Selecciona una fecha.';
-    if (!selectedTime) return 'Selecciona una hora disponible.';
+    const hasProducts = selectedProductLines.length > 0;
+    const needsAppointment = !isWalkInMode || Boolean(selectedServiceId) || !hasProducts;
+
+    if (needsAppointment && !selectedServiceId) return 'Selecciona un servicio.';
+    if (needsAppointment && !selectedDate) return 'Selecciona una fecha.';
+    if (needsAppointment && !selectedTime) return 'Selecciona una hora disponible.';
     if (!customer.customerName.trim()) return 'Ingresa tu nombre.';
     if (!customer.customerPhone.trim()) return 'Ingresa tu teléfono.';
 
-    if (depositEnabled) {
+    if (appointmentDepositEnabled) {
       if (!deposit.depositPaymentMethodId) return 'Selecciona el método del adelanto.';
       if (!deposit.depositAmount || Number(deposit.depositAmount) <= 0) {
         return 'Ingresa un monto de adelanto válido.';
@@ -401,43 +511,70 @@ export default function PublicBookingPage() {
     setSuccess(null);
 
     try {
-      const payload = {
-        branchId: Number(selectedBranchId),
-        serviceId: Number(selectedServiceId),
-        barberId: selectedBarberId ? Number(selectedBarberId) : null,
-        date: selectedDate,
-        horaInicio: selectedTime,
-        customerName: customer.customerName.trim(),
-        customerLastName: customer.customerLastName.trim() || null,
-        customerPhone: customer.customerPhone.trim(),
-        customerEmail: customer.customerEmail.trim() || null,
-        promotionId: null,
-        depositRequired: depositEnabled,
-        depositPaymentMethodId: depositEnabled ? Number(deposit.depositPaymentMethodId) : null,
-        depositAmount: depositEnabled ? Number(deposit.depositAmount) : null,
-        depositOperationCode:
-          depositEnabled && selectedMethod?.requiresOperationCode
-            ? deposit.depositOperationCode.trim() || null
-            : null,
-        depositEvidenceUrl:
-          depositEnabled && selectedMethod?.requiresEvidence
-            ? deposit.depositEvidenceUrl.trim() || null
-            : null,
-        depositNote: depositEnabled ? deposit.depositNote.trim() || null : null,
-      };
+      const shouldCreateAppointment = Boolean(selectedServiceId);
+      let response = null;
 
-      const response = await createPublicBookingAppointment(codigoNegocio, payload);
+      if (shouldCreateAppointment) {
+        const payload = {
+          branchId: Number(selectedBranchId),
+          serviceId: Number(selectedServiceId),
+          barberId: selectedBarberId ? Number(selectedBarberId) : null,
+          date: selectedDate,
+          horaInicio: selectedTime,
+          customerName: customer.customerName.trim(),
+          customerLastName: customer.customerLastName.trim() || null,
+          customerPhone: customer.customerPhone.trim(),
+          customerEmail: customer.customerEmail.trim() || null,
+          promotionId: null,
+          depositRequired: appointmentDepositEnabled,
+          depositPaymentMethodId: appointmentDepositEnabled ? Number(deposit.depositPaymentMethodId) : null,
+          depositAmount: appointmentDepositEnabled ? Number(deposit.depositAmount) : null,
+          depositOperationCode:
+            appointmentDepositEnabled && selectedMethod?.requiresOperationCode
+              ? deposit.depositOperationCode.trim() || null
+              : null,
+          depositEvidenceUrl:
+            appointmentDepositEnabled && selectedMethod?.requiresEvidence
+              ? deposit.depositEvidenceUrl.trim() || null
+              : null,
+          depositNote: appointmentDepositEnabled ? deposit.depositNote.trim() || null : null,
+        };
+
+        response = await createPublicBookingAppointment(codigoNegocio, payload);
+      }
+
+      const createdProductOrders = [];
+
+      for (const line of selectedProductLines) {
+        const order = await createPublicProductOrder(codigoNegocio, {
+          branchId: Number(selectedBranchId),
+          productId: Number(line.product.id),
+          quantity: Number(line.quantity),
+          customerName: fullCustomerName(customer) || customer.customerName.trim(),
+          customerPhone: customer.customerPhone.trim(),
+          paymentMethod: selectedMethod?.code || selectedMethod?.name || 'PAY_AT_SHOP',
+          paymentOperationNumber: deposit.depositOperationCode.trim() || null,
+          paymentCaptureUrl: deposit.depositEvidenceUrl.trim() || null,
+          notes: response?.appointmentId
+            ? `Pedido creado junto a reserva publica #${response.appointmentId}.`
+            : 'Pedido creado desde QR de atencion en local.',
+        });
+        createdProductOrders.push(order);
+      }
 
       setSuccess({
-        ...response,
+        ...(response || {}),
+        mode: isWalkInMode ? 'walkin' : 'booking',
         branchName: selectedBranch?.name,
         barberName: selectedBarber?.name,
         serviceName: selectedService?.name,
         servicePrice: selectedService?.price,
-        date: selectedDate,
-        time: selectedTime,
+        date: selectedService ? selectedDate : '',
+        time: selectedService ? selectedTime : '',
         customerName: fullCustomerName(customer),
+        productOrders: createdProductOrders,
       });
+      setProductQuantities({});
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {
@@ -498,7 +635,7 @@ export default function PublicBookingPage() {
               <div className="hidden rounded-2xl border border-white/20 bg-white/15 px-4 py-3 backdrop-blur md:block">
                 <div className="flex items-center gap-2 text-sm font-black text-emerald-100">
                   <ShieldCheck size={18} />
-                  Reserva segura
+                  {isWalkInMode ? 'Atencion en local' : 'Reserva segura'}
                 </div>
                 <p className="mt-1 text-xs font-semibold text-white/75">
                   Confirmación directa con el negocio.
@@ -508,13 +645,15 @@ export default function PublicBookingPage() {
 
             <div className="mt-12 max-w-4xl md:mt-16">
               <p className="text-xs font-black uppercase tracking-[0.28em] text-amber-200">
-                Reserva online
+                {isWalkInMode ? 'QR del local' : 'Reserva online'}
               </p>
               <h1 className="mt-3 text-4xl font-black leading-none md:text-6xl">
                 {businessName}
               </h1>
               <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-white/85 md:text-lg">
-                Elige sede, profesional, servicio y horario. Tu cita queda lista en segundos.
+                {isWalkInMode
+                  ? 'Separa productos, registra tus datos o solicita atencion desde tu telefono para que el negocio te atienda en caja.'
+                  : 'Elige sede, profesional, servicio y horario. Tu cita queda lista en segundos.'}
               </p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -539,10 +678,10 @@ export default function PublicBookingPage() {
                 <div className="rounded-2xl border border-white/15 bg-white/15 p-4 backdrop-blur">
                   <div className="flex items-center gap-2 text-sm font-black">
                     <CalendarDays size={17} />
-                    Horarios reales
+                    {isWalkInMode ? 'Caja conectada' : 'Horarios reales'}
                   </div>
                   <p className="mt-1 text-xs font-semibold text-white/70">
-                    Elige una hora disponible.
+                    {isWalkInMode ? 'Tus productos llegan como pedido pendiente.' : 'Elige una hora disponible.'}
                   </p>
                 </div>
               </div>
@@ -634,11 +773,29 @@ export default function PublicBookingPage() {
 
             <PremiumSection
               number="3"
-              title="Elige servicio"
-              subtitle="Revisa precio y duración antes de continuar."
+              title={isWalkInMode ? 'Elige servicio (opcional)' : 'Elige servicio'}
+              subtitle={isWalkInMode ? 'Si solo quieres separar productos, puedes dejar esta parte sin seleccionar.' : 'Revisa precio y duracion antes de continuar.'}
               icon={Scissors}
             >
               <div className="grid gap-3 md:grid-cols-2">
+                {isWalkInMode ? (
+                  <SelectableCard
+                    selected={!selectedServiceId}
+                    onClick={() => {
+                      setSelectedServiceId('');
+                      setSelectedTime('');
+                    }}
+                    large
+                  >
+                    <ImageThumb fallbackIcon={Package} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-black">Solo productos</p>
+                      <p className="mt-1 text-xs font-bold text-slate-500">
+                        Separar productos para pagar o recoger en caja.
+                      </p>
+                    </div>
+                  </SelectableCard>
+                ) : null}
                 {services.map((service) => (
                   <SelectableCard
                     key={service.id}
@@ -651,7 +808,7 @@ export default function PublicBookingPage() {
                       <div className="flex gap-3">
                         <p className="min-w-0 flex-1 truncate text-base font-black">{service.name}</p>
                         <p className="shrink-0 text-base font-black text-emerald-700">
-                          {service.variablePrice ? 'Desde ' : ''}{formatMoney(service.price)}
+                          {service.variablePrice ? 'Desde ' : ''}{money(service.price)}
                         </p>
                       </div>
                       <p className="mt-1 line-clamp-2 text-xs font-bold text-slate-500">
@@ -667,10 +824,22 @@ export default function PublicBookingPage() {
               </div>
             </PremiumSection>
 
+            {isWalkInMode && !selectedServiceId ? (
+              <PremiumSection
+                number="4"
+                title="Atencion sin cita"
+                subtitle="Para separar productos no necesitas escoger horario."
+                icon={CalendarDays}
+              >
+                <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold leading-6 text-emerald-900">
+                  Puedes continuar solo con productos. Si quieres solicitar un servicio tambien, selecciona uno y te mostraremos horarios disponibles.
+                </div>
+              </PremiumSection>
+            ) : (
             <PremiumSection
               number="4"
               title="Fecha y hora"
-              subtitle="Selecciona un horario disponible."
+              subtitle={isWalkInMode ? 'Elige una hora para que el negocio te ubique en agenda.' : 'Selecciona un horario disponible.'}
               icon={CalendarDays}
             >
               <div className="grid gap-4 md:grid-cols-[260px_1fr]">
@@ -722,6 +891,7 @@ export default function PublicBookingPage() {
                 </div>
               </div>
             </PremiumSection>
+            )}
 
             <PremiumSection
               number="5"
@@ -757,9 +927,104 @@ export default function PublicBookingPage() {
               </div>
             </PremiumSection>
 
-            {depositEnabled ? (
+            {selectedBranchId ? (
               <PremiumSection
                 number="6"
+                title="Productos para recoger"
+                subtitle="Puedes separar productos disponibles y pagarlos o recogerlos en caja."
+                icon={Package}
+              >
+                {productsLoading ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-black text-slate-500">
+                    Cargando productos...
+                  </div>
+                ) : publicProducts.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-black text-slate-500">
+                    Este negocio aun no tiene productos publicados para clientes.
+                  </div>
+                ) : (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {publicProducts.map((product) => {
+                      const quantity = asNumber(productQuantities[product.id], 0);
+                      const maxReached = product.stock > 0 && quantity >= product.stock;
+
+                      return (
+                        <div
+                          key={product.id}
+                          className={[
+                            'rounded-3xl border bg-white p-4 shadow-sm',
+                            product.publicFeatured ? 'border-amber-200 ring-2 ring-amber-100' : 'border-slate-200',
+                            product.publicAvailable ? '' : 'opacity-60',
+                          ].join(' ')}
+                        >
+                          <div className="flex gap-3">
+                            <ImageThumb src={product.imageUrl} fallbackIcon={Package} />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-base font-black text-slate-950">{product.name}</p>
+                                  <p className="mt-1 text-xs font-bold text-slate-500">
+                                    {product.category || 'Producto disponible'}
+                                  </p>
+                                </div>
+                                <p className="shrink-0 text-base font-black text-emerald-700">
+                                  {money(product.price)}
+                                </p>
+                              </div>
+
+                              <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">
+                                {product.description || 'Separa este producto y recÃ³gelo en el local.'}
+                              </p>
+
+                              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                                <span className={`rounded-full px-3 py-1 text-[11px] font-black ${product.publicAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                  {product.publicAvailable ? `Stock ${product.stock}` : 'Agotado'}
+                                </span>
+
+                                <div className="flex items-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                                  <button
+                                    type="button"
+                                    onClick={() => changeProductQuantity(product, -1)}
+                                    disabled={quantity <= 0}
+                                    className="flex h-10 w-10 items-center justify-center text-slate-700 disabled:opacity-30"
+                                  >
+                                    <Minus size={16} />
+                                  </button>
+                                  <div className="w-10 text-center text-sm font-black text-slate-950">{quantity}</div>
+                                  <button
+                                    type="button"
+                                    onClick={() => changeProductQuantity(product, 1)}
+                                    disabled={!product.publicAvailable || maxReached}
+                                    className="flex h-10 w-10 items-center justify-center text-slate-700 disabled:opacity-30"
+                                  >
+                                    <Plus size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {selectedProductLines.length > 0 ? (
+                  <div className="mt-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-4">
+                    <p className="text-sm font-black text-emerald-900">
+                      Productos seleccionados: {selectedProductLines.length} · Total {money(selectedProductsTotal)}
+                    </p>
+                    <p className="mt-1 text-xs font-bold leading-5 text-emerald-800">
+                      El negocio validarÃ¡ el pedido desde caja y lo entregarÃ¡ descontando stock.
+                    </p>
+                  </div>
+                ) : null}
+              </PremiumSection>
+            ) : null}
+
+            {appointmentDepositEnabled ? (
+              <PremiumSection
+                number="7"
                 title="Adelanto obligatorio"
                 subtitle="Este negocio solicita un anticipo para confirmar y separar tu horario."
                 icon={WalletCards}
@@ -897,18 +1162,30 @@ export default function PublicBookingPage() {
               <SummaryLine label="Negocio" value={businessName} />
               <SummaryLine label="Sede" value={selectedBranch?.name || 'Por elegir'} />
               <SummaryLine label="Profesional" value={selectedBarber?.name || 'Cualquiera disponible'} />
-              <SummaryLine label="Servicio" value={selectedService?.name || 'Por elegir'} />
-              <SummaryLine
-                label="Precio"
-                value={selectedService ? `${selectedService.variablePrice ? 'Desde ' : ''}${formatMoney(selectedService.price)}` : 'Por definir'}
-              />
-              <SummaryLine label="Fecha" value={displayDate(selectedDate)} />
-              <SummaryLine label="Hora" value={selectedTime || 'Por elegir'} />
+              <SummaryLine label="Servicio" value={selectedService?.name || (isWalkInMode ? 'Opcional' : 'Por elegir')} />
+              {selectedService ? (
+                <>
+                  <SummaryLine
+                    label="Precio"
+                    value={`${selectedService.variablePrice ? 'Desde ' : ''}${money(selectedService.price)}`}
+                  />
+                  <SummaryLine label="Fecha" value={displayDate(selectedDate)} />
+                  <SummaryLine label="Hora" value={selectedTime || 'Por elegir'} />
+                </>
+              ) : null}
 
-              {depositEnabled ? (
+              {selectedProductLines.length > 0 ? (
                 <>
                   <div className="my-4 h-px bg-slate-100" />
-                  <SummaryLine label="Adelanto obligatorio" value={formatMoney(deposit.depositAmount) || 'Por definir'} />
+                  <SummaryLine label="Productos" value={`${selectedProductLines.length} seleccionados`} />
+                  <SummaryLine label="Total productos" value={money(selectedProductsTotal)} />
+                </>
+              ) : null}
+
+              {appointmentDepositEnabled ? (
+                <>
+                  <div className="my-4 h-px bg-slate-100" />
+                  <SummaryLine label="Adelanto obligatorio" value={money(deposit.depositAmount) || 'Por definir'} />
                   <SummaryLine label="Método" value={selectedMethod?.name || 'Por elegir'} />
                   {selectedMethod?.accountHolderName ? (
                     <SummaryLine label="Titular" value={selectedMethod.accountHolderName} />
@@ -928,7 +1205,15 @@ export default function PublicBookingPage() {
                 disabled={submitting}
                 className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#0F2A5F] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {submitting ? 'Confirmando...' : 'Confirmar reserva'}
+                {submitting
+                  ? 'Confirmando...'
+                  : selectedProductLines.length > 0 && !selectedService
+                    ? 'Enviar pedido a caja'
+                    : selectedProductLines.length > 0
+                      ? 'Confirmar reserva y productos'
+                      : isWalkInMode
+                        ? 'Enviar solicitud'
+                        : 'Confirmar reserva'}
                 <ChevronRight size={18} />
               </button>
 
@@ -1036,6 +1321,11 @@ function SummaryLine({ label, value }) {
 }
 
 function SuccessPanel({ success, onNewBooking }) {
+  const hasService = Boolean(success.serviceName);
+  const hasProducts = Array.isArray(success.productOrders) && success.productOrders.length > 0;
+  const title = hasService ? 'Reserva creada correctamente' : 'Pedido enviado a caja';
+  const actionLabel = hasService ? 'Crear otra reserva' : 'Enviar otro pedido';
+
   return (
     <div className="mt-5 rounded-[34px] border border-emerald-200 bg-emerald-50 p-6 shadow-[0_24px_70px_rgba(16,185,129,0.10)]">
       <div className="flex items-start gap-4">
@@ -1043,18 +1333,23 @@ function SuccessPanel({ success, onNewBooking }) {
           <CheckCircle2 size={28} />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-black text-emerald-950">Reserva creada correctamente</h2>
+          <h2 className="text-2xl font-black text-emerald-950">{title}</h2>
           <p className="mt-1 text-sm font-bold text-emerald-800">
             Estado: {success.estado || success.status || 'CREATED'} · Código: {success.appointmentId || 'registrado'}
           </p>
 
           <div className="mt-4 grid gap-2 rounded-3xl bg-white/70 p-4 text-sm font-bold text-slate-700 md:grid-cols-2">
             <p><b>Cliente:</b> {success.customerName}</p>
-            <p><b>Servicio:</b> {success.serviceName}</p>
+            {hasService ? <p><b>Servicio:</b> {success.serviceName}</p> : null}
             <p><b>Sede:</b> {success.branchName}</p>
-            <p><b>Profesional:</b> {success.barberName || 'Cualquiera disponible'}</p>
-            <p><b>Fecha:</b> {displayDate(success.date)}</p>
-            <p><b>Hora:</b> {success.time}</p>
+            {hasService ? <p><b>Profesional:</b> {success.barberName || 'Cualquiera disponible'}</p> : null}
+            {hasService ? <p><b>Fecha:</b> {displayDate(success.date)}</p> : null}
+            {hasService ? <p><b>Hora:</b> {success.time}</p> : null}
+            {hasProducts ? (
+              <p className="md:col-span-2">
+                <b>Productos:</b> {success.productOrders.length} pedido{success.productOrders.length === 1 ? '' : 's'} enviado{success.productOrders.length === 1 ? '' : 's'} a caja.
+              </p>
+            ) : null}
           </div>
 
           <button
@@ -1062,7 +1357,7 @@ function SuccessPanel({ success, onNewBooking }) {
             onClick={onNewBooking}
             className="mt-4 rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-black text-white"
           >
-            Crear otra reserva
+            {actionLabel}
           </button>
         </div>
       </div>

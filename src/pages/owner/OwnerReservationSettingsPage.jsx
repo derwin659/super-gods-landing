@@ -41,6 +41,20 @@ const TEMPLATES = [
     accountLabel: 'Datos de pago móvil',
     instructions: 'Realiza el pago móvil y escribe la referencia.',
   },
+  {
+    code: 'ZELLE',
+    displayName: 'Zelle',
+    countryCode: 'VE',
+    accountLabel: 'Correo Zelle',
+    instructions: 'Realiza el pago por Zelle y escribe la referencia.',
+  },
+  {
+    code: 'USDT',
+    displayName: 'USDT / Binance',
+    countryCode: 'VE',
+    accountLabel: 'Wallet o Binance Pay',
+    instructions: 'Realiza el pago en USDT y escribe el ID de transaccion.',
+  },
 ];
 
 function createMethod(template, sortOrder) {

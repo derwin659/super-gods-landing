@@ -189,6 +189,8 @@ function ProductFormModal({ branch, product, onClose, onSaved }) {
   const [stockMinimo, setStockMinimo] = useState(product ? String(product.stockMinimo || 0) : '0');
   const [activo, setActivo] = useState(product?.activo !== false);
   const [permiteVentaSinStock, setPermiteVentaSinStock] = useState(product?.permiteVentaSinStock === true);
+  const [publicVisible, setPublicVisible] = useState(product?.publicVisible === true);
+  const [publicFeatured, setPublicFeatured] = useState(product?.publicFeatured === true);
   const [imageFile, setImageFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -224,6 +226,8 @@ function ProductFormModal({ branch, product, onClose, onSaved }) {
         stockMinimo: Number(stockMinimo || 0) || 0,
         activo,
         permiteVentaSinStock,
+        publicVisible,
+        publicFeatured,
       };
 
       let saved = isEdit
@@ -316,6 +320,22 @@ function ProductFormModal({ branch, product, onClose, onSaved }) {
               <div className="text-sm font-semibold text-neutral-500">Úsalo solo para casos especiales.</div>
             </div>
             <input type="checkbox" checked={permiteVentaSinStock} onChange={(event) => setPermiteVentaSinStock(event.target.checked)} className="h-5 w-5" />
+          </label>
+
+          <label className="flex items-center justify-between gap-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
+            <div>
+              <div className="font-black text-neutral-950">Visible para clientes</div>
+              <div className="text-sm font-semibold text-blue-700">Se muestra en la reserva web como producto disponible.</div>
+            </div>
+            <input type="checkbox" checked={publicVisible} onChange={(event) => setPublicVisible(event.target.checked)} className="h-5 w-5" />
+          </label>
+
+          <label className="flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+            <div>
+              <div className="font-black text-neutral-950">Destacar producto</div>
+              <div className="text-sm font-semibold text-amber-700">Aparece primero como recomendacion o promocion.</div>
+            </div>
+            <input type="checkbox" checked={publicFeatured} onChange={(event) => setPublicFeatured(event.target.checked)} className="h-5 w-5" />
           </label>
         </div>
 
@@ -770,9 +790,21 @@ export default function OwnerProductsPage() {
                       </div>
                     </div>
 
-                    <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${product.activo ? (product.stockBajo ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700') : 'bg-neutral-100 text-neutral-500'}`}>
-                      {product.activo ? (product.stockBajo ? 'Stock bajo' : 'Activo') : 'Inactivo'}
-                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${product.activo ? (product.stockBajo ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700') : 'bg-neutral-100 text-neutral-500'}`}>
+                        {product.activo ? (product.stockBajo ? 'Stock bajo' : 'Activo') : 'Inactivo'}
+                      </span>
+                      {product.publicVisible ? (
+                        <span className="w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+                          Visible cliente
+                        </span>
+                      ) : null}
+                      {product.publicFeatured ? (
+                        <span className="w-fit rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
+                          Destacado
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-4">

@@ -279,8 +279,33 @@ export default function OwnerSubscriptionPage() {
   );
 
   const currentActive = isSubscriptionActive(subscription);
-  const isPeruManualPayment = String(activeCurrency || '').toUpperCase() === 'PEN';
-  const availableBillingOptions = isPeruManualPayment
+  const normalizedCurrency = String(activeCurrency || '').toUpperCase();
+  const isPeruManualPayment = normalizedCurrency === 'PEN';
+  const supportsLocalManualPayment = ['PEN', 'VES', 'USD'].includes(normalizedCurrency);
+  const manualPaymentMethod = normalizedCurrency === 'PEN'
+    ? 'YAPE'
+    : normalizedCurrency === 'VES'
+      ? 'PAGO_MOVIL'
+      : 'ZELLE_USDT';
+  const manualPaymentTitle = normalizedCurrency === 'PEN'
+    ? 'Pago por Yape'
+    : normalizedCurrency === 'VES'
+      ? 'Pago local en Venezuela'
+      : 'Pago manual internacional';
+  const manualPaymentHelper = normalizedCurrency === 'PEN'
+    ? 'Envía el monto y reporta tu número de operación.'
+    : normalizedCurrency === 'VES'
+      ? 'Puedes reportar Pago Móvil, transferencia, Zelle, Binance o USDT.'
+      : 'Puedes reportar Zelle, Binance, USDT o transferencia acordada con soporte.';
+  const manualPaymentReferenceLabel = normalizedCurrency === 'PEN'
+    ? 'Número Yape'
+    : normalizedCurrency === 'VES'
+      ? 'Datos de pago'
+      : 'Referencia de pago';
+  const manualPaymentReferenceValue = normalizedCurrency === 'PEN'
+    ? '958062847'
+    : 'Coordinar por WhatsApp con soporte';
+  const availableBillingOptions = supportsLocalManualPayment
     ? BILLING_OPTIONS
     : BILLING_OPTIONS.filter((option) => option.id === 'MONTHLY');
 
@@ -308,10 +333,10 @@ export default function OwnerSubscriptionPage() {
   }, []);
 
   useEffect(() => {
-    if (!loading && !isPeruManualPayment && selectedBilling !== 'MONTHLY') {
+    if (!loading && !supportsLocalManualPayment && selectedBilling !== 'MONTHLY') {
       setSelectedBilling('MONTHLY');
     }
-  }, [isPeruManualPayment, loading, selectedBilling]);
+  }, [supportsLocalManualPayment, loading, selectedBilling]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -331,7 +356,7 @@ export default function OwnerSubscriptionPage() {
       await reportSubscriptionPayment({
         plan: selectedPlan,
         billingCycle: selectedBilling,
-        paymentMethod: 'YAPE',
+        paymentMethod: manualPaymentMethod,
         operationNumber,
         amount,
         payerName,
@@ -542,7 +567,7 @@ export default function OwnerSubscriptionPage() {
                   ))}
                 </div>
 
-                {!isPeruManualPayment && (
+                {!supportsLocalManualPayment && (
                   <p className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold leading-6 text-emerald-800">
                     El cobro automatico internacional esta habilitado en ciclo mensual. Los planes semestral y anual se activaran cuando creemos esos precios recurrentes en Paddle.
                   </p>
@@ -610,26 +635,26 @@ export default function OwnerSubscriptionPage() {
                   </div>
                 </div>
 
-                {isPeruManualPayment && (
+                {supportsLocalManualPayment && (
                 <div className="mt-5 rounded-[26px] border border-blue-100 bg-blue-50 p-5">
                   <div className="flex items-center gap-3">
                     <CreditCard size={22} strokeWidth={2.5} className="text-blue-700" />
                     <div>
                       <div className="text-sm font-black text-blue-900">
-                        Pago por Yape
+                        {manualPaymentTitle}
                       </div>
                       <div className="text-xs font-bold text-blue-600">
-                        Envía el monto y reporta tu número de operación.
+                        {manualPaymentHelper}
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-4 rounded-2xl bg-white px-4 py-3">
                     <div className="text-xs font-black uppercase tracking-[0.16em] text-neutral-400">
-                      Número Yape
+                      {manualPaymentReferenceLabel}
                     </div>
                     <div className="mt-1 text-2xl font-black text-neutral-950">
-                      958062847
+                      {manualPaymentReferenceValue}
                     </div>
                 
                   </div>
@@ -667,7 +692,7 @@ export default function OwnerSubscriptionPage() {
                 )
               </section>
 
-              {isPeruManualPayment ? (
+              {supportsLocalManualPayment ? (
               <form
                 onSubmit={handleSubmit}
                 className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.055)]"

@@ -27,6 +27,12 @@ import {
   updateCashSale,
 } from '../../api/ownerCashApi';
 import { createOwnerCustomer, getOwnerCustomers } from '../../api/ownerCustomersApi';
+import {
+  approveOwnerProductOrder,
+  deliverOwnerProductOrder,
+  getOwnerProductOrders,
+  rejectOwnerProductOrder,
+} from '../../api/ownerProductOrdersApi';
 import { useAuth } from '../../context/AuthContext';
 import { getBusinessLabels, readBusinessLabels } from '../../utils/businessLabels';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
@@ -570,11 +576,10 @@ function buildLocalSaleDateForBackend(dateValue) {
   if (selected > todayValue) selected = todayValue;
   if (selected < minValue) selected = minValue;
 
-  const hh = String(now.getHours()).padStart(2, '0');
-  const min = String(now.getMinutes()).padStart(2, '0');
-  const ss = String(now.getSeconds()).padStart(2, '0');
-
-  return `${selected}T${hh}:${min}:${ss}`;
+  // Usamos mediodía local para evitar que una conversión de zona horaria
+  // haga que la venta caiga en el día anterior. Importante probar también
+  // en móvil con tenants de Venezuela (America/Caracas) y Perú (America/Lima).
+  return `${selected}T12:00:00`;
 }
 
 
@@ -605,6 +610,10 @@ function saleDateInputMinValue() {
   const date = new Date();
   date.setDate(date.getDate() - 30);
   return toDateInputValue(date);
+}
+
+function saleDateInputMaxValue() {
+  return toDateInputValue(new Date());
 }
 
 function saleIdOf(sale) {
@@ -2915,11 +2924,11 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                     type="date"
                     value={saleDate}
                     min={saleDateInputMinValue()}
-                    max={toDateInputValue(new Date())}
+                    max={saleDateInputMaxValue()}
                     onChange={(event) => setSaleDate(event.target.value)}
                     className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-400"
                   />
-                  {saleDate !== toDateInputValue(new Date()) && (
+                  {saleDate !== saleDateInputMaxValue() && (
                     <div className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
                       Esta cita se cobrará con fecha anterior para regularizar caja.
                     </div>
@@ -3674,11 +3683,11 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                     type="date"
                     value={saleDate}
                     min={saleDateInputMinValue()}
-                    max={toDateInputValue(new Date())}
+                    max={saleDateInputMaxValue()}
                     onChange={(event) => setSaleDate(event.target.value)}
                     className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-400"
                   />
-                  {saleDate !== toDateInputValue(new Date()) && (
+                  {saleDate !== saleDateInputMaxValue() && (
                     <div className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
                       Esta venta se guardará con fecha anterior. Úsalo para regularizar ventas olvidadas.
                     </div>
@@ -4497,6 +4506,121 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, on
 }
 
 
+function productOrderStatusLabel(status) {
+  const code = String(status || '').toUpperCase();
+  if (code === 'APPROVED') return 'Aprobado';
+  if (code === 'DELIVERED') return 'Entregado';
+  if (code === 'REJECTED') return 'Rechazado';
+  if (code === 'CANCELLED') return 'Cancelado';
+  return 'Pendiente';
+}
+
+function ProductOrdersSection({ items = [], processingId, isOpen, onApprove, onReject, onDeliver }) {
+  if (!items.length) return null;
+
+  return (
+    <section className="rounded-[34px] border border-blue-200 bg-blue-50 p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="text-xs font-black uppercase tracking-[0.22em] text-blue-700">
+            Pedidos web
+          </div>
+          <h3 className="mt-2 text-2xl font-black text-neutral-950">
+            Productos separados por clientes
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-blue-900/70">
+            Aprueba, rechaza o entrega pedidos del catalogo publico. Al entregar se registra una venta y se descuenta stock.
+          </p>
+        </div>
+
+        <div className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-blue-800">
+          {items.length} pedido{items.length === 1 ? '' : 's'}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 xl:grid-cols-2">
+        {items.map((order) => {
+          const status = String(order.status || '').toUpperCase();
+          const isApproved = status === 'APPROVED';
+          const busy = String(processingId) === `product-order-${order.id}`;
+
+          return (
+            <article key={order.id} className="rounded-[28px] border border-blue-100 bg-white p-4 shadow-sm">
+              <div className="flex gap-3">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-blue-50 text-blue-700">
+                  {order.productImageUrl ? (
+                    <img src={order.productImageUrl} alt={order.productName} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-black">P</span>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-black text-neutral-950">{order.productName}</p>
+                      <p className="mt-1 text-xs font-bold text-neutral-500">
+                        {order.customerName} · {order.customerPhone || 'Sin telefono'}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-800">
+                      {productOrderStatusLabel(order.status)}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid gap-2 text-xs font-black text-neutral-700 sm:grid-cols-3">
+                    <div className="rounded-2xl bg-neutral-50 px-3 py-2">Cant. {order.quantity}</div>
+                    <div className="rounded-2xl bg-neutral-50 px-3 py-2">{methodLabel(order.paymentMethod)}</div>
+                    <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-emerald-700">{formatMoney(order.total)}</div>
+                  </div>
+
+                  {order.paymentOperationNumber ? (
+                    <p className="mt-2 text-xs font-bold text-neutral-500">Operacion: {order.paymentOperationNumber}</p>
+                  ) : null}
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {status === 'PENDING' ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onApprove(order)}
+                          disabled={busy}
+                          className="rounded-2xl bg-emerald-600 px-4 py-3 text-xs font-black text-white disabled:opacity-50"
+                        >
+                          Aprobar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onReject(order)}
+                          disabled={busy}
+                          className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-black text-red-700 disabled:opacity-50"
+                        >
+                          Rechazar
+                        </button>
+                      </>
+                    ) : null}
+
+                    {isApproved ? (
+                      <button
+                        type="button"
+                        onClick={() => onDeliver(order)}
+                        disabled={busy || !isOpen}
+                        className="rounded-2xl bg-neutral-950 px-4 py-3 text-xs font-black text-white disabled:opacity-50"
+                      >
+                        Entregar y vender
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function OwnerCashPage() {
   const { session } = useAuth();
   const [branches, setBranches] = useState([]);
@@ -4505,6 +4629,7 @@ export default function OwnerCashPage() {
   const [movements, setMovements] = useState([]);
   const [sales, setSales] = useState([]);
   const [pendingValidationSales, setPendingValidationSales] = useState([]);
+  const [productOrders, setProductOrders] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState(DEFAULT_PAYMENT_METHODS);
 
   const [loadingBranches, setLoadingBranches] = useState(true);
@@ -4584,12 +4709,23 @@ export default function OwnerCashPage() {
       setCashRegister(current);
 
       let dataPendingSales = [];
+      let dataProductOrders = [];
       try {
         dataPendingSales = await getPendingValidationSales(branchId);
       } catch {
         dataPendingSales = [];
       }
+      try {
+        const [pendingOrders, approvedOrders] = await Promise.all([
+          getOwnerProductOrders({ branchId, status: 'PENDING' }),
+          getOwnerProductOrders({ branchId, status: 'APPROVED' }),
+        ]);
+        dataProductOrders = [...pendingOrders, ...approvedOrders];
+      } catch {
+        dataProductOrders = [];
+      }
       setPendingValidationSales(Array.isArray(dataPendingSales) ? dataPendingSales : []);
+      setProductOrders(Array.isArray(dataProductOrders) ? dataProductOrders : []);
 
       if (current?.id) {
         const [dataMovements, dataSales] = await Promise.all([
@@ -4610,6 +4746,7 @@ export default function OwnerCashPage() {
       setLastUpdatedAt(new Date());
     } catch (error) {
       setPendingValidationSales([]);
+      setProductOrders([]);
       setErrorMsg(error.message || 'No se pudo cargar la caja.');
     } finally {
       setLoadingCash(false);
@@ -4838,6 +4975,82 @@ export default function OwnerCashPage() {
     }
   }
 
+  async function handleApproveProductOrder(order) {
+    if (!selectedBranch || !order?.id) return;
+
+    setErrorMsg('');
+    setProcessingApprovalId(`product-order-${order.id}`);
+
+    try {
+      await approveOwnerProductOrder({
+        branchId: selectedBranch.id,
+        orderId: order.id,
+        note: 'Pedido aprobado desde caja web',
+      });
+      await loadCash(selectedBranchId);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo aprobar el pedido de producto.');
+    } finally {
+      setProcessingApprovalId(null);
+    }
+  }
+
+  async function handleRejectProductOrder(order) {
+    if (!selectedBranch || !order?.id) return;
+
+    const reason = window.prompt(
+      `Motivo para rechazar el pedido de ${order.productName}:`,
+      'Producto no disponible'
+    );
+    if (reason === null) return;
+
+    setErrorMsg('');
+    setProcessingApprovalId(`product-order-${order.id}`);
+
+    try {
+      await rejectOwnerProductOrder({
+        branchId: selectedBranch.id,
+        orderId: order.id,
+        note: reason.trim() || 'Pedido rechazado desde caja web',
+      });
+      await loadCash(selectedBranchId);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo rechazar el pedido de producto.');
+    } finally {
+      setProcessingApprovalId(null);
+    }
+  }
+
+  async function handleDeliverProductOrder(order) {
+    if (!selectedBranch || !order?.id) return;
+
+    if (!isOpen) {
+      setErrorMsg('Abre caja antes de entregar un pedido.');
+      return;
+    }
+
+    const ok = window.confirm(
+      `Entregar ${order.quantity} x ${order.productName} por ${formatMoney(order.total)}?`
+    );
+    if (!ok) return;
+
+    setErrorMsg('');
+    setProcessingApprovalId(`product-order-${order.id}`);
+
+    try {
+      await deliverOwnerProductOrder({
+        branchId: selectedBranch.id,
+        orderId: order.id,
+        note: 'Pedido entregado desde caja web',
+      });
+      await loadCash(selectedBranchId);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo entregar el pedido de producto.');
+    } finally {
+      setProcessingApprovalId(null);
+    }
+  }
+
   const isOpen = String(cashRegister?.status || '').toUpperCase() === 'OPEN';
 
   const paymentSalesSource = Array.isArray(cashRegister?.paymentMethodsSummary)
@@ -5052,6 +5265,15 @@ export default function OwnerCashPage() {
             onReject={handleRejectSalePayment}
           />
 
+          <ProductOrdersSection
+            items={productOrders}
+            processingId={processingApprovalId}
+            isOpen={isOpen}
+            onApprove={handleApproveProductOrder}
+            onReject={handleRejectProductOrder}
+            onDeliver={handleDeliverProductOrder}
+          />
+
           <EmptyCard
         title="No hay caja abierta"
         text="Abre una caja para empezar a registrar ventas, ingresos, gastos y movimientos del día."
@@ -5097,6 +5319,15 @@ export default function OwnerCashPage() {
             processingId={processingApprovalId}
             onApprove={handleApproveMovement}
             onReject={handleRejectMovement}
+          />
+
+          <ProductOrdersSection
+            items={productOrders}
+            processingId={processingApprovalId}
+            isOpen={isOpen}
+            onApprove={handleApproveProductOrder}
+            onReject={handleRejectProductOrder}
+            onDeliver={handleDeliverProductOrder}
           />
 
           <section className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">

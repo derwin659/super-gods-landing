@@ -74,3 +74,19 @@ export function createPublicBookingAppointment(codigoNegocio, payload) {
     }
   );
 }
+
+export function getPublicBookingProducts(codigoNegocio, params = {}) {
+  return request(
+    `/api/public/booking/${encodeURIComponent(codigoNegocio)}/products${buildQuery(params)}`
+  );
+}
+
+export function createPublicProductOrder(codigoNegocio, payload) {
+  return request(
+    `/api/public/booking/${encodeURIComponent(codigoNegocio)}/product-orders`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  );
+}

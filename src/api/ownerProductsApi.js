@@ -55,6 +55,9 @@ export function normalizeProduct(raw = {}) {
     imagePublicId: text(raw.imagePublicId ?? ''),
     activo: raw.activo !== false,
     permiteVentaSinStock: raw.permiteVentaSinStock === true,
+    publicVisible: raw.publicVisible === true,
+    publicFeatured: raw.publicFeatured === true,
+    publicAvailable: raw.publicAvailable === true,
     stockBajo: raw.stockBajo === true || stockActual <= stockMinimo,
     raw,
   };
@@ -221,5 +224,7 @@ function normalizeProductPayload(payload = {}) {
     categoria: String(payload.categoria || '').trim() || null,
     activo: payload.activo !== false,
     permiteVentaSinStock: payload.permiteVentaSinStock === true,
+    publicVisible: payload.publicVisible === true,
+    publicFeatured: payload.publicFeatured === true,
   };
 }

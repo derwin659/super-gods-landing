@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   cancelOwnerAppointment,
@@ -13,6 +14,7 @@ import {
   updateOwnerAppointment,
   validateAppointmentDeposit,
 } from '../../api/ownerAgendaApi';
+import { getOwnerProductOrders } from '../../api/ownerProductOrdersApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
 
 function toDateInputValue(date) {
@@ -218,6 +220,58 @@ function EmptyCard({ onCreate }) {
         Crear primera cita
       </button>
     </div>
+  );
+}
+
+function ProductOrdersBanner({ orders = [], onOpenCash }) {
+  if (!orders.length) return null;
+
+  const quantity = orders.reduce((sum, order) => sum + Number(order.quantity || 0), 0);
+  const total = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+  const pending = orders.filter((order) => String(order.status || '').toUpperCase() === 'PENDING').length;
+  const approved = orders.filter((order) => String(order.status || '').toUpperCase() === 'APPROVED').length;
+
+  return (
+    <section className="rounded-[30px] border border-amber-200 bg-amber-50 p-5 shadow-[0_16px_45px_rgba(15,23,42,0.055)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-2xl">
+            <Package className="h-6 w-6 text-amber-700" />
+          </div>
+
+          <div className="min-w-0">
+            <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+              Productos separados
+            </div>
+            <h3 className="mt-1 text-xl font-black text-neutral-950">
+              Clientes dejaron productos pendientes para caja
+            </h3>
+            <p className="mt-1 text-sm font-bold leading-6 text-amber-900/75">
+              {quantity} producto{quantity === 1 ? '' : 's'} por {formatMoney(total)}. Revisa, aprueba o entrega desde caja.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-amber-700">
+              {pending} pendiente{pending === 1 ? '' : 's'}
+            </span>
+            <span className="rounded-full bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700">
+              {approved} aprobado{approved === 1 ? '' : 's'}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={onOpenCash}
+            className="rounded-2xl bg-neutral-950 px-5 py-4 text-sm font-black text-white transition hover:scale-[1.01]"
+          >
+            Ver en caja
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -1273,6 +1327,7 @@ export default function OwnerAgendaPage() {
   const [selectedDate, setSelectedDate] = useState(toDateInputValue(new Date()));
 
   const [items, setItems] = useState([]);
+  const [productOrders, setProductOrders] = useState([]);
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [loadingAgenda, setLoadingAgenda] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -1349,14 +1404,26 @@ export default function OwnerAgendaPage() {
     setErrorMsg('');
 
     try {
-      const data = await getOwnerAgenda({
-        fecha: selectedDate,
-        branchId: selectedBranchId,
-      });
+      const [data, pendingOrders, approvedOrders] = await Promise.all([
+        getOwnerAgenda({
+          fecha: selectedDate,
+          branchId: selectedBranchId,
+        }),
+        getOwnerProductOrders({
+          branchId: selectedBranchId,
+          status: 'PENDING',
+        }).catch(() => []),
+        getOwnerProductOrders({
+          branchId: selectedBranchId,
+          status: 'APPROVED',
+        }).catch(() => []),
+      ]);
 
       setItems(Array.isArray(data) ? data : []);
+      setProductOrders([...pendingOrders, ...approvedOrders]);
     } catch (error) {
       setItems([]);
+      setProductOrders([]);
       setErrorMsg(error.message || 'No se pudo cargar la agenda.');
     } finally {
       setLoadingAgenda(false);
@@ -1428,6 +1495,13 @@ export default function OwnerAgendaPage() {
       barberUserId: String(item.barberUserId || ''),
     });
 
+    navigate(`/owner/caja?${params.toString()}`);
+  }
+
+  function openCashProductOrders() {
+    const params = new URLSearchParams();
+    if (selectedBranchId) params.set('branchId', String(selectedBranchId));
+    params.set('section', 'product-orders');
     navigate(`/owner/caja?${params.toString()}`);
   }
 
@@ -1566,6 +1640,11 @@ export default function OwnerAgendaPage() {
         <StatBox label="Finalizadas" value={doneCount} tone="green" />
         <StatBox label="Pagos por validar" value={pendingDepositCount} tone="amber" />
       </section>
+
+      <ProductOrdersBanner
+        orders={productOrders}
+        onOpenCash={openCashProductOrders}
+      />
 
       {loadingAgenda ? (
         <div className="rounded-[28px] border border-neutral-200 bg-white p-6 font-bold text-neutral-700 shadow-sm">
