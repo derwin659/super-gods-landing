@@ -19,6 +19,13 @@ function extractList(data) {
   if (Array.isArray(data?.data)) return data.data;
   if (Array.isArray(data?.content)) return data.content;
   if (Array.isArray(data?.customers)) return data.customers;
+  if (Array.isArray(data?.history)) return data.history;
+  if (Array.isArray(data?.visits)) return data.visits;
+  if (Array.isArray(data?.sales)) return data.sales;
+  if (Array.isArray(data?.cashSales)) return data.cashSales;
+  if (Array.isArray(data?.cuts)) return data.cuts;
+  if (Array.isArray(data?.cutHistory)) return data.cutHistory;
+  if (Array.isArray(data?.appointments)) return data.appointments;
   if (Array.isArray(data?.results)) return data.results;
   if (Array.isArray(data?.rows)) return data.rows;
 
@@ -307,15 +314,19 @@ export async function getOwnerCustomerHistory(customerId) {
     `/api/owner/cash-sales/customer/${customerId}`,
   ];
 
+  let emptyResult = [];
+
   for (const endpoint of endpoints) {
     const data = await tryRequest(endpoint);
 
     if (!data.__error) {
-      return extractList(data).map(normalizeHistoryItem);
+      const items = extractList(data).map(normalizeHistoryItem);
+      if (items.length > 0) return items;
+      emptyResult = items;
     }
   }
 
-  return [];
+  return emptyResult;
 }
 
 export async function getOwnerCustomerCutHistory(customerId) {
@@ -326,15 +337,19 @@ export async function getOwnerCustomerCutHistory(customerId) {
     `/api/customer-cut-history${toQuery({ customerId })}`,
   ];
 
+  let emptyResult = [];
+
   for (const endpoint of endpoints) {
     const data = await tryRequest(endpoint);
 
     if (!data.__error) {
-      return extractList(data).map(normalizeCutHistoryItem);
+      const items = extractList(data).map(normalizeCutHistoryItem);
+      if (items.length > 0) return items;
+      emptyResult = items;
     }
   }
 
-  return [];
+  return emptyResult;
 }
 
 export async function getOwnerCustomerLoyalty(customerId) {

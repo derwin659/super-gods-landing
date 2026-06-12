@@ -40,6 +40,15 @@ function toBool(value) {
 }
 
 export function normalizeAgendaItem(raw = {}) {
+  const rawCustomerName =
+    raw.customerName ??
+    raw.nombreCliente ??
+    raw.clientName ??
+    raw.clienteNombre ??
+    raw.cliente ??
+    'Cliente';
+  const customerName = String(rawCustomerName || 'Cliente').trim();
+
   const depositStatus =
     raw.depositStatus ??
     raw.estadoPagoInicial ??
@@ -81,9 +90,20 @@ export function normalizeAgendaItem(raw = {}) {
     hora: String(raw.hora ?? raw.horaInicio ?? raw.time ?? ''),
     horaFin: String(raw.horaFin ?? ''),
 
-    cliente: String(raw.cliente ?? raw.customerName ?? 'Cliente'),
+    cliente: /^\d+$/.test(customerName) ? 'Cliente' : customerName,
+    customerName: /^\d+$/.test(customerName) ? 'Cliente' : customerName,
+    customerPhone:
+      raw.customerPhone !== null && raw.customerPhone !== undefined
+        ? String(raw.customerPhone)
+        : raw.telefono !== null && raw.telefono !== undefined
+          ? String(raw.telefono)
+          : raw.phone !== null && raw.phone !== undefined
+            ? String(raw.phone)
+            : '',
     servicio: String(raw.servicio ?? raw.serviceName ?? 'Servicio'),
+    serviceName: String(raw.serviceName ?? raw.servicio ?? 'Servicio'),
     barbero: String(raw.barbero ?? raw.barberName ?? 'Sin asignar'),
+    barberName: String(raw.barberName ?? raw.barbero ?? 'Sin asignar'),
     estado: String(raw.estado ?? 'RESERVADO'),
 
     telefono:
@@ -178,13 +198,28 @@ export function normalizeAgendaItem(raw = {}) {
 }
 
 export async function getOwnerBranchesForAgenda() {
-  const data = await apiRequest('/api/owner/home/dashboard');
-  const raw = Array.isArray(data?.branches) ? data.branches : [];
+  const [dashboard, activeBranches] = await Promise.all([
+    apiRequest('/api/owner/home/dashboard').catch(() => null),
+    apiRequest('/api/owner/branches/active').catch(() => null),
+  ]);
 
-  return raw.map((item) => ({
-    id: Number(item.branchId ?? item.id ?? 0),
-    name: String(item.branchName ?? item.name ?? item.nombre ?? 'Sede'),
-  }));
+  const raw = [
+    ...(Array.isArray(dashboard?.branches) ? dashboard.branches : []),
+    ...extractList(activeBranches),
+  ];
+  const map = new Map();
+
+  raw.forEach((item) => {
+    const id = Number(item.branchId ?? item.id ?? 0);
+    if (!id) return;
+
+    map.set(String(id), {
+      id,
+      name: String(item.branchName ?? item.name ?? item.nombre ?? 'Sede'),
+    });
+  });
+
+  return Array.from(map.values());
 }
 
 export async function getOwnerAgenda({ fecha, branchId }) {

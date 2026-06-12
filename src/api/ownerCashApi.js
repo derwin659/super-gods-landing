@@ -31,17 +31,43 @@ function toNumber(value, fallback = 0) {
   return Number.isNaN(parsed) ? fallback : parsed;
 }
 
-export async function getOwnerBranches() {
-  const data = await apiRequest('/api/owner/home/dashboard');
-  const raw = Array.isArray(data?.branches) ? data.branches : [];
-
-  return raw.map((item) => ({
+function normalizeBranch(item = {}) {
+  return {
     id: Number(item.branchId ?? item.id ?? 0),
     name: String(item.branchName ?? item.name ?? item.nombre ?? 'Sede'),
-    todaySales: Number(item.todaySales ?? 0),
-    todayAppointments: Number(item.todayAppointments ?? 0),
+    todaySales: Number(item.todaySales ?? item.salesToday ?? 0),
+    todayAppointments: Number(item.todayAppointments ?? item.appointmentsToday ?? 0),
     averageTicket: Number(item.averageTicket ?? 0),
-  }));
+  };
+}
+
+function mergeBranches(...groups) {
+  const map = new Map();
+
+  groups.flat().forEach((item) => {
+    const branch = normalizeBranch(item);
+    if (!branch.id) return;
+
+    map.set(String(branch.id), {
+      ...(map.get(String(branch.id)) || {}),
+      ...branch,
+    });
+  });
+
+  return Array.from(map.values());
+}
+
+export async function getOwnerBranches() {
+  const [dashboard, activeBranches] = await Promise.all([
+    apiRequest('/api/owner/home/dashboard').catch(() => null),
+    apiRequest('/api/owner/branches/active').catch(() => null),
+  ]);
+
+  const dashboardBranches = Array.isArray(dashboard?.branches)
+    ? dashboard.branches
+    : [];
+
+  return mergeBranches(dashboardBranches, extractList(activeBranches));
 }
 
 export async function getCurrentCashRegister(branchId) {

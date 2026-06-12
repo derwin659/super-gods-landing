@@ -2509,6 +2509,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
   const [customerResults, setCustomerResults] = useState([]);
   const [customerSearching, setCustomerSearching] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const [payments, setPayments] = useState([createPaymentDraft('CASH', 0)]);
   const [discount, setDiscount] = useState('0');
   const [tipAmount, setTipAmount] = useState('0');
   const [tipBarberUserId, setTipBarberUserId] = useState('');
@@ -2549,6 +2550,22 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
     : 0;
   const amountToCollectNow = Math.max(0, roundMoney(totalBeforeDeposit - depositApplied));
   const total = totalBeforeDeposit;
+  const paymentPayloads = payments
+    .map((payment) => ({
+      method: normalizeMethod(payment.method),
+      amount: roundMoney(parseMoneyInput(payment.amount)),
+    }))
+    .filter((payment) => payment.method && payment.amount > 0);
+  const paymentsTotal = roundMoney(paymentPayloads.reduce((sum, payment) => sum + payment.amount, 0));
+  const remainingPayment = roundMoney(amountToCollectNow - paymentsTotal);
+  const primaryPaymentMethod = amountToCollectNow <= 0
+    ? 'FREE'
+    : paymentPayloads.length > 1
+      ? 'MIXED'
+      : paymentPayloads[0]?.method || paymentMethod || 'CASH';
+  const cashPaymentTotal = roundMoney(paymentPayloads
+    .filter((payment) => normalizeMethod(payment.method) === 'CASH')
+    .reduce((sum, payment) => sum + payment.amount, 0));
 
   const hasHaircut = items.some((item) => {
     const name = String(item.name || '').toLowerCase();
@@ -2672,10 +2689,39 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
   }
 
   useEffect(() => {
-    if (paymentMethod !== 'CASH') {
-      setCashReceived(String(amountToCollectNow.toFixed(2)));
+    setPayments((prev) => {
+      if (prev.length !== 1) return prev;
+      return [{ ...prev[0], amount: amountToCollectNow.toFixed(2) }];
+    });
+  }, [amountToCollectNow]);
+
+  useEffect(() => {
+    if (cashPaymentTotal > 0 && parseMoneyInput(cashReceived) + 0.009 < cashPaymentTotal) {
+      setCashReceived(cashPaymentTotal.toFixed(2));
     }
-  }, [paymentMethod, amountToCollectNow]);
+  }, [cashPaymentTotal, cashReceived]);
+
+  function updatePayment(index, field, value) {
+    setPayments((prev) => prev.map((payment, i) => (
+      i === index ? { ...payment, [field]: value } : payment
+    )));
+
+    if (field === 'method' && index === 0) {
+      setPaymentMethod(value);
+    }
+  }
+
+  function addPaymentMethod() {
+    const nextAmount = remainingPayment > 0 ? remainingPayment : 0;
+    setPayments((prev) => [...prev, createPaymentDraft(defaultExtraPaymentMethod(paymentMethods), nextAmount)]);
+  }
+
+  function removePaymentMethod(index) {
+    setPayments((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
+  }
 
   function addServiceItem() {
     const service = services.find((item) => String(item.id) === String(selectedServiceId));
@@ -2733,6 +2779,8 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
         name: product.name,
         quantity: qty,
         unitPrice: Number(product.price || 0),
+        baseUnitPrice: Number(product.price || 0),
+        priceEditable: true,
       },
     ]);
   }
@@ -2766,9 +2814,20 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
       return;
     }
 
-    const received = Number(String(cashReceived).replace(',', '.')) || 0;
-    if (paymentMethod === 'CASH' && received + 0.009 < amountToCollectNow) {
-      setErrorMsg('El efectivo recibido no puede ser menor al saldo pendiente.');
+    const received = parseMoneyInput(cashReceived);
+    if (amountToCollectNow > 0 && paymentPayloads.length === 0) {
+      setErrorMsg('Agrega al menos un metodo de pago.');
+      return;
+    }
+
+    if (Math.abs(remainingPayment) > 0.009) {
+      const label = remainingPayment > 0 ? 'Falta' : 'Sobra';
+      setErrorMsg(`${label} ${formatMoney(Math.abs(remainingPayment))} para completar el saldo.`);
+      return;
+    }
+
+    if (cashPaymentTotal > 0 && received + 0.009 < cashPaymentTotal) {
+      setErrorMsg('El efectivo recibido no puede ser menor al monto pagado en efectivo.');
       return;
     }
 
@@ -2780,13 +2839,13 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
         customerId: appointment.customerId || null,
         appointmentId: appointment.appointmentId || null,
         saleDate: buildLocalSaleDateForBackend(saleDate),
-        metodoPago: amountToCollectNow <= 0 ? 'FREE' : paymentMethod,
+        metodoPago: primaryPaymentMethod,
         discount: discountNumber,
-        cashReceived: paymentMethod === 'CASH' ? received : amountToCollectNow,
+        cashReceived: cashPaymentTotal > 0 ? received : amountToCollectNow,
         payments:
           amountToCollectNow <= 0
             ? []
-            : [{ method: paymentMethod, amount: amountToCollectNow }],
+            : paymentPayloads,
         cutType: hasHaircut ? 'Corte registrado en agenda web' : null,
         cutDetail: hasHaircut
           ? `${appointment.serviceName || items.find((item) => item.type === 'service')?.name || 'Servicio de corte'} · ${appointment.barberName || items.find((item) => item.type === 'service')?.barberName || 'Barbero'}`
@@ -2804,7 +2863,22 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
       });
 
       clearAttendAppointmentFromStorage();
-      offerCustomerWhatsappFollowUp(createdSale);
+      offerCustomerWhatsappFollowUp(
+        saleWithWhatsappFallback(createdSale, {
+          customerName:
+            selectedCustomer?.nombreCompleto ||
+            customerName.trim() ||
+            appointment?.customerName,
+          customerPhone:
+            selectedCustomer?.telefono ||
+            appointment?.customerPhone ||
+            appointment?.telefono,
+          telefono:
+            selectedCustomer?.telefono ||
+            appointment?.telefono ||
+            appointment?.customerPhone,
+        })
+      );
       onSaved();
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo registrar la venta.');
@@ -2813,8 +2887,8 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
     }
   }
 
-  const change = paymentMethod === 'CASH'
-    ? Math.max(0, (Number(String(cashReceived).replace(',', '.')) || 0) - amountToCollectNow)
+  const change = cashPaymentTotal > 0
+    ? Math.max(0, parseMoneyInput(cashReceived) - cashPaymentTotal)
     : 0;
 
   return (
@@ -2933,16 +3007,92 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                       Esta cita se cobrará con fecha anterior para regularizar caja.
                     </div>
                   )}
-                </label>
+                </label>                <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
+                {amountToCollectNow <= 0 ? (
+                  <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-4">
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+                      Saldo cubierto
+                    </div>
+                    <p className="mt-2 text-sm font-bold leading-6 text-emerald-800">
+                      No queda monto por cobrar. La venta se completara con el pago inicial aplicado.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-600">
+                          Metodos de pago
+                        </div>
+                        <div className="mt-1 text-xs font-bold leading-5 text-neutral-500">
+                          Divide el saldo pendiente entre efectivo, Yape, Plin, tarjeta u otros metodos.
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addPaymentMethod}
+                        className="rounded-2xl bg-neutral-950 px-4 py-3 text-xs font-black text-white"
+                      >
+                        + Agregar metodo
+                      </button>
+                    </div>
 
-                <SelectField
-                  label="Método de pago"
-                  value={paymentMethod}
-                  onChange={setPaymentMethod}
-                  options={paymentOptions}
-                />
-                <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
-                <InputField label="Recibido" value={cashReceived} onChange={setCashReceived} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
+                    <div className="mt-4 space-y-3">
+                      {payments.map((payment, index) => (
+                        <div key={payment.key} className="rounded-[20px] border border-neutral-200 bg-white p-3">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="text-xs font-black uppercase tracking-[0.14em] text-neutral-500">
+                              {index === 0 ? 'Metodo principal' : `Metodo ${index + 1}`}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removePaymentMethod(index)}
+                              disabled={payments.length <= 1}
+                              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700 disabled:opacity-40"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <SelectField
+                              label="Metodo"
+                              value={payment.method}
+                              onChange={(value) => updatePayment(index, 'method', value)}
+                              options={paymentOptions}
+                            />
+                            <InputField
+                              label="Monto"
+                              value={payment.amount}
+                              onChange={(value) => updatePayment(index, 'amount', value)}
+                              type="number"
+                              step="0.01"
+                              prefix={getTenantCurrencySymbol()}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-black ${
+                      Math.abs(remainingPayment) <= 0.009
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : remainingPayment > 0
+                          ? 'border-amber-200 bg-amber-50 text-amber-700'
+                          : 'border-red-200 bg-red-50 text-red-700'
+                    }`}>
+                      {Math.abs(remainingPayment) <= 0.009
+                        ? 'Pago completo'
+                        : remainingPayment > 0
+                          ? `Falta ${formatMoney(remainingPayment)}`
+                          : `Sobra ${formatMoney(Math.abs(remainingPayment))}`}
+                    </div>
+                  </div>
+                )}
+
+                {cashPaymentTotal > 0 && (
+                  <InputField label={`Efectivo recibido para ${formatMoney(cashPaymentTotal)}`} value={cashReceived} onChange={setCashReceived} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
+                )}
               </div>
             </div>
           </div>
@@ -2979,13 +3129,13 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                       </div>
 
                       <div className="flex flex-wrap items-center justify-end gap-3">
-                        {item.type === 'service' && item.variablePrice ? (
+                        {(item.type === 'product' || (item.type === 'service' && item.variablePrice)) ? (
                           <label className="min-w-[220px] rounded-2xl border border-amber-200 bg-amber-50 p-3 text-left">
                             <span className="inline-flex rounded-full bg-neutral-950 px-2.5 py-1 text-[10px] font-black uppercase text-white">
-                              Variable
+                              {item.type === 'product' ? 'Editable' : 'Variable'}
                             </span>
                             <span className="ml-2 text-[11px] font-black text-amber-700">
-                              Desde {formatMoney(item.baseUnitPrice)}
+                              Base {formatMoney(item.baseUnitPrice)}
                             </span>
                             <span className="mt-2 block text-[11px] font-black uppercase tracking-[0.12em] text-neutral-500">
                               Precio final a cobrar
@@ -2999,7 +3149,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                               className="mt-1 h-12 w-full rounded-xl border border-amber-200 bg-white px-3 text-lg font-black text-neutral-950 outline-none focus:border-violet-500"
                             />
                             <span className="mt-1 block text-xs font-bold text-neutral-500">
-                              Escribe el monto real del servicio.
+                              Escribe el monto real de esta venta.
                             </span>
                           </label>
                         ) : null}
@@ -3063,6 +3213,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedBarberId, setSelectedBarberId] = useState('');
+  const [selectedHelperBarberIds, setSelectedHelperBarberIds] = useState([]);
   const [quantity, setQuantity] = useState('1');
 
   const [customerName, setCustomerName] = useState('');
@@ -3272,6 +3423,15 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     return barbers.find((item) => String(item.id) === String(selectedBarberId));
   }
 
+  function toggleHelperBarber(barberId) {
+    const id = String(barberId);
+    setSelectedHelperBarberIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((item) => item !== id)
+        : [...prev, id]
+    );
+  }
+
   function addServiceItem() {
     const service = services.find((item) => String(item.id) === String(selectedServiceId));
     const barber = currentBarber();
@@ -3287,25 +3447,37 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
       return;
     }
 
+    const helperBarbers = selectedHelperBarberIds
+      .filter((id) => id !== String(barber.id))
+      .map((id) => barbers.find((item) => String(item.id) === id))
+      .filter(Boolean);
+    const assignedBarbers = [barber, ...helperBarbers];
+    const basePrice = servicePriceOf(service);
+    const totalServiceAmount = roundMoney(basePrice * qty);
+    const splitAmount = assignedBarbers.length > 1
+      ? roundMoney(totalServiceAmount / assignedBarbers.length)
+      : basePrice;
+
     setErrorMsg('');
     setItems((prev) => [
       ...prev,
-      {
-        key: `service-${service.id}-${barber.id}-${Date.now()}`,
+      ...assignedBarbers.map((assignedBarber, index) => ({
+        key: `service-${service.id}-${assignedBarber.id}-${Date.now()}-${index}`,
         type: 'service',
         serviceId: service.id,
         productId: null,
-        barberUserId: barber.id,
-        barberName: barber.name,
+        barberUserId: assignedBarber.id,
+        barberName: assignedBarber.name,
         name: service.name,
-        quantity: qty,
-        unitPrice: servicePriceOf(service),
-        baseUnitPrice: servicePriceOf(service),
+        quantity: assignedBarbers.length > 1 ? 1 : qty,
+        unitPrice: splitAmount,
+        baseUnitPrice: assignedBarbers.length > 1 ? splitAmount : basePrice,
         variablePrice: serviceAllowsVariablePrice(service),
-      },
+      })),
     ]);
 
     setSelectedServiceId('');
+    setSelectedHelperBarberIds([]);
     setQuantity('1');
   }
 
@@ -3346,6 +3518,8 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         name: product.name,
         quantity: qty,
         unitPrice: Number(product.price ?? product.precioVenta ?? 0),
+        baseUnitPrice: Number(product.price ?? product.precioVenta ?? 0),
+        priceEditable: true,
       },
     ]);
 
@@ -3441,7 +3615,16 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         })),
       });
 
-      offerCustomerWhatsappFollowUp(createdSale);
+      offerCustomerWhatsappFollowUp(
+        saleWithWhatsappFallback(createdSale, {
+          customerName:
+            selectedCustomer?.nombreCompleto ||
+            customerName.trim() ||
+            'Cliente',
+          customerPhone: selectedCustomer?.telefono || quickCustomerPhone,
+          telefono: selectedCustomer?.telefono || quickCustomerPhone,
+        })
+      );
       onSaved();
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo registrar la venta.');
@@ -3571,7 +3754,10 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                 <SelectField
                   label="Barbero"
                   value={selectedBarberId}
-                  onChange={setSelectedBarberId}
+                  onChange={(value) => {
+                    setSelectedBarberId(value);
+                    setSelectedHelperBarberIds((prev) => prev.filter((id) => id !== String(value)));
+                  }}
                   options={[
                     { value: '', label: 'Selecciona barbero' },
                     ...barbers.map((barber) => ({
@@ -3581,6 +3767,38 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                   ]}
                 />
               </div>
+
+              {selectedBarberId && barbers.length > 1 && (
+                <div className="mt-3 rounded-[22px] border border-amber-200 bg-amber-50 p-4">
+                  <div className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+                    Servicio compartido
+                  </div>
+                  <p className="mt-1 text-xs font-bold leading-5 text-amber-800">
+                    Marca otros profesionales si este servicio se realizo entre varias personas. El monto se divide para calcular comisiones.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {barbers
+                      .filter((barber) => String(barber.id) !== String(selectedBarberId))
+                      .map((barber) => {
+                        const selected = selectedHelperBarberIds.includes(String(barber.id));
+                        return (
+                          <button
+                            key={barber.id}
+                            type="button"
+                            onClick={() => toggleHelperBarber(barber.id)}
+                            className={`rounded-full border px-3 py-2 text-xs font-black transition ${
+                              selected
+                                ? 'border-neutral-950 bg-neutral-950 text-white'
+                                : 'border-amber-200 bg-white text-amber-800 hover:bg-amber-100'
+                            }`}
+                          >
+                            {barber.name}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-5 rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
                 <div className="text-sm font-black text-neutral-950">Agregar servicio</div>
@@ -3880,13 +4098,13 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       </div>
 
                       <div className="flex flex-wrap items-center justify-end gap-3">
-                        {item.type === 'service' && item.variablePrice ? (
+                        {(item.type === 'product' || (item.type === 'service' && item.variablePrice)) ? (
                           <label className="min-w-[220px] rounded-2xl border border-amber-200 bg-amber-50 p-3 text-left">
                             <span className="inline-flex rounded-full bg-neutral-950 px-2.5 py-1 text-[10px] font-black uppercase text-white">
-                              Variable
+                              {item.type === 'product' ? 'Editable' : 'Variable'}
                             </span>
                             <span className="ml-2 text-[11px] font-black text-amber-700">
-                              Desde {formatMoney(item.baseUnitPrice)}
+                              Base {formatMoney(item.baseUnitPrice)}
                             </span>
                             <span className="mt-2 block text-[11px] font-black uppercase tracking-[0.12em] text-neutral-500">
                               Precio final a cobrar
@@ -3900,7 +4118,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                               className="mt-1 h-12 w-full rounded-xl border border-amber-200 bg-white px-3 text-lg font-black text-neutral-950 outline-none focus:border-violet-500"
                             />
                             <span className="mt-1 block text-xs font-bold text-neutral-500">
-                              Escribe el monto real del servicio.
+                              Escribe el monto real de esta venta.
                             </span>
                           </label>
                         ) : null}
@@ -4542,10 +4760,11 @@ function ProductOrdersSection({ items = [], processingId, isOpen, onApprove, onR
         {items.map((order) => {
           const status = String(order.status || '').toUpperCase();
           const isApproved = status === 'APPROVED';
-          const busy = String(processingId) === `product-order-${order.id}`;
+          const orderProcessingId = `product-order-${order.source || 'PRODUCT_ORDER'}-${order.id}`;
+          const busy = String(processingId) === orderProcessingId;
 
           return (
-            <article key={order.id} className="rounded-[28px] border border-blue-100 bg-white p-4 shadow-sm">
+            <article key={`${order.source || 'PRODUCT_ORDER'}-${order.id}`} className="rounded-[28px] border border-blue-100 bg-white p-4 shadow-sm">
               <div className="flex gap-3">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-blue-50 text-blue-700">
                   {order.productImageUrl ? (
@@ -4651,7 +4870,8 @@ export default function OwnerCashPage() {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [processingApprovalId, setProcessingApprovalId] = useState(null);
 
-  const canManageSales = String(session?.role || '').trim().toUpperCase() === 'OWNER';
+  const currentRole = String(session?.role || '').trim().toUpperCase();
+  const canManageSales = currentRole === 'OWNER' || currentRole === 'ADMIN';
   const labels = useMemo(
     () => getBusinessLabels(session?.businessType),
     [session?.businessType]
@@ -4979,12 +5199,13 @@ export default function OwnerCashPage() {
     if (!selectedBranch || !order?.id) return;
 
     setErrorMsg('');
-    setProcessingApprovalId(`product-order-${order.id}`);
+    setProcessingApprovalId(`product-order-${order.source || 'PRODUCT_ORDER'}-${order.id}`);
 
     try {
       await approveOwnerProductOrder({
         branchId: selectedBranch.id,
         orderId: order.id,
+        source: order.source,
         note: 'Pedido aprobado desde caja web',
       });
       await loadCash(selectedBranchId);
@@ -5005,12 +5226,13 @@ export default function OwnerCashPage() {
     if (reason === null) return;
 
     setErrorMsg('');
-    setProcessingApprovalId(`product-order-${order.id}`);
+    setProcessingApprovalId(`product-order-${order.source || 'PRODUCT_ORDER'}-${order.id}`);
 
     try {
       await rejectOwnerProductOrder({
         branchId: selectedBranch.id,
         orderId: order.id,
+        source: order.source,
         note: reason.trim() || 'Pedido rechazado desde caja web',
       });
       await loadCash(selectedBranchId);
@@ -5035,12 +5257,13 @@ export default function OwnerCashPage() {
     if (!ok) return;
 
     setErrorMsg('');
-    setProcessingApprovalId(`product-order-${order.id}`);
+    setProcessingApprovalId(`product-order-${order.source || 'PRODUCT_ORDER'}-${order.id}`);
 
     try {
       await deliverOwnerProductOrder({
         branchId: selectedBranch.id,
         orderId: order.id,
+        source: order.source,
         note: 'Pedido entregado desde caja web',
       });
       await loadCash(selectedBranchId);

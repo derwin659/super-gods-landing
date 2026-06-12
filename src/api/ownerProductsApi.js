@@ -92,13 +92,28 @@ export function normalizeStockMovement(raw = {}) {
 }
 
 export async function getOwnerBranchesForProducts() {
-  const data = await apiRequest('/api/owner/home/dashboard');
-  const raw = Array.isArray(data?.branches) ? data.branches : [];
+  const [dashboard, activeBranches] = await Promise.all([
+    apiRequest('/api/owner/home/dashboard').catch(() => null),
+    apiRequest('/api/owner/branches/active').catch(() => null),
+  ]);
 
-  return raw.map((item) => ({
-    id: Number(item.branchId ?? item.id ?? 0),
-    name: String(item.branchName ?? item.name ?? item.nombre ?? 'Sede'),
-  }));
+  const raw = [
+    ...(Array.isArray(dashboard?.branches) ? dashboard.branches : []),
+    ...extractList(activeBranches),
+  ];
+  const map = new Map();
+
+  raw.forEach((item) => {
+    const id = Number(item.branchId ?? item.id ?? 0);
+    if (!id) return;
+
+    map.set(String(id), {
+      id,
+      name: String(item.branchName ?? item.name ?? item.nombre ?? 'Sede'),
+    });
+  });
+
+  return Array.from(map.values());
 }
 
 export async function getOwnerProducts({ branchId, activeOnly = null }) {
