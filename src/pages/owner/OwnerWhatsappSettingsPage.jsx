@@ -321,7 +321,7 @@ export default function OwnerWhatsappSettingsPage() {
               <ToggleRow
                 icon={MessageCircle}
                 title="Mensaje al finalizar una venta"
-                text="Cuando el dueno aprueba una venta, se muestra el mensaje listo para enviar por WhatsApp al cliente."
+                text="Con un proveedor conectado, el backend envia el mensaje al cliente desde el numero central del negocio."
                 checked={!!settings?.postSaleMessageEnabled}
                 onChange={(value) => updateField('postSaleMessageEnabled', value)}
                 badge="Recomendado"

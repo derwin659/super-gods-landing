@@ -377,11 +377,7 @@ const starterActions = [
 
 function SubscriptionStatusBanner({ subscription, error }) {
   if (error) {
-    return (
-      <div className="mb-5 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-black text-amber-800">
-        No se pudo validar la suscripcion. Revisa Plan y pagos si notas algun bloqueo.
-      </div>
-    );
+    return null;
   }
 
   if (!subscription) return null;

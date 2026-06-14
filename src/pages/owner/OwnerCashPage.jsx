@@ -33,8 +33,10 @@ import {
   getOwnerProductOrders,
   rejectOwnerProductOrder,
 } from '../../api/ownerProductOrdersApi';
+import { getMyOwnerPermissions } from '../../api/ownerPermissionsApi';
 import { useAuth } from '../../context/AuthContext';
 import { getBusinessLabels, readBusinessLabels } from '../../utils/businessLabels';
+import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 
 function formatMoney(value) {
@@ -185,6 +187,8 @@ function customerWhatsappUrlOf(sale) {
   if (!phone) return '';
 
   const message = customerWhatsappMessageOf(sale);
+  if (!message) return '';
+
   const query = message ? `?text=${encodeURIComponent(message)}` : '';
   return `https://wa.me/${phone}${query}`;
 }
@@ -234,7 +238,9 @@ function normalizeWhatsappPhone(value) {
   return digits;
 }
 
-function offerCustomerWhatsappFollowUp(sale) {
+function offerCustomerWhatsappFollowUp(sale, { canOpenWhatsapp = false } = {}) {
+  if (!canOpenWhatsapp) return;
+
   const url = customerWhatsappUrlOf(sale);
   if (!url) return;
 
@@ -2877,7 +2883,10 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
             selectedCustomer?.telefono ||
             appointment?.telefono ||
             appointment?.customerPhone,
-        })
+        }),
+        {
+          canOpenWhatsapp: String(session?.role || '').trim().toUpperCase() === 'OWNER',
+        }
       );
       onSaved();
     } catch (error) {
@@ -3623,7 +3632,10 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
             'Cliente',
           customerPhone: selectedCustomer?.telefono || quickCustomerPhone,
           telefono: selectedCustomer?.telefono || quickCustomerPhone,
-        })
+        }),
+        {
+          canOpenWhatsapp: String(session?.role || '').trim().toUpperCase() === 'OWNER',
+        }
       );
       onSaved();
     } catch (error) {
@@ -4869,9 +4881,12 @@ export default function OwnerCashPage() {
   const [showAppointmentSaleModal, setShowAppointmentSaleModal] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [processingApprovalId, setProcessingApprovalId] = useState(null);
+  const [permissionBundle, setPermissionBundle] = useState(null);
 
   const currentRole = String(session?.role || '').trim().toUpperCase();
-  const canManageSales = currentRole === 'OWNER' || currentRole === 'ADMIN';
+  const canManageSales =
+    currentRole === 'OWNER' ||
+    hasAnyOwnerPermission(permissionBundle, ['CASH_ACCESS']);
   const labels = useMemo(
     () => getBusinessLabels(session?.businessType),
     [session?.businessType]
@@ -4880,6 +4895,34 @@ export default function OwnerCashPage() {
   const selectedBranch = useMemo(() => {
     return branches.find((item) => String(item.id) === String(selectedBranchId)) || null;
   }, [branches, selectedBranchId]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadPermissions() {
+      try {
+        const data = await getMyOwnerPermissions();
+        if (mounted) setPermissionBundle(data);
+      } catch {
+        if (mounted) {
+          setPermissionBundle({
+            owner: currentRole === 'OWNER',
+            permissions: [],
+          });
+        }
+      }
+    }
+
+    if (session?.token) {
+      loadPermissions();
+    } else {
+      setPermissionBundle(null);
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [session?.token, currentRole]);
 
   async function loadBranches() {
     setLoadingBranches(true);
@@ -5154,7 +5197,9 @@ export default function OwnerCashPage() {
         saleId,
       });
 
-      offerCustomerWhatsappFollowUp(saleWithWhatsappFallback(approvedSale, sale));
+      offerCustomerWhatsappFollowUp(saleWithWhatsappFallback(approvedSale, sale), {
+        canOpenWhatsapp: currentRole === 'OWNER',
+      });
       await loadCash(selectedBranchId);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo aprobar la venta pendiente.');
