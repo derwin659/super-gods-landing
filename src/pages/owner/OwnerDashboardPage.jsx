@@ -7,9 +7,12 @@ import {
   CalendarCheck,
   CalendarDays,
   CheckCircle2,
+  Copy,
   CreditCard,
+  ExternalLink,
   Gift,
   ChartNoAxesCombined,
+  QrCode,
   ShieldCheck,
   Scissors,
   Store,
@@ -212,6 +215,75 @@ function StartHereSection() {
           icon={Store}
           tone="amber"
         />
+      </div>
+    </section>
+  );
+}
+
+function qrImageFor(value) {
+  const clean = String(value || '').trim();
+  if (!clean) return '';
+  return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=12&data=${encodeURIComponent(clean)}`;
+}
+
+function BookingQrCard({ bookingLinks }) {
+  const link = String(bookingLinks?.businessLink || '').trim();
+  const code = String(bookingLinks?.codigoNegocio || '').trim();
+
+  if (!link) return null;
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      window.prompt('Copia el enlace de reserva', link);
+    }
+  }
+
+  return (
+    <section className="rounded-[34px] border border-emerald-200 bg-[linear-gradient(135deg,#ECFDF5_0%,#FFFFFF_58%,#F0FDFA_100%)] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.055)]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_190px] lg:items-center">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-800">
+            <QrCode size={15} strokeWidth={3} />
+            Reserva online
+          </div>
+          <h3 className="mt-4 text-2xl font-black text-neutral-950">
+            QR para que tus clientes reserven
+          </h3>
+          <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-neutral-600">
+            Imprime este QR o compártelo por WhatsApp para que el cliente abra la página de reserva del negocio.
+          </p>
+          <div className="mt-4 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-black text-neutral-700">
+            {code ? `${code} · ` : ''}{link}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={copyLink}
+              className="inline-flex items-center gap-2 rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white transition hover:scale-[1.01]"
+            >
+              <Copy size={16} strokeWidth={3} />
+              Copiar link
+            </button>
+            <a
+              href={link}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-sm font-black text-neutral-700 transition hover:border-neutral-950"
+            >
+              <ExternalLink size={16} strokeWidth={3} />
+              Abrir reserva
+            </a>
+          </div>
+        </div>
+        <div className="mx-auto w-full max-w-[190px] rounded-[28px] border border-emerald-200 bg-white p-4 shadow-[0_16px_40px_rgba(16,185,129,0.12)]">
+          <img
+            src={qrImageFor(link)}
+            alt="QR de reserva"
+            className="aspect-square w-full rounded-2xl object-contain"
+          />
+        </div>
       </div>
     </section>
   );
@@ -543,6 +615,7 @@ export default function OwnerDashboardPage() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [googleStatus, setGoogleStatus] = useState(null);
   const [loadingGoogleStatus, setLoadingGoogleStatus] = useState(true);
+  const [bookingLinks, setBookingLinks] = useState(null);
 
   async function loadDashboard({ silent = false } = {}) {
     if (silent) {
@@ -567,6 +640,24 @@ export default function OwnerDashboardPage() {
 
   useEffect(() => {
     loadDashboard();
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadBookingLinks() {
+      try {
+        const data = await apiRequest('/api/owner/booking-links');
+        if (alive) setBookingLinks(data);
+      } catch {
+        if (alive) setBookingLinks(null);
+      }
+    }
+
+    loadBookingLinks();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -698,6 +789,8 @@ export default function OwnerDashboardPage() {
       {!loading && !errorMsg && (
         <>
           <StartHereSection />
+
+          <BookingQrCard bookingLinks={bookingLinks} />
 
           <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             <MetricCard

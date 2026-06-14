@@ -23,6 +23,23 @@ function initials(value) {
     .toUpperCase();
 }
 
+const SERVICE_CATEGORY_SUGGESTIONS = [
+  'Cortes',
+  'Barba',
+  'Cejas',
+  'Color',
+  'Tratamientos',
+  'Facial',
+  'Masajes',
+  'Uñas',
+  'Pestañas',
+  'Depilación',
+  'Piercing',
+  'Tatuajes',
+  'Paquetes',
+  'Otros',
+];
+
 function ErrorBox({ message }) {
   if (!message) return null;
 
@@ -393,6 +410,22 @@ function ServiceFormModal({ service, onClose, onSaved }) {
                 onChange={setCategoria}
                 placeholder="Ej. Corte, barba, tratamiento"
               />
+              <div className="-mt-1 flex flex-wrap gap-2">
+                {SERVICE_CATEGORY_SUGGESTIONS.slice(0, 8).map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setCategoria(item)}
+                    className={
+                      categoria === item
+                        ? 'rounded-full bg-neutral-950 px-3 py-1.5 text-xs font-black text-white'
+                        : 'rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-black text-neutral-600 hover:border-amber-300'
+                    }
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
 
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                 <div className="flex items-center justify-between gap-4">

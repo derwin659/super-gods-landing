@@ -68,6 +68,14 @@ function displayDate(yyyyMmDd) {
   return `${dd}/${mm}/${yyyy}`;
 }
 
+function normalizeSearchText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 function normalizeBranch(raw) {
   return {
     id: asNumber(raw.branchId ?? raw.id),
@@ -107,6 +115,7 @@ function normalizeService(raw) {
     ),
     durationMinutes: asNumber(raw.durationMinutes ?? raw.duracionMinutos ?? raw.duration, 30),
     imageUrl: firstText(raw.imageUrl, raw.serviceImageUrl, raw.photoUrl),
+    category: firstText(raw.category, raw.categoria, raw.categoryName, raw.nombreCategoria),
   };
 }
 
@@ -200,6 +209,9 @@ export default function PublicBookingPage() {
   const [selectedBranchId, setSelectedBranchId] = useState(branchIdFromUrl || '');
   const [selectedBarberId, setSelectedBarberId] = useState(barberIdFromUrl || '');
   const [selectedServiceId, setSelectedServiceId] = useState('');
+  const [selectedServiceIds, setSelectedServiceIds] = useState([]);
+  const [serviceSearch, setServiceSearch] = useState('');
+  const [selectedServiceCategory, setSelectedServiceCategory] = useState('');
   const [selectedDate, setSelectedDate] = useState(todayDateInput());
   const [selectedTime, setSelectedTime] = useState('');
 
@@ -265,6 +277,7 @@ export default function PublicBookingPage() {
 
         if (!selectedServiceId && services.length === 1) {
           setSelectedServiceId(String(services[0].id));
+          setSelectedServiceIds([String(services[0].id)]);
         }
 
         const defaultAmount = bootstrapData?.bookingDepositDefaultAmount;
@@ -298,6 +311,40 @@ export default function PublicBookingPage() {
     [bootstrap]
   );
 
+  const serviceCategories = useMemo(() => {
+    const categories = services
+      .map((service) => service.category)
+      .filter(Boolean);
+
+    return [...new Set(categories)].sort((a, b) => a.localeCompare(b, 'es'));
+  }, [services]);
+
+  const filteredServices = useMemo(() => {
+    const queryWords = normalizeSearchText(serviceSearch)
+      .split(/\s+/)
+      .filter(Boolean);
+    const categoryFilter = normalizeSearchText(selectedServiceCategory);
+
+    return services.filter((service) => {
+      const category = normalizeSearchText(service.category);
+      if (categoryFilter && category !== categoryFilter) return false;
+
+      if (queryWords.length === 0) return true;
+
+      const haystack = normalizeSearchText(
+        [
+          service.name,
+          service.description,
+          service.category,
+          `${service.price}`,
+          `${service.durationMinutes}`,
+        ].join(' ')
+      );
+
+      return queryWords.every((word) => haystack.includes(word));
+    });
+  }, [services, serviceSearch, selectedServiceCategory]);
+
   const allBarbers = useMemo(
     () => asArray(bootstrap?.barbers).map(normalizeBarber),
     [bootstrap]
@@ -318,7 +365,19 @@ export default function PublicBookingPage() {
 
   const selectedBranch = branches.find((b) => String(b.id) === String(selectedBranchId));
   const selectedBarber = allBarbers.find((b) => String(b.id) === String(selectedBarberId));
-  const selectedService = services.find((s) => String(s.id) === String(selectedServiceId));
+  const selectedServices = useMemo(() => {
+    return selectedServiceIds
+      .map((id) => services.find((service) => String(service.id) === String(id)))
+      .filter(Boolean);
+  }, [services, selectedServiceIds]);
+  const selectedServicesTotal = selectedServices.reduce(
+    (sum, service) => sum + service.price,
+    0
+  );
+  const selectedServicesDuration = selectedServices.reduce(
+    (sum, service) => sum + service.durationMinutes,
+    0
+  );
   const selectedMethod = paymentMethods.find(
     (p) => String(p.id) === String(deposit.depositPaymentMethodId)
   );
@@ -336,7 +395,7 @@ export default function PublicBookingPage() {
   );
 
   const depositEnabled = Boolean(bootstrap?.bookingDepositEnabled);
-  const appointmentDepositEnabled = depositEnabled && (!isWalkInMode || Boolean(selectedServiceId));
+  const appointmentDepositEnabled = depositEnabled && (!isWalkInMode || selectedServiceIds.length > 0);
   const forcedBranch = Boolean(branchIdFromUrl);
   const forcedBarber = Boolean(barberIdFromUrl);
   const currencySymbol = firstText(bootstrap?.currencySymbol, linkInfo?.currencySymbol, 'S/');
@@ -349,7 +408,7 @@ export default function PublicBookingPage() {
       setSelectedTime('');
       setSlots([]);
 
-      if (!selectedBranchId || !selectedServiceId || !selectedDate) return;
+      if (!selectedBranchId || selectedServiceIds.length === 0 || !selectedDate) return;
 
       setAvailabilityLoading(true);
       setError('');
@@ -358,6 +417,7 @@ export default function PublicBookingPage() {
         const data = await getPublicBookingAvailability(codigoNegocio, {
           branchId: selectedBranchId,
           serviceId: selectedServiceId,
+          serviceIds: selectedServiceIds,
           date: selectedDate,
           barberId: selectedBarberId || undefined,
         });
@@ -376,7 +436,7 @@ export default function PublicBookingPage() {
     return () => {
       active = false;
     };
-  }, [codigoNegocio, selectedBranchId, selectedServiceId, selectedDate, selectedBarberId]);
+  }, [codigoNegocio, selectedBranchId, selectedServiceId, selectedServiceIds, selectedDate, selectedBarberId]);
 
   useEffect(() => {
     let active = true;
@@ -472,12 +532,23 @@ export default function PublicBookingPage() {
     reader.readAsDataURL(file);
   }
 
+  function toggleService(serviceId) {
+    const id = String(serviceId);
+    setSelectedTime('');
+    setSelectedServiceIds((prev) => {
+      const exists = prev.includes(id);
+      const next = exists ? prev.filter((item) => item !== id) : [...prev, id];
+      setSelectedServiceId(next[0] || '');
+      return next;
+    });
+  }
+
   function validate() {
     if (!selectedBranchId) return 'Selecciona una sede.';
     const hasProducts = selectedProductLines.length > 0;
-    const needsAppointment = !isWalkInMode || Boolean(selectedServiceId) || !hasProducts;
+    const needsAppointment = !isWalkInMode || selectedServiceIds.length > 0 || !hasProducts;
 
-    if (needsAppointment && !selectedServiceId) return 'Selecciona un servicio.';
+    if (needsAppointment && selectedServiceIds.length === 0) return 'Selecciona un servicio.';
     if (needsAppointment && !selectedDate) return 'Selecciona una fecha.';
     if (needsAppointment && !selectedTime) return 'Selecciona una hora disponible.';
     if (!customer.customerName.trim()) return 'Ingresa tu nombre.';
@@ -511,13 +582,14 @@ export default function PublicBookingPage() {
     setSuccess(null);
 
     try {
-      const shouldCreateAppointment = Boolean(selectedServiceId);
+      const shouldCreateAppointment = selectedServiceIds.length > 0;
       let response = null;
 
       if (shouldCreateAppointment) {
         const payload = {
           branchId: Number(selectedBranchId),
           serviceId: Number(selectedServiceId),
+          serviceIds: selectedServiceIds.map((id) => Number(id)),
           barberId: selectedBarberId ? Number(selectedBarberId) : null,
           date: selectedDate,
           horaInicio: selectedTime,
@@ -567,10 +639,11 @@ export default function PublicBookingPage() {
         mode: isWalkInMode ? 'walkin' : 'booking',
         branchName: selectedBranch?.name,
         barberName: selectedBarber?.name,
-        serviceName: selectedService?.name,
-        servicePrice: selectedService?.price,
-        date: selectedService ? selectedDate : '',
-        time: selectedService ? selectedTime : '',
+        serviceName: selectedServices.map((service) => service.name).join(', '),
+        servicePrice: selectedServicesTotal,
+        serviceDuration: selectedServicesDuration,
+        date: selectedServices.length > 0 ? selectedDate : '',
+        time: selectedServices.length > 0 ? selectedTime : '',
         customerName: fullCustomerName(customer),
         productOrders: createdProductOrders,
       });
@@ -773,16 +846,62 @@ export default function PublicBookingPage() {
 
             <PremiumSection
               number="3"
-              title={isWalkInMode ? 'Elige servicio (opcional)' : 'Elige servicio'}
-              subtitle={isWalkInMode ? 'Si solo quieres separar productos, puedes dejar esta parte sin seleccionar.' : 'Revisa precio y duracion antes de continuar.'}
+              title={isWalkInMode ? 'Elige servicios (opcional)' : 'Elige servicios'}
+              subtitle={isWalkInMode ? 'Puedes seleccionar uno o varios servicios, o continuar solo con productos.' : 'Selecciona uno o varios servicios para calcular duración y precio.'}
               icon={Scissors}
             >
+              <div className="mb-4 space-y-3">
+                <label className="block">
+                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+                    Buscar servicio
+                  </span>
+                  <input
+                    type="search"
+                    value={serviceSearch}
+                    onChange={(event) => setServiceSearch(event.target.value)}
+                    placeholder="Ej. facial, limpieza, piercing, profesional"
+                    className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black text-slate-950 outline-none ring-blue-100 placeholder:text-slate-400 focus:border-blue-600 focus:ring-4"
+                  />
+                </label>
+
+                {serviceCategories.length > 0 ? (
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedServiceCategory('')}
+                      className={
+                        !selectedServiceCategory
+                          ? 'shrink-0 rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white'
+                          : 'shrink-0 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-600'
+                      }
+                    >
+                      Todo
+                    </button>
+                    {serviceCategories.map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => setSelectedServiceCategory(category)}
+                        className={
+                          selectedServiceCategory === category
+                            ? 'shrink-0 rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white'
+                            : 'shrink-0 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-600'
+                        }
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
               <div className="grid gap-3 md:grid-cols-2">
                 {isWalkInMode ? (
                   <SelectableCard
-                    selected={!selectedServiceId}
+                    selected={selectedServiceIds.length === 0}
                     onClick={() => {
                       setSelectedServiceId('');
+                      setSelectedServiceIds([]);
                       setSelectedTime('');
                     }}
                     large
@@ -796,11 +915,21 @@ export default function PublicBookingPage() {
                     </div>
                   </SelectableCard>
                 ) : null}
-                {services.map((service) => (
+                {selectedServices.length > 0 ? (
+                  <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm font-black text-emerald-900 md:col-span-2">
+                    {selectedServices.length} servicio{selectedServices.length === 1 ? '' : 's'} seleccionado{selectedServices.length === 1 ? '' : 's'} · {selectedServicesDuration} min aprox. · {money(selectedServicesTotal)}
+                  </div>
+                ) : null}
+                {filteredServices.length === 0 ? (
+                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-700 md:col-span-2">
+                    No encontramos servicios con esa busqueda. Prueba con otra palabra o categoria.
+                  </div>
+                ) : null}
+                {filteredServices.map((service) => (
                   <SelectableCard
                     key={service.id}
-                    selected={String(selectedServiceId) === String(service.id)}
-                    onClick={() => setSelectedServiceId(String(service.id))}
+                    selected={selectedServiceIds.includes(String(service.id))}
+                    onClick={() => toggleService(service.id)}
                     large
                   >
                     <ImageThumb src={service.imageUrl} fallbackIcon={Scissors} />
@@ -818,13 +947,23 @@ export default function PublicBookingPage() {
                         <Clock3 size={14} />
                         {service.durationMinutes} min aprox.
                       </div>
+                      {service.category ? (
+                        <div className="mt-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                          {service.category}
+                        </div>
+                      ) : null}
+                      {selectedServiceIds.includes(String(service.id)) ? (
+                        <div className="mt-2 inline-flex rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white">
+                          Seleccionado
+                        </div>
+                      ) : null}
                     </div>
                   </SelectableCard>
                 ))}
               </div>
             </PremiumSection>
 
-            {isWalkInMode && !selectedServiceId ? (
+            {isWalkInMode && selectedServiceIds.length === 0 ? (
               <PremiumSection
                 number="4"
                 title="Atencion sin cita"
@@ -1162,13 +1301,21 @@ export default function PublicBookingPage() {
               <SummaryLine label="Negocio" value={businessName} />
               <SummaryLine label="Sede" value={selectedBranch?.name || 'Por elegir'} />
               <SummaryLine label="Profesional" value={selectedBarber?.name || 'Cualquiera disponible'} />
-              <SummaryLine label="Servicio" value={selectedService?.name || (isWalkInMode ? 'Opcional' : 'Por elegir')} />
-              {selectedService ? (
+              <SummaryLine
+                label="Servicios"
+                value={
+                  selectedServices.length > 0
+                    ? `${selectedServices.length} seleccionado${selectedServices.length === 1 ? '' : 's'}`
+                    : isWalkInMode ? 'Opcional' : 'Por elegir'
+                }
+              />
+              {selectedServices.length > 0 ? (
                 <>
                   <SummaryLine
-                    label="Precio"
-                    value={`${selectedService.variablePrice ? 'Desde ' : ''}${money(selectedService.price)}`}
+                    label="Total servicios"
+                    value={money(selectedServicesTotal)}
                   />
+                  <SummaryLine label="Duración" value={`${selectedServicesDuration} min aprox.`} />
                   <SummaryLine label="Fecha" value={displayDate(selectedDate)} />
                   <SummaryLine label="Hora" value={selectedTime || 'Por elegir'} />
                 </>
@@ -1207,7 +1354,7 @@ export default function PublicBookingPage() {
               >
                 {submitting
                   ? 'Confirmando...'
-                  : selectedProductLines.length > 0 && !selectedService
+                  : selectedProductLines.length > 0 && selectedServices.length === 0
                     ? 'Enviar pedido a caja'
                     : selectedProductLines.length > 0
                       ? 'Confirmar reserva y productos'

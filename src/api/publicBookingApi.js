@@ -38,7 +38,13 @@ function buildQuery(params = {}) {
   const query = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && String(value).trim() !== '') {
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (item !== undefined && item !== null && String(item).trim() !== '') {
+          query.append(key, String(item));
+        }
+      });
+    } else if (value !== undefined && value !== null && String(value).trim() !== '') {
       query.set(key, String(value));
     }
   });
