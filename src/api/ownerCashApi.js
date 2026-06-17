@@ -475,7 +475,12 @@ export async function createCashSale({
   cutType = null,
   cutDetail = null,
   cutObservations = null,
+  createdByRole = null,
 }) {
+  const sessionRole = String(createdByRole || localStorage.getItem('ROLE') || '')
+    .trim()
+    .toUpperCase();
+
   return apiRequest(`/api/owner/cash-sales${toQuery({ branchId })}`, {
     method: 'POST',
     body: JSON.stringify({
@@ -491,6 +496,7 @@ export async function createCashSale({
       cutType,
       cutDetail,
       cutObservations,
+      ...(sessionRole ? { createdByRole: sessionRole } : {}),
       items: Array.isArray(items) ? items : [],
     }),
   });

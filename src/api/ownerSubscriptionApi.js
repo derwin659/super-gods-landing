@@ -22,16 +22,60 @@ function text(value, fallback = '') {
   return String(value);
 }
 
+export function normalizePlanCode(plan, fallback = 'STARTER') {
+  const value = text(plan, fallback).trim().toUpperCase().replace(/\s+/g, '_');
+
+  switch (value) {
+    case 'NORMAL':
+    case 'STANDARD':
+      return 'STARTER';
+    case 'SOLO':
+    case 'INDEPENDENT':
+      return 'BASIC';
+    case 'STARTER_LEGACY':
+    case 'PRO_LEGACY':
+    case 'FREE':
+    case 'BASIC':
+    case 'STARTER':
+    case 'GROWTH':
+    case 'PRO':
+    case 'ENTERPRISE':
+    case 'GODS_AI':
+      return value;
+    default:
+      return fallback;
+  }
+}
+
+export function publicPlanCode(plan) {
+  const value = normalizePlanCode(plan);
+  switch (value) {
+    case 'STARTER_LEGACY':
+      return 'STARTER';
+    case 'PRO_LEGACY':
+      return 'PRO';
+    case 'GODS_AI':
+      return 'GROWTH';
+    default:
+      return value;
+  }
+}
+
 export function normalizeSubscription(raw = {}) {
+  const plan = normalizePlanCode(raw.plan);
+  const publicPlan = normalizePlanCode(raw.publicPlan || publicPlanCode(plan));
+
   return {
     subId: raw.subId === null || raw.subId === undefined ? null : toNumber(raw.subId),
     tenantId: raw.tenantId === null || raw.tenantId === undefined ? null : toNumber(raw.tenantId),
-    plan: text(raw.plan, 'STARTER').toUpperCase(),
+    plan,
+    publicPlan,
     estado: text(raw.estado, 'TRIAL').toUpperCase(),
     trial: toBool(raw.trial),
     precioMensual: toNumber(raw.precioMensual),
     billingCycle: text(raw.billingCycle, 'MONTHLY').toUpperCase(),
     currency: text(raw.currency, 'PEN'),
+    billingChannel: text(raw.billingChannel, 'WEB').toUpperCase(),
     fechaInicio: text(raw.fechaInicio),
     fechaRenovacion: text(raw.fechaRenovacion),
     fechaFin: text(raw.fechaFin),
@@ -44,11 +88,15 @@ export function normalizeSubscription(raw = {}) {
     maxAdmins: toNumber(raw.maxAdmins),
     usedAdmins: toNumber(raw.usedAdmins),
     aiEnabled: toBool(raw.aiEnabled),
+    aiLevel: text(raw.aiLevel, raw.aiEnabled ? 'PRO' : 'BASIC').toUpperCase(),
+    aiVisualCreditsBalance: toNumber(raw.aiVisualCreditsBalance),
     loyaltyEnabled: toBool(raw.loyaltyEnabled),
     promotionsEnabled: toBool(raw.promotionsEnabled),
+    maxMonthlyBookings: raw.maxMonthlyBookings === null || raw.maxMonthlyBookings === undefined ? null : toNumber(raw.maxMonthlyBookings),
+    usedMonthlyBookings: toNumber(raw.usedMonthlyBookings),
     planPrices: Array.isArray(raw.planPrices)
       ? raw.planPrices.map((item) => ({
-          plan: text(item.plan, '').toUpperCase(),
+          plan: normalizePlanCode(item.plan, ''),
           countryCode: text(item.countryCode, 'PE').toUpperCase(),
           currency: text(item.currency, raw.currency || 'PEN').toUpperCase(),
           monthlyAmount: toNumber(item.monthlyAmount),
@@ -61,11 +109,23 @@ export function normalizeSubscription(raw = {}) {
 }
 
 export function planLabel(plan) {
-  switch (String(plan || '').toUpperCase()) {
+  switch (normalizePlanCode(plan, '')) {
+    case 'FREE':
+      return 'Gratis';
+    case 'BASIC':
+      return 'Basic';
     case 'STARTER':
       return 'Starter';
+    case 'GROWTH':
+      return 'Growth';
     case 'PRO':
       return 'Pro';
+    case 'ENTERPRISE':
+      return 'Enterprise';
+    case 'STARTER_LEGACY':
+      return 'Starter Legacy';
+    case 'PRO_LEGACY':
+      return 'Pro Legacy';
     case 'GODS_AI':
       return 'Gods AI';
     default:
@@ -110,19 +170,27 @@ export function billingLabel(billing) {
 }
 
 export function monthlyPrice(plan, planPrices = []) {
-  const planCode = String(plan || '').toUpperCase();
+  const planCode = publicPlanCode(plan);
   const configured = planPrices.find((item) => item.plan === planCode);
-  if (configured && configured.monthlyAmount > 0) return configured.monthlyAmount;
+  if (configured && configured.monthlyAmount >= 0) return configured.monthlyAmount;
 
   switch (planCode) {
+    case 'FREE':
+      return 0;
+    case 'BASIC':
+      return 39.90;
     case 'STARTER':
-      return 39;
+      return 79.90;
+    case 'GROWTH':
+      return 139.90;
     case 'PRO':
-      return 79;
+      return 229.90;
+    case 'ENTERPRISE':
+      return 399.90;
     case 'GODS_AI':
-      return 149;
+      return 139.90;
     default:
-      return 39;
+      return 79.90;
   }
 }
 
@@ -189,7 +257,7 @@ export async function getSubscriptionPlanPrices() {
   const data = await apiRequest('/api/subscription/plan-prices');
   return Array.isArray(data)
     ? data.map((item) => ({
-        plan: text(item.plan, '').toUpperCase(),
+        plan: normalizePlanCode(item.plan, ''),
         countryCode: text(item.countryCode, 'PE').toUpperCase(),
         currency: text(item.currency, 'PEN').toUpperCase(),
         monthlyAmount: toNumber(item.monthlyAmount),

@@ -13,9 +13,14 @@ const BUSINESS_TYPE_OPTIONS = [
 ];
 
 const PLAN_OPTIONS = [
+  { value: "FREE", label: "Free" },
+  { value: "BASIC", label: "Basic" },
   { value: "STARTER", label: "Starter" },
+  { value: "GROWTH", label: "Growth" },
   { value: "PRO", label: "Pro" },
-  { value: "GODS_AI", label: "Gods AI" },
+  { value: "ENTERPRISE", label: "Enterprise" },
+  { value: "STARTER_LEGACY", label: "Starter Legacy" },
+  { value: "PRO_LEGACY", label: "Pro Legacy" },
 ];
 
 const BILLING_OPTIONS = [

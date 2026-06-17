@@ -90,12 +90,22 @@ function statusLabel(status) {
 
 function planLabel(plan) {
   switch ((plan || "").toUpperCase()) {
+    case "FREE":
+      return "Free";
+    case "BASIC":
+      return "Basic";
     case "STARTER":
       return "Starter";
+    case "GROWTH":
+      return "Growth";
     case "PRO":
       return "Pro";
-    case "GODS_AI":
-      return "Gods AI";
+    case "ENTERPRISE":
+      return "Enterprise";
+    case "STARTER_LEGACY":
+      return "Starter Legacy";
+    case "PRO_LEGACY":
+      return "Pro Legacy";
     default:
       return plan || "-";
   }
@@ -587,9 +597,14 @@ function EditTenantModal({ item, form, saving, error, onChange, onClose, onSave 
             value={form.plan}
             onChange={(v) => onChange("plan", v)}
             options={[
+              ["FREE", "Free"],
+              ["BASIC", "Basic"],
               ["STARTER", "Starter"],
+              ["GROWTH", "Growth"],
               ["PRO", "Pro"],
-              ["GODS_AI", "Gods AI"],
+              ["ENTERPRISE", "Enterprise"],
+              ["STARTER_LEGACY", "Starter Legacy"],
+              ["PRO_LEGACY", "Pro Legacy"],
             ]}
           />
           <SelectField
