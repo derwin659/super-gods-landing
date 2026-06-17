@@ -117,12 +117,12 @@ function PublicHomePage() {
   );
 
   const rubros = [
-    { icon: Scissors, title: 'BarberÃ­as', text: 'Reservas, caja, barberos, puntos, promociones, pagos y reportes.' },
-    { icon: Sparkles, title: 'PeluquerÃ­as', text: 'Agenda, servicios, profesionales, clientes frecuentes y control de ingresos.' },
-    { icon: Hand, title: 'Estudios de uÃ±as', text: 'Citas, paquetes, clientas frecuentes, historial, pagos y fidelizaciÃ³n.' },
-    { icon: Eye, title: 'Cejas y pestaÃ±as', text: 'Reservas ordenadas, especialistas, servicios recurrentes y promociones.' },
-    { icon: PenTool, title: 'Tattoo studios', text: 'Citas, artistas, clientes, pagos, seguimiento y organizaciÃ³n del estudio.' },
-    { icon: Leaf, title: 'Spas y estÃ©tica', text: 'Servicios, reservas, paquetes, clientes, sedes, caja y reportes.' },
+    { icon: Scissors, title: 'Barberias', text: 'Reservas, caja, barberos, puntos, promociones, pagos y reportes.' },
+    { icon: Sparkles, title: 'Peluquerias', text: 'Agenda, servicios, profesionales, clientes frecuentes y control de ingresos.' },
+    { icon: Hand, title: 'Estudios de unas', text: 'Citas, paquetes, clientas frecuentes, historial, pagos y fidelizacion.' },
+    { icon: Eye, title: 'Cejas y pestanas', text: 'Reservas ordenadas, especialistas, servicios recurrentes y promociones.' },
+    { icon: PenTool, title: 'Tattoo studios', text: 'Citas, artistas, clientes, pagos, seguimiento y organizacion del estudio.' },
+    { icon: Leaf, title: 'Spas y estetica', text: 'Servicios, reservas, paquetes, clientes, sedes, caja y reportes.' },
   ];
 
   const companyServices = [
@@ -143,17 +143,17 @@ function PublicHomePage() {
     },
     {
       icon: UsersRound,
-      title: 'GestiÃ³n de clientes',
+      title: 'Gestion de clientes',
       text: 'Guarda historial, visitas, puntos, recompensas, preferencias y datos de contacto.',
     },
     {
       icon: Gift,
-      title: 'FidelizaciÃ³n, puntos y promociones',
-      text: 'Crea premios, campaÃ±as y beneficios para que los clientes regresen con mÃ¡s frecuencia.',
+      title: 'Fidelizacion, puntos y promociones',
+      text: 'Crea premios, campanas y beneficios para que los clientes regresen con mas frecuencia.',
     },
     {
       icon: ChartNoAxesCombined,
-      title: 'Reportes y mÃ©tricas',
+      title: 'Reportes y metricas',
       text: 'Visualiza ventas, utilidad, gastos, rendimiento por sede, profesional y rango de fechas.',
     },
     {
@@ -236,37 +236,37 @@ function PublicHomePage() {
       name: 'Basic',
       price: formatSubscriptionPrice(getPlanPriceFromMap('BASIC', pricingCountry, publicPriceMap)),
       badge: 'Independiente',
-      description: 'Para barberos solos, servicios a domicilio o agenda personal.',
-      items: ['1 profesional', '1 agenda', 'Reservas online', 'Clientes e historial', 'Perfil para recibir reservas'],
+      description: 'Para profesionales independientes o servicios a domicilio.',
+      items: ['1 profesional', '1 agenda', 'Reservas online', 'Clientes e historial'],
     },
     {
       name: 'Starter',
       price: formatSubscriptionPrice(getPlanPriceFromMap('STARTER', pricingCountry, publicPriceMap)),
       badge: '1 sede',
-      description: 'Para negocios pequenos que quieren ordenar reservas, caja y clientes.',
-      items: ['1 sede', 'Hasta 5 profesionales', '1 admin', 'Reservas online', 'Control de caja', 'Programa de puntos', 'Soporte inicial'],
+      description: 'Para una sede que necesita agenda, caja y fidelizacion.',
+      items: ['1 sede', '5 profesionales', '1 admin', 'Caja y puntos'],
     },
     {
       name: 'Growth',
       price: formatSubscriptionPrice(getPlanPriceFromMap('GROWTH', pricingCountry, publicPriceMap)),
-      badge: 'Mas recomendado',
+      badge: 'Recomendado',
       highlighted: true,
-      description: 'Para negocios con dos sedes que necesitan promociones, reportes y mas control.',
-      items: ['2 sedes', 'Hasta 10 profesionales', '3 admins', 'Promociones', 'Reportes por sede', 'Gods AI Pro incluido', 'CampaÃ±as automatizadas'],
+      description: 'Para crecer con 2 sedes, reportes, promociones e IA.',
+      items: ['2 sedes', '10 profesionales', '3 admins', 'IA Pro incluida'],
     },
     {
       name: 'Pro',
       price: formatSubscriptionPrice(getPlanPriceFromMap('PRO', pricingCountry, publicPriceMap)),
       badge: 'Multi sede',
-      description: 'Para marcas con tres sedes y operacion avanzada.',
-      items: ['3 sedes', 'Hasta 18 profesionales', '6 admins', 'Caja avanzada', 'Inventario por sede', 'Reportes avanzados', 'Soporte prioritario'],
+      description: 'Para marcas con mas control operativo y equipo grande.',
+      items: ['3 sedes', '18 profesionales', '6 admins', 'Reportes avanzados'],
     },
     {
       name: 'Enterprise',
       price: formatSubscriptionPrice(getPlanPriceFromMap('ENTERPRISE', pricingCountry, publicPriceMap)),
       badge: 'Desde',
-      description: 'Para cadenas con mas de tres sedes, expansion o acuerdos a medida.',
-      items: ['Sedes ilimitadas', 'Equipo ilimitado', 'Onboarding guiado', 'Soporte prioritario', 'Condiciones comerciales a medida'],
+      description: 'Para cadenas, expansion y acuerdos comerciales a medida.',
+      items: ['Sedes ilimitadas', 'Equipo ilimitado', 'Onboarding', 'Soporte prioritario'],
     },
   ];
   const screenshots = [
@@ -429,10 +429,10 @@ function PublicHomePage() {
 
           <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
             <a href="/login" className="hidden h-12 items-center justify-center whitespace-nowrap rounded-2xl border border-[#CBD5E1] bg-white px-5 text-sm font-black text-[#0F172A] transition hover:border-[#2563EB] hover:text-[#2563EB] md:inline-flex">
-              Iniciar sesiÃ³n
+              Iniciar sesion
             </a>
             <a href="/registro-negocio" className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-[#0F2A5F] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84] sm:px-6">
-              Probar 7 dÃ­as gratis
+              Probar 7 dias gratis
             </a>
           </div>
         </nav>
@@ -446,11 +446,11 @@ function PublicHomePage() {
             <div>
               <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-2 text-sm font-black text-blue-700 shadow-sm">
                 <span className="h-2 w-2 rounded-full bg-green-500" />
-                Software premium para barberÃ­as, salones y centros de belleza
+                Software premium para barberias, salones y centros de belleza
               </div>
 
               <h1 className="max-w-4xl text-5xl font-black leading-[0.98] tracking-[-0.055em] text-slate-950 md:text-7xl">
-                MÃ¡s reservas, caja clara y clientes que vuelven
+                Mas reservas, caja clara y clientes que vuelven
               </h1>
 
               <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate-600 md:text-xl">
@@ -459,7 +459,7 @@ function PublicHomePage() {
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a href="/registro-negocio" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]">
-                  Probar 7 dÃ­as gratis
+                  Probar 7 dias gratis
                   <ArrowRight size={18} strokeWidth={2.6} />
                 </a>
                 <a href={whatsappUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white px-7 py-4 text-base font-black text-emerald-700 shadow-sm transition hover:-translate-y-1 hover:border-emerald-500 hover:bg-emerald-50">
@@ -467,7 +467,7 @@ function PublicHomePage() {
                   Ayuda por WhatsApp
                 </a>
                 <a href="#capturas" className="inline-flex justify-center rounded-2xl border border-slate-200 bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1 hover:border-blue-600 hover:text-blue-700">
-                  Ver cÃ³mo funciona
+                  Ver como funciona
                 </a>
                 <a href="/login" className="inline-flex justify-center rounded-2xl bg-slate-950 px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 sm:hidden">
                   Iniciar sesiÃ³n
@@ -856,33 +856,39 @@ function PublicHomePage() {
           </div>
         </section>
 
-        <section id="ia" className="px-4 py-20">
-          <div className="mx-auto grid max-w-7xl items-center gap-10 rounded-[40px] bg-gradient-to-br from-[#0F2A5F] to-[#07152F] p-8 text-white shadow-[0_40px_100px_rgba(15,42,95,0.35)] md:p-12 lg:grid-cols-2">
+        <section id="ia" className="px-4 py-16">
+          <div className="mx-auto grid max-w-7xl items-center gap-8 rounded-[32px] bg-gradient-to-br from-[#0F2A5F] via-[#102E6B] to-[#07152F] p-7 text-white shadow-[0_34px_90px_rgba(15,42,95,0.30)] md:p-10 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-200">Gods AI</p>
-              <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] md:text-6xl">Inteligencia artificial para experiencias premium</h2>
-              <p className="mt-5 text-lg font-medium leading-8 text-blue-100">Desarrollamos herramientas con IA para asesoramiento personalizado, recomendaciones visuales y experiencias innovadoras dentro del negocio.</p>
-              <a href="#contacto" className="mt-8 inline-flex rounded-2xl bg-white px-7 py-4 text-base font-black text-[#0F2A5F] transition hover:-translate-y-1">Solicitar demo Gods AI</a>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-200">Modulo premium</p>
+              <h2 className="mt-3 max-w-xl text-4xl font-black tracking-[-0.04em] md:text-5xl">Gods AI acompaña la experiencia, no es un plan separado</h2>
+              <p className="mt-5 max-w-2xl text-base font-medium leading-8 text-blue-100">
+                La IA se activa como beneficio dentro de los planes de crecimiento: recomendaciones, analisis visual y futuras herramientas para asesorar cortes, color y cambios de look.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                <span className="rounded-full bg-white/12 px-4 py-2 text-xs font-black text-blue-100">Incluida desde Growth</span>
+                <span className="rounded-full bg-white/12 px-4 py-2 text-xs font-black text-blue-100">Creditos visuales proximamente</span>
+                <span className="rounded-full bg-white/12 px-4 py-2 text-xs font-black text-blue-100">Tambien para salones</span>
+              </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <AiBox title="AnÃ¡lisis facial" text="Detecta forma de rostro y caracterÃ­sticas clave." />
-              <AiBox title="Recomendaciones" text="Sugiere estilos segÃºn rostro, servicio y preferencias." />
-              <AiBox title="Vista ilustrativa" text="Muestra una idea visual del resultado." />
-              <AiBox title="DiferenciaciÃ³n" text="Ideal para negocios que buscan una experiencia premium." />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <AiBox title="Analisis visual" text="Rostro, estilo, preferencias y contexto del servicio." />
+              <AiBox title="Recomendaciones" text="Ideas para cortes, barba, peinados y tratamientos." />
+              <AiBox title="Color y belleza" text="Preparado para simulaciones futuras en salones." />
+              <AiBox title="Experiencia premium" text="Un diferencial comercial para planes Growth, Pro y Enterprise." />
             </div>
           </div>
         </section>
 
-        <section id="planes" className="px-4 py-20">
+        <section id="planes" className="px-4 py-12">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Planes</p>
-              <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">Planes simples para empezar rÃ¡pido</h2>
-              <p className="mt-5 text-lg font-medium leading-8 text-slate-600">Empieza con una prueba gratis y luego elige el plan ideal para tu negocio.</p>
+              <h2 className="mt-2 text-4xl font-black tracking-[-0.04em] text-slate-950 md:text-5xl">Planes claros para cada etapa del negocio</h2>
+              <p className="mt-3 text-base font-medium leading-7 text-slate-600">Precios de lanzamiento. Los clientes legacy mantienen su precio historico.</p>
             </div>
 
-            <div className="mx-auto mt-8 flex max-w-md items-center gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/70">
+            <div className="mx-auto mt-4 flex max-w-md items-center gap-3 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-200/70">
               <span className="pl-3 text-xs font-black uppercase tracking-[0.16em] text-slate-500">Pais</span>
               <select
                 value={pricingCountry}
@@ -897,30 +903,39 @@ function PublicHomePage() {
               </select>
             </div>
 
-            <div className="mt-12 grid gap-6 lg:grid-cols-3">
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               {plans.map((plan) => (
-                <div key={plan.name} className={plan.highlighted ? 'rounded-[34px] bg-[#0F2A5F] p-7 text-white shadow-[0_30px_90px_rgba(15,42,95,0.35)]' : 'rounded-[34px] border border-slate-200 bg-white p-7 shadow-xl shadow-slate-200/70'}>
-                  <div className={plan.highlighted ? 'inline-flex rounded-full bg-white/15 px-4 py-2 text-xs font-black text-blue-100' : 'inline-flex rounded-full bg-blue-50 px-4 py-2 text-xs font-black text-blue-700'}>{plan.badge}</div>
-                  <h3 className="mt-6 text-2xl font-black">{plan.name}</h3>
-                  <div className="mt-4 flex items-end gap-2">
-                    <p className="text-5xl font-black tracking-tight">{plan.price}</p>
-                    <p className={plan.highlighted ? 'mb-2 font-bold text-blue-100' : 'mb-2 font-bold text-slate-500'}>/ mes</p>
+                <div
+                  key={plan.name}
+                  className={
+                    plan.highlighted
+                      ? 'flex min-h-[370px] flex-col rounded-[24px] bg-[#0F2A5F] p-4 text-white shadow-[0_24px_70px_rgba(15,42,95,0.32)] ring-1 ring-blue-300/20'
+                      : 'flex min-h-[370px] flex-col rounded-[24px] border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/60'
+                  }
+                >
+                  <div className={plan.highlighted ? 'inline-flex w-fit rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-black text-blue-100' : 'inline-flex w-fit rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-black text-blue-700'}>{plan.badge}</div>
+                  <h3 className="mt-4 text-xl font-black">{plan.name}</h3>
+                  <div className="mt-3 min-h-[44px]">
+                    <p className="break-words text-[clamp(1.7rem,2.1vw,2.35rem)] font-black leading-none tracking-tight">{plan.price}</p>
+                    <p className={plan.highlighted ? 'mt-1 text-xs font-bold text-blue-100' : 'mt-1 text-xs font-bold text-slate-500'}>/ mes</p>
                   </div>
-                  <p className={plan.highlighted ? 'mt-4 font-medium leading-7 text-blue-100' : 'mt-4 font-medium leading-7 text-slate-600'}>{plan.description}</p>
-                  <div className="mt-7 grid gap-3">
+                  <p className={plan.highlighted ? 'mt-3 min-h-[60px] text-[13px] font-medium leading-5 text-blue-100' : 'mt-3 min-h-[60px] text-[13px] font-medium leading-5 text-slate-600'}>{plan.description}</p>
+                  <div className="mt-4 grid gap-2">
                     {plan.items.map((item) => (
-                      <div key={item} className="flex items-start gap-3">
-                        <span className={plan.highlighted ? 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-sm font-black text-[#0F2A5F]' : 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-black text-green-700'}>âœ“</span>
-                        <span className="text-sm font-bold">{item}</span>
+                      <div key={item} className="flex items-start gap-2.5">
+                        <span className={plan.highlighted ? 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[#0F2A5F]' : 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700'}>
+                          <CheckCircle2 size={13} strokeWidth={3} />
+                        </span>
+                        <span className="text-xs font-bold leading-5">{item}</span>
                       </div>
                     ))}
                   </div>
-                  <a href="/registro-negocio" className={plan.highlighted ? 'mt-8 inline-flex w-full justify-center rounded-2xl bg-white px-6 py-4 text-sm font-black text-[#0F2A5F] transition hover:-translate-y-1' : 'mt-8 inline-flex w-full justify-center rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white transition hover:-translate-y-1 hover:bg-[#0F2A5F]'}>Probar gratis</a>
+                  <a href="/registro-negocio" className={plan.highlighted ? 'mt-auto inline-flex w-full justify-center rounded-2xl bg-white px-4 py-2.5 text-sm font-black text-[#0F2A5F] transition hover:-translate-y-1' : 'mt-auto inline-flex w-full justify-center rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-black text-white transition hover:-translate-y-1 hover:bg-[#0F2A5F]'}>Probar gratis</a>
                 </div>
               ))}
             </div>
 
-            <p className="mt-6 text-center text-sm font-semibold text-slate-500">Precio de lanzamiento Â· 10% de descuento pagando 6 meses Â· 20% de descuento pagando anual.</p>
+            <p className="mt-6 text-center text-sm font-semibold text-slate-500">Precio de lanzamiento. 10% de descuento pagando 6 meses. 20% de descuento pagando anual.</p>
             <p className="mx-auto mt-3 max-w-3xl text-center text-xs font-semibold leading-6 text-slate-400">
               En Peru el pago se gestiona de forma local. Para otros paises, el cobro internacional se procesa con Paddle y el monto final puede variar levemente por conversion de moneda, impuestos o comisiones del medio de pago.
             </p>
@@ -1161,7 +1176,7 @@ function MetricCard({ value, label }) {
 function PainItem({ text }) {
   return (
     <div className="flex items-start gap-3 rounded-2xl bg-white/10 p-4">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-500 text-sm font-black text-white">Ã—</span>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-500 text-sm font-black text-white">x</span>
       <p className="font-bold leading-7 text-slate-200">{text}</p>
     </div>
   );
@@ -1170,7 +1185,9 @@ function PainItem({ text }) {
 function GoodItem({ text }) {
   return (
     <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-500 text-sm font-black text-white">âœ“</span>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-500 text-white">
+        <CheckCircle2 size={16} strokeWidth={3} />
+      </span>
       <p className="font-bold leading-7 text-slate-700">{text}</p>
     </div>
   );
@@ -1178,8 +1195,10 @@ function GoodItem({ text }) {
 
 function AiBox({ title, text }) {
   return (
-    <div className="rounded-[28px] border border-white/10 bg-white/10 p-6 backdrop-blur">
-      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-xl">âš¡</div>
+    <div className="rounded-[24px] border border-white/10 bg-white/10 p-5 backdrop-blur">
+      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#0F2A5F]">
+        <Sparkles size={20} strokeWidth={2.6} />
+      </div>
       <h3 className="text-xl font-black">{title}</h3>
       <p className="mt-3 text-sm font-medium leading-6 text-blue-100">{text}</p>
     </div>
@@ -1189,7 +1208,9 @@ function AiBox({ title, text }) {
 function InfoLine({ text }) {
   return (
     <div className="flex items-start gap-3 rounded-2xl bg-white/10 p-4">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-400 text-sm font-black text-slate-950">âœ“</span>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-400 text-slate-950">
+        <CheckCircle2 size={16} strokeWidth={3} />
+      </span>
       <p className="font-bold leading-7 text-blue-100">{text}</p>
     </div>
   );

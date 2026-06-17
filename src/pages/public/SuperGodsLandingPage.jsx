@@ -183,8 +183,8 @@ function SuperGodsLandingPage() {
       price: formatSubscriptionPrice(getPlanPriceFromMap('BASIC', pricingCountry, publicPriceMap)),
       period: '/mes',
       launchNote: 'Para independientes',
-      description: 'Para barberos que trabajan solos, a domicilio o con agenda personal.',
-      features: ['1 profesional', '1 agenda', 'Reservas online', 'Clientes e historial', 'Perfil para recibir reservas'],
+      description: 'Para profesionales independientes o servicios a domicilio.',
+      features: ['1 profesional', '1 agenda', 'Reservas online', 'Clientes e historial'],
       highlight: false,
       cta: 'Empezar Basic',
     },
@@ -193,8 +193,8 @@ function SuperGodsLandingPage() {
       price: formatSubscriptionPrice(getPlanPriceFromMap('STARTER', pricingCountry, publicPriceMap)),
       period: '/mes',
       launchNote: '1 sede',
-      description: 'Para negocios pequenos que quieren ordenar reservas, caja y clientes.',
-      features: ['1 sede', 'Hasta 5 profesionales', '1 admin', 'Control de caja', 'Reservas online', 'Programa de puntos', 'Hasta 5 premios'],
+      description: 'Para una sede que necesita agenda, caja y fidelizacion.',
+      features: ['1 sede', '5 profesionales', '1 admin', 'Caja y puntos'],
       highlight: false,
       cta: 'Elegir Starter',
     },
@@ -202,9 +202,9 @@ function SuperGodsLandingPage() {
       name: 'Growth',
       price: formatSubscriptionPrice(getPlanPriceFromMap('GROWTH', pricingCountry, publicPriceMap)),
       period: '/mes',
-      launchNote: 'Mas recomendado',
-      description: 'Para negocios con dos sedes o equipos que necesitan mas control y marketing.',
-      features: ['2 sedes', 'Hasta 10 profesionales', '3 admins', 'Promociones', 'Reportes por sede', 'Gods AI Pro incluido'],
+      launchNote: 'Recomendado',
+      description: 'Para crecer con 2 sedes, reportes, promociones e IA.',
+      features: ['2 sedes', '10 profesionales', '3 admins', 'IA Pro incluida'],
       highlight: true,
       cta: 'Elegir Growth',
     },
@@ -213,8 +213,8 @@ function SuperGodsLandingPage() {
       price: formatSubscriptionPrice(getPlanPriceFromMap('PRO', pricingCountry, publicPriceMap)),
       period: '/mes',
       launchNote: 'Multi sede',
-      description: 'Para marcas con tres sedes y operacion avanzada.',
-      features: ['3 sedes', 'Hasta 18 profesionales', '6 admins', 'Caja avanzada', 'Inventario por sede', 'Reportes avanzados'],
+      description: 'Para marcas con mas control operativo y equipo grande.',
+      features: ['3 sedes', '18 profesionales', '6 admins', 'Reportes avanzados'],
       highlight: false,
       cta: 'Elegir Pro',
     },
@@ -223,8 +223,8 @@ function SuperGodsLandingPage() {
       price: formatSubscriptionPrice(getPlanPriceFromMap('ENTERPRISE', pricingCountry, publicPriceMap)),
       period: '/mes',
       launchNote: 'Desde',
-      description: 'Para cadenas con mas de tres sedes, expansion o acuerdos a medida.',
-      features: ['Sedes ilimitadas', 'Equipo ilimitado', 'Onboarding guiado', 'Soporte prioritario', 'Condiciones comerciales a medida'],
+      description: 'Para cadenas, expansion y acuerdos comerciales a medida.',
+      features: ['Sedes ilimitadas', 'Equipo ilimitado', 'Onboarding', 'Soporte prioritario'],
       highlight: false,
       cta: 'Hablar con ventas',
     },
@@ -474,7 +474,7 @@ function SuperGodsLandingPage() {
       </section>
 
       <section id="planes" className="border-y border-white/10 bg-white/[0.03]">
-        <div className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
+        <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <div className="text-sm font-bold uppercase tracking-[0.2em] text-amber-400">
               Planes simples
@@ -503,11 +503,11 @@ function SuperGodsLandingPage() {
             </select>
           </div>
 
-          <div className="mt-12 grid gap-6 lg:grid-cols-3">
+          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`rounded-[32px] border p-8 shadow-2xl ${
+                className={`flex min-h-[405px] flex-col rounded-[26px] border p-5 shadow-2xl ${
                   plan.highlight
                     ? 'border-amber-400 bg-amber-400/10 ring-1 ring-amber-400/40'
                     : 'border-white/10 bg-white/5'
@@ -519,34 +519,34 @@ function SuperGodsLandingPage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between gap-3">
+                <div className="grid gap-3">
                   <div className="text-2xl font-black">{plan.name}</div>
-                  <div className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-amber-300">
+                  <div className="w-fit rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-amber-300">
                     {plan.launchNote}
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-end gap-2">
-                  <span className="text-5xl font-black">{plan.price}</span>
-                  <span className="pb-1 text-white/60">{plan.period}</span>
+                <div className="mt-4 min-h-[50px]">
+                  <span className="block break-words text-[clamp(1.8rem,2.4vw,2.6rem)] font-black leading-none">{plan.price}</span>
+                  <span className="mt-1 block text-xs font-bold text-white/60">{plan.period}</span>
                 </div>
 
                 <div className="mt-2 text-sm text-amber-300/90">
                   Valor promocional por lanzamiento
                 </div>
 
-                <p className="mt-4 min-h-[96px] text-white/65">
+                <p className="mt-4 min-h-[72px] text-sm leading-6 text-white/65">
                   {plan.description}
                 </p>
 
-                <div className="mt-6 space-y-3">
+                <div className="mt-5 space-y-2.5">
                   {plan.features.map((feature) => (
                     <div
                       key={feature}
-                      className="flex items-start gap-3 text-white/85"
+                      className="flex items-start gap-2.5 text-white/85"
                     >
-                      <span className="mt-1 text-amber-400">âœ¦</span>
-                      <span>{feature}</span>
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />
+                      <span className="text-sm font-bold leading-5">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -555,7 +555,7 @@ function SuperGodsLandingPage() {
                   href={whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className={`mt-8 block rounded-2xl px-5 py-4 text-center font-bold transition hover:scale-[1.02] ${
+                  className={`mt-auto block rounded-2xl px-4 py-3 text-center text-sm font-bold transition hover:scale-[1.02] ${
                     plan.highlight
                       ? 'bg-amber-400 text-neutral-950'
                       : 'border border-white/15 bg-white/5 text-white'
