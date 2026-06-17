@@ -269,6 +269,24 @@ function PublicHomePage() {
       items: ['Sedes ilimitadas', 'Equipo ilimitado', 'Onboarding', 'Soporte prioritario'],
     },
   ];
+
+  const planComparison = [
+    { feature: 'Reservas online', basic: 'Incluido', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Agenda por profesional', basic: '1 agenda', starter: '5 profesionales', growth: '10 profesionales', pro: '18 profesionales', enterprise: 'Ilimitado' },
+    { feature: 'Sedes', basic: '1 agenda', starter: '1 sede', growth: '2 sedes', pro: '3 sedes', enterprise: 'Ilimitadas' },
+    { feature: 'Clientes e historial', basic: 'Incluido', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Caja y ventas', basic: 'No incluido', starter: 'Basica', growth: 'Completa', pro: 'Avanzada', enterprise: 'Avanzada' },
+    { feature: 'Consumo en local con QR', basic: 'No incluido', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Puntos y recompensas', basic: 'No incluido', starter: 'Basico', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Promociones', basic: 'No incluido', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Campanas automatizadas', basic: 'No incluido', starter: 'No incluido', growth: 'Push notifications', pro: 'Push + segmentos', enterprise: 'Avanzado' },
+    { feature: 'WhatsApp', basic: 'No incluido', starter: 'Manual', growth: 'Premium', pro: 'Premium', enterprise: 'Prioritario' },
+    { feature: 'Inventario por sede', basic: 'No incluido', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Reportes', basic: 'Basicos', starter: 'Basicos', growth: 'Por sede', pro: 'Avanzados', enterprise: 'Avanzados' },
+    { feature: 'Roles de administrador', basic: 'No incluido', starter: '1 admin', growth: '3 admins', pro: '6 admins', enterprise: 'Ilimitados' },
+    { feature: 'Gods AI Pro', basic: 'No incluido', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Soporte', basic: 'Estandar', starter: 'Estandar', growth: 'Prioridad media', pro: 'Prioritario', enterprise: 'Directo' },
+  ];
   const screenshots = [
     {
       title: 'Dashboard del dueÃ±o',
@@ -939,6 +957,45 @@ function PublicHomePage() {
             <p className="mx-auto mt-3 max-w-3xl text-center text-xs font-semibold leading-6 text-slate-400">
               En Peru el pago se gestiona de forma local. Para otros paises, el cobro internacional se procesa con Paddle y el monto final puede variar levemente por conversion de moneda, impuestos o comisiones del medio de pago.
             </p>
+
+            <div className="mt-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-xl shadow-slate-200/70">
+              <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-5 py-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Comparativa</p>
+                  <h3 className="mt-1 text-2xl font-black text-slate-950">Funciones por plan</h3>
+                </div>
+                <p className="max-w-2xl text-sm font-semibold leading-6 text-slate-500">
+                  Las cards ayudan a decidir rapido; esta tabla muestra las funciones operativas reales del sistema.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-[980px] w-full border-collapse text-left">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+                      <th className="sticky left-0 z-10 bg-white px-5 py-4">Funcion</th>
+                      <th className="px-4 py-4">Basic</th>
+                      <th className="px-4 py-4">Starter</th>
+                      <th className="bg-blue-50 px-4 py-4 text-blue-800">Growth</th>
+                      <th className="px-4 py-4">Pro</th>
+                      <th className="px-4 py-4">Enterprise</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {planComparison.map((row) => (
+                      <tr key={row.feature} className="border-b border-slate-100 last:border-b-0">
+                        <th className="sticky left-0 z-10 bg-white px-5 py-3 text-sm font-black text-slate-950">{row.feature}</th>
+                        <PlanFeatureCell value={row.basic} />
+                        <PlanFeatureCell value={row.starter} />
+                        <PlanFeatureCell value={row.growth} highlighted />
+                        <PlanFeatureCell value={row.pro} />
+                        <PlanFeatureCell value={row.enterprise} />
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1190,6 +1247,33 @@ function GoodItem({ text }) {
       </span>
       <p className="font-bold leading-7 text-slate-700">{text}</p>
     </div>
+  );
+}
+
+function PlanFeatureCell({ value, highlighted = false }) {
+  const negative = String(value).toLowerCase().includes('no incluido');
+
+  return (
+    <td className={highlighted ? 'bg-blue-50/70 px-4 py-3' : 'px-4 py-3'}>
+      <span
+        className={
+          negative
+            ? 'inline-flex items-center gap-2 text-sm font-bold text-slate-400'
+            : highlighted
+              ? 'inline-flex items-center gap-2 text-sm font-black text-blue-900'
+              : 'inline-flex items-center gap-2 text-sm font-bold text-slate-700'
+        }
+      >
+        {negative ? (
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-black text-slate-400">-</span>
+        ) : (
+          <span className={highlighted ? 'flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white' : 'flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700'}>
+            <CheckCircle2 size={13} strokeWidth={3} />
+          </span>
+        )}
+        {value}
+      </span>
+    </td>
   );
 }
 
