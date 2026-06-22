@@ -3170,6 +3170,9 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                               : `${item.quantity} x ${formatMoney(item.unitPrice)}`}
                           </div>
                         </div>
+                      </div>
+
+                      <div className="mt-3">
                         <button
                           type="button"
                           onClick={() => removeItem(item.key)}
@@ -3229,7 +3232,9 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerResults, setCustomerResults] = useState([]);
   const [customerSearching, setCustomerSearching] = useState(false);
+  const [quickCustomerFirstName, setQuickCustomerFirstName] = useState('');
   const [quickCustomerPhone, setQuickCustomerPhone] = useState('');
+  const [quickCustomerLastName, setQuickCustomerLastName] = useState('');
   const [creatingCustomer, setCreatingCustomer] = useState(false);
   const [isCourtesy, setIsCourtesy] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
@@ -3349,7 +3354,17 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     }
 
     const onlyNumbers = String(value || '').replace(/[^0-9]/g, '');
-    if (onlyNumbers.length >= 6 && quickCustomerPhone.trim().length === 0) {
+    if (onlyNumbers.length < value.trim().length && !selectedCustomer) {
+      setQuickCustomerFirstName(value.trim());
+    }
+
+    const currentPhone = String(quickCustomerPhone || '').replace(/[^0-9]/g, '');
+    if (
+      onlyNumbers.length >= 2 &&
+      (currentPhone.length === 0 ||
+        onlyNumbers.startsWith(currentPhone) ||
+        currentPhone.startsWith(onlyNumbers))
+    ) {
       setQuickCustomerPhone(onlyNumbers);
     }
   }
@@ -3357,7 +3372,9 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   function selectCustomer(customer) {
     setSelectedCustomer(customer);
     setCustomerName(customer.nombreCompleto || customer.nombres || 'Cliente');
+    setQuickCustomerFirstName('');
     setQuickCustomerPhone(customer.telefono || '');
+    setQuickCustomerLastName('');
     setCustomerResults([]);
     setCustomerSearching(false);
   }
@@ -3365,7 +3382,9 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   async function createQuickCustomerFromSale() {
     setErrorMsg('');
 
-    const name = customerName.trim();
+    const searchIsOnlyPhone = String(customerName || '').replace(/[^0-9]/g, '') === customerName.trim();
+    const name = (quickCustomerFirstName.trim() || (searchIsOnlyPhone ? '' : customerName.trim())).trim();
+    const lastName = quickCustomerLastName.trim();
     const phone = String(quickCustomerPhone || '').replace(/[^0-9]/g, '');
 
     if (!name) {
@@ -3383,6 +3402,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     try {
       const created = await createOwnerCustomer({
         nombres: name,
+        apellidos: lastName || null,
         telefono: phone,
       });
       selectCustomer(created);
@@ -3698,6 +3718,9 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                         onClick={() => {
                           setSelectedCustomer(null);
                           setCustomerName('');
+                          setQuickCustomerFirstName('');
+                          setQuickCustomerPhone('');
+                          setQuickCustomerLastName('');
                           setCustomerResults([]);
                         }}
                         className="rounded-xl bg-white px-3 py-2 text-xs font-black text-emerald-700"
@@ -3741,7 +3764,20 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                         Puedes guardar la venta como cliente ocasional o crear el cliente ahora agregando su teléfono.
                       </p>
 
-                      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <input
+                          value={quickCustomerFirstName}
+                          onChange={(event) => setQuickCustomerFirstName(event.target.value)}
+                          placeholder="Nombre del cliente"
+                          className="w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm font-black text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-500"
+                        />
+
+                        <input
+                          value={quickCustomerLastName}
+                          onChange={(event) => setQuickCustomerLastName(event.target.value)}
+                          placeholder="Apellido del cliente"
+                          className="w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm font-black text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-500"
+                        />
                         <input
                           type="tel"
                           value={quickCustomerPhone}
@@ -3754,7 +3790,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                           type="button"
                           onClick={createQuickCustomerFromSale}
                           disabled={creatingCustomer}
-                          className="rounded-2xl bg-neutral-950 px-4 py-3 text-sm font-black text-white transition hover:scale-[1.01] disabled:opacity-60"
+                          className="w-full rounded-2xl bg-neutral-950 px-4 py-3 text-sm font-black text-white transition hover:scale-[1.01] disabled:opacity-60 sm:w-auto"
                         >
                           {creatingCustomer ? 'Creando...' : 'Crear cliente'}
                         </button>

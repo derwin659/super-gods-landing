@@ -516,7 +516,7 @@ function BarberDetailModal({ barber, loading, errorMsg, items, onClose }) {
         )}
 
         {!loading && items.length > 0 && (
-          <div className="overflow-hidden rounded-[24px] border border-neutral-200">
+          <div className="overflow-x-auto rounded-[24px] border border-neutral-200">
             <table className="w-full min-w-[780px] text-left text-sm">
               <thead className="bg-neutral-50 text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
                 <tr>
@@ -1065,9 +1065,15 @@ export default function OwnerReportsPage() {
     })),
   ];
 
+  const totalIncome = n(profitability?.totalSales) + n(profitability?.additionalIncome);
+  const totalExpenses =
+    n(profitability?.operationalExpenses) +
+    n(profitability?.barberPayments) +
+    n(profitability?.barberAdvances);
+
   return (
-    <div className="space-y-7">
-      <section className="relative overflow-hidden rounded-[34px] border border-amber-400/15 bg-[linear-gradient(135deg,#080808_0%,#111827_48%,#15110A_100%)] p-6 text-white shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
+    <div className="min-w-0 space-y-5 sm:space-y-7">
+      <section className="relative overflow-hidden rounded-[26px] border border-amber-400/15 bg-[linear-gradient(135deg,#080808_0%,#111827_48%,#15110A_100%)] p-4 text-white shadow-[0_22px_60px_rgba(15,23,42,0.18)] sm:rounded-[34px] sm:p-6">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(251,191,36,0.22),transparent_30%),radial-gradient(circle_at_100%_0%,rgba(16,185,129,0.16),transparent_34%)]" />
 
         <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
@@ -1076,7 +1082,7 @@ export default function OwnerReportsPage() {
               Reportes premium
             </div>
 
-            <h2 className="mt-5 text-4xl font-black tracking-tight">
+            <h2 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">
               Rentabilidad, barberos y métodos de pago
             </h2>
 
@@ -1097,7 +1103,7 @@ export default function OwnerReportsPage() {
         </div>
       </section>
 
-      <section className="rounded-[30px] border border-neutral-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.045)]">
+      <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_35px_rgba(15,23,42,0.045)] sm:rounded-[30px] sm:p-5">
         <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr_1fr_auto] lg:items-end">
           <SelectField
             label="Sede"
@@ -1137,6 +1143,13 @@ export default function OwnerReportsPage() {
             />
 
             <StatCard
+              title="Ingresos adicionales"
+              value={formatMoney(profitability?.additionalIncome)}
+              helper="Movimientos de caja"
+              tone="blue"
+            />
+
+            <StatCard
               title="Utilidad estimada"
               value={formatMoney(profitability?.netProfit)}
               helper={`Margen ${formatPercent(profitability?.profitMargin)}`}
@@ -1144,21 +1157,21 @@ export default function OwnerReportsPage() {
             />
 
             <StatCard
-              title="Gastos operativos"
-              value={formatMoney(profitability?.operationalExpenses)}
-              helper="Gastos registrados en caja"
+              title="Total egresos"
+              value={formatMoney(totalExpenses)}
+              helper="Gastos + pagos + adelantos"
               tone="red"
-            />
-
-            <StatCard
-              title="Pagos a barberos"
-              value={formatMoney(n(profitability?.barberPayments) + n(profitability?.barberAdvances))}
-              helper="Pagos + adelantos"
-              tone="gold"
             />
           </section>
 
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              title="Ingreso total"
+              value={formatMoney(totalIncome)}
+              helper="Ventas + adicionales"
+              tone="gold"
+            />
+
             <StatCard
               title="Ticket promedio"
               value={formatMoney(salesReport?.averageTicket)}
@@ -1310,7 +1323,7 @@ export default function OwnerReportsPage() {
             </ChartCard>
           </section>
 
-          <section className="rounded-[30px] border border-neutral-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.05)]">
+          <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)] sm:rounded-[30px] sm:p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <h3 className="text-xl font-black text-neutral-950">
@@ -1326,7 +1339,7 @@ export default function OwnerReportsPage() {
               </div>
             </div>
 
-            <div className="mt-5 overflow-hidden rounded-[24px] border border-neutral-200">
+            <div className="mt-5 overflow-x-auto rounded-[24px] border border-neutral-200">
               <table className="w-full min-w-[860px] text-left text-sm">
                 <thead className="bg-neutral-50 text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
                   <tr>
