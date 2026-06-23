@@ -86,6 +86,10 @@ function normalizeBranch(raw) {
 }
 
 function normalizeBarber(raw) {
+  const rawBranchIds = Array.isArray(raw.branchIds) ? raw.branchIds : [];
+  const branchIds = rawBranchIds.map(asNumber).filter((id) => Number.isFinite(id) && id > 0);
+  const branchId = raw.branchId === undefined || raw.branchId === null ? null : asNumber(raw.branchId);
+
   const fullName = firstText(
     raw.barberName,
     raw.nombreCompleto,
@@ -97,7 +101,8 @@ function normalizeBarber(raw) {
     id: asNumber(raw.barberId ?? raw.id ?? raw.userId),
     name: fullName,
     photoUrl: firstText(raw.photoUrl, raw.barberPhotoUrl, raw.imageUrl, raw.googlePictureUrl),
-    branchId: raw.branchId === undefined || raw.branchId === null ? null : asNumber(raw.branchId),
+    branchId,
+    branchIds: branchIds.length > 0 ? branchIds : (branchId ? [branchId] : []),
   };
 }
 
@@ -359,7 +364,12 @@ export default function PublicBookingPage() {
     if (!selectedBranchId) return allBarbers;
     const selected = Number(selectedBranchId);
 
-    const withBranch = allBarbers.filter((b) => b.branchId === selected);
+    const withBranch = allBarbers.filter((b) => {
+      if (Array.isArray(b.branchIds) && b.branchIds.length > 0) {
+        return b.branchIds.includes(selected);
+      }
+      return b.branchId === selected;
+    });
     return withBranch.length > 0 ? withBranch : allBarbers;
   }, [allBarbers, selectedBranchId]);
 
