@@ -4496,31 +4496,54 @@ function HistoryPaymentPill({ label, value }) {
 
 function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, onClose }) {
   const [sales, setSales] = useState([]);
+  const [movements, setMovements] = useState(Array.isArray(cash?.movements) ? cash.movements : []);
   const [editingSale, setEditingSale] = useState(null);
+  const [editingMovement, setEditingMovement] = useState(null);
   const [deletingSaleId, setDeletingSaleId] = useState(null);
+  const [deletingMovementId, setDeletingMovementId] = useState(null);
   const [paymentMethods] = useState(initialPaymentMethods);
   const [loadingSales, setLoadingSales] = useState(true);
+  const [loadingMovements, setLoadingMovements] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
-    async function loadSales() {
-      setLoadingSales(true);
-      setErrorMsg('');
+  async function loadSales() {
+    setLoadingSales(true);
+    setErrorMsg('');
 
-      try {
-        const data = await getSalesByCashRegister({
-          branchId: branch.id,
-          cashRegisterId: cash.id,
-        });
+    try {
+      const data = await getSalesByCashRegister({
+        branchId: branch.id,
+        cashRegisterId: cash.id,
+      });
 
-        setSales(data);
-      } catch (error) {
-        setErrorMsg(error.message || 'No se pudieron cargar las ventas de esta caja.');
-      } finally {
-        setLoadingSales(false);
-      }
+      setSales(data);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudieron cargar las ventas de esta caja.');
+    } finally {
+      setLoadingSales(false);
     }
+  }
 
+  async function loadMovements() {
+    setLoadingMovements(true);
+    setErrorMsg('');
+
+    try {
+      const data = await getCashMovements({
+        branchId: branch.id,
+        cashRegisterId: cash.id,
+      });
+
+      setMovements(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudieron cargar los movimientos de esta caja.');
+    } finally {
+      setLoadingMovements(false);
+    }
+  }
+
+  useEffect(() => {
+    setMovements(Array.isArray(cash?.movements) ? cash.movements : []);
     loadSales();
   }, [branch.id, cash.id]);
 
@@ -4529,7 +4552,41 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
       ? cash.paymentMethodBalances
       : cash?.paymentMethodsSummary || [];
 
-  const movements = Array.isArray(cash?.movements) ? cash.movements : [];
+  async function handleDeleteHistorySale(sale) {
+    const saleId = saleIdOf(sale);
+    if (!saleId) return;
+    if (!window.confirm('Eliminar la venta #' + saleId + '? Esta accion no se puede deshacer.')) return;
+
+    setDeletingSaleId(saleId);
+    setErrorMsg('');
+
+    try {
+      await deleteCashSale({ branchId: branch.id, saleId });
+      await loadSales();
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo eliminar la venta.');
+    } finally {
+      setDeletingSaleId(null);
+    }
+  }
+
+  async function handleDeleteHistoryMovement(movement) {
+    const movementId = movement?.id;
+    if (!movementId) return;
+    if (!window.confirm('Eliminar el movimiento #' + movementId + '? Esta accion no se puede deshacer.')) return;
+
+    setDeletingMovementId(movementId);
+    setErrorMsg('');
+
+    try {
+      await deleteCashMovement({ branchId: branch.id, movementId });
+      await loadMovements();
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo eliminar el movimiento.');
+    } finally {
+      setDeletingMovementId(null);
+    }
+  }
 
   return (
     <ModalShell title="Detalle de caja" subtitle={branch?.name || 'Sede'} onClose={onClose}>
@@ -4548,20 +4605,20 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
           <StatCard title="Apertura" value={formatDateTime(cash.openedAt)} helper={cash.openedByUserName || 'Usuario no registrado'} />
           <StatCard title="Cierre" value={formatDateTime(cash.closedAt)} helper={cash.closedByUserName || cash.assignedUserName || 'Pendiente'} />
           <StatCard title="Ventas total" value={formatMoney(cash.salesTotal)} helper="Total registrado" tone="gold" />
-          <StatCard title="Esperado" value={formatMoney(cash.closingAmountExpected)} helper="Efectivo físico esperado" tone={balanceTone(cash.closingAmountExpected)} />
+          <StatCard title="Esperado" value={formatMoney(cash.closingAmountExpected)} helper="Efectivo fisico esperado" tone={balanceTone(cash.closingAmountExpected)} />
           <StatCard title="Contado" value={formatMoney(cash.closingAmountCounted)} helper="Monto contado al cierre" />
           <StatCard title="Diferencia" value={formatMoney(cash.differenceAmount)} helper="Contado - esperado" tone={Number(cash.differenceAmount || 0) === 0 ? 'green' : 'red'} />
         </div>
 
         <div className="rounded-[26px] border border-neutral-200 bg-white p-5">
           <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
-            Métodos de pago
+            Metodos de pago
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {paymentsSource.length === 0 ? (
               <div className="rounded-2xl bg-neutral-50 p-4 text-sm font-bold text-neutral-500">
-                Sin métodos registrados.
+                Sin metodos registrados.
               </div>
             ) : (
               paymentsSource.map((payment) => (
@@ -4573,7 +4630,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
                     {paymentLabelFromOptions(paymentMethods, payment.paymentMethod)}
                   </div>
                   <div className="mt-1 text-xs text-neutral-500">
-                    {payment.count || 0} operación(es)
+                    {payment.count || 0} operacion(es)
                   </div>
                   <div className={`mt-2 text-lg font-black ${amountClassByValue(payment.totalAmount)}`}>
                     {formatMoney(payment.totalAmount)}
@@ -4595,7 +4652,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
                 <tr>
                   <th className="px-4 py-3 font-black">Cliente</th>
                   <th className="px-4 py-3 font-black">Barbero</th>
-                  <th className="px-4 py-3 font-black">Método</th>
+                  <th className="px-4 py-3 font-black">Metodo</th>
                   <th className="px-4 py-3 font-black">Total</th>
                   <th className="px-4 py-3 font-black">Fecha</th>
                   <th className="px-4 py-3 font-black text-right">Acciones</th>
@@ -4621,25 +4678,40 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
                     </td>
                   </tr>
                 ) : (
-                  sales.map((sale) => (
-                    <tr key={saleIdOf(sale)} className="border-t border-neutral-200">
-                      <td className="px-4 py-4 font-black text-neutral-950">
-                        {sale.customerName || 'Cliente ocasional'}
-                      </td>
-                      <td className="px-4 py-4 font-bold text-neutral-700">
-                        {saleBarberName(sale)}
-                      </td>
-                      <td className="px-4 py-4 font-bold text-neutral-700">
-                        {methodLabel(sale.metodoPago)}
-                      </td>
-                      <td className="px-4 py-4 font-black text-emerald-700">
-                        {formatMoney(sale.total)}
-                      </td>
-                      <td className="px-4 py-4 text-xs font-bold text-neutral-500">
-                        {formatDateTime(saleDateOf(sale))}
-                      </td>
-                    </tr>
-                  ))
+                  sales.map((sale) => {
+                    const saleId = saleIdOf(sale);
+                    const isDeleting = deletingSaleId === saleId;
+
+                    return (
+                      <tr key={saleId} className="border-t border-neutral-200">
+                        <td className="px-4 py-4 font-black text-neutral-950">
+                          {sale.customerName || 'Cliente ocasional'}
+                        </td>
+                        <td className="px-4 py-4 font-bold text-neutral-700">
+                          {saleBarberName(sale)}
+                        </td>
+                        <td className="px-4 py-4 font-bold text-neutral-700">
+                          {methodLabel(sale.metodoPago)}
+                        </td>
+                        <td className="px-4 py-4 font-black text-emerald-700">
+                          {formatMoney(sale.total)}
+                        </td>
+                        <td className="px-4 py-4 text-xs font-bold text-neutral-500">
+                          {formatDateTime(saleDateOf(sale))}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex justify-end gap-2">
+                            <button type="button" onClick={() => setEditingSale(sale)} className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-black text-neutral-700 hover:bg-neutral-100">
+                              Editar
+                            </button>
+                            <button type="button" onClick={() => handleDeleteHistorySale(sale)} disabled={isDeleting} className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700 hover:bg-red-100 disabled:opacity-60">
+                              {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -4652,43 +4724,88 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
           </div>
 
           <div className="mt-4 space-y-3">
-            {movements.length === 0 ? (
+            {loadingMovements ? (
+              <div className="rounded-2xl bg-neutral-50 p-4 text-sm font-bold text-neutral-500">
+                Cargando movimientos...
+              </div>
+            ) : movements.length === 0 ? (
               <div className="rounded-2xl bg-neutral-50 p-4 text-sm font-bold text-neutral-500">
                 No hubo gastos, ingresos, adelantos ni pagos.
               </div>
             ) : (
-              movements.map((movement) => (
-                <div key={movement.id} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-black text-neutral-950">
-                        {movement.concept || movementTypeLabel(movement.type)}
-                      </div>
-                      <div className="mt-1 text-xs font-bold text-neutral-500">
-                        {movementTypeLabel(movement.type)} · {methodLabel(movement.paymentMethod)}
-                      </div>
-                      {movement.barberUserName && (
-                        <div className="mt-1 text-xs font-bold text-amber-700">
-                          Barbero: {movement.barberUserName}
-                        </div>
-                      )}
-                      {movement.note && (
-                        <div className="mt-1 text-xs text-neutral-500">
-                          {movement.note}
-                        </div>
-                      )}
-                    </div>
+              movements.map((movement) => {
+                const isDeleting = deletingMovementId === movement.id;
 
-                    <div className={`font-black ${movementAmountClass(movement.type)}`}>
-                      {formatMoney(movement.amount)}
+                return (
+                  <div key={movement.id} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <div className="font-black text-neutral-950">
+                          {movement.concept || movementTypeLabel(movement.type)}
+                        </div>
+                        <div className="mt-1 text-xs font-bold text-neutral-500">
+                          {movementTypeLabel(movement.type)} - {methodLabel(movement.paymentMethod)} - {formatDateTime(movement.movementDate)}
+                        </div>
+                        {movement.barberUserName && (
+                          <div className="mt-1 text-xs font-bold text-amber-700">
+                            Barbero: {movement.barberUserName}
+                          </div>
+                        )}
+                        {movement.note && (
+                          <div className="mt-1 text-xs text-neutral-500">
+                            {movement.note}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col items-start gap-2 lg:items-end">
+                        <div className={`font-black ${movementAmountClass(movement.type)}`}>
+                          {formatMoney(movement.amount)}
+                        </div>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => setEditingMovement(movement)} className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-black text-neutral-700 hover:bg-neutral-100">
+                            Editar
+                          </button>
+                          <button type="button" onClick={() => handleDeleteHistoryMovement(movement)} disabled={isDeleting} className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700 hover:bg-red-100 disabled:opacity-60">
+                            {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
       </div>
+
+      {editingSale && (
+        <EditSaleModal
+          branch={branch}
+          sale={editingSale}
+          paymentMethods={paymentMethods}
+          onClose={() => setEditingSale(null)}
+          onSaved={async () => {
+            setEditingSale(null);
+            await loadSales();
+          }}
+        />
+      )}
+
+      {editingMovement && (
+        <MovementModal
+          branch={branch}
+          cashRegister={cash}
+          paymentMethods={paymentMethods}
+          initialMovement={editingMovement}
+          onClose={() => setEditingMovement(null)}
+          onSaved={async () => {
+            setEditingMovement(null);
+            await loadMovements();
+          }}
+        />
+      )}
     </ModalShell>
   );
 }
