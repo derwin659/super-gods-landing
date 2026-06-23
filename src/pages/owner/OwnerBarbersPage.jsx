@@ -35,6 +35,36 @@ function initials(item) {
     .toUpperCase();
 }
 
+function getBranchId(branch) {
+  return branch?.id ?? branch?.branchId;
+}
+
+function getBranchName(branch) {
+  return branch?.name || branch?.nombre || branch?.branchName || 'Sede ' + getBranchId(branch);
+}
+
+function barberBranchIds(barber) {
+  const raw = Array.isArray(barber?.branchIds) && barber.branchIds.length > 0
+    ? barber.branchIds
+    : barber?.branchId
+      ? [barber.branchId]
+      : [];
+
+  return raw.map((id) => String(id));
+}
+
+function barberBranchLabel(barber) {
+  const names = Array.isArray(barber?.branchNombres) && barber.branchNombres.length > 0
+    ? barber.branchNombres
+    : barber?.branchNombre
+      ? [barber.branchNombre]
+      : [];
+
+  if (names.length > 0) return names.join(', ');
+  const ids = barberBranchIds(barber);
+  return ids.length > 0 ? ids.join(', ') : 'Sin sede';
+}
+
 function salaryFrequencyLabel(value) {
   const code = String(value || '').toUpperCase();
 
@@ -208,8 +238,13 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
   const [email, setEmail] = useState(barber?.email || '');
   const [phone, setPhone] = useState(barber?.phone || '');
   const [password, setPassword] = useState('');
-  const [branchId, setBranchId] = useState(String(barber?.branchId || branches[0]?.id || branches[0]?.branchId || ''));
+  const initialBranchIds = barberBranchIds(barber);
+  const fallbackBranchId = branches[0] ? String(getBranchId(branches[0])) : '';
+  const [selectedBranchIds, setSelectedBranchIds] = useState(
+    initialBranchIds.length > 0 ? initialBranchIds : fallbackBranchId ? [fallbackBranchId] : []
+  );
   const [activo, setActivo] = useState(barber?.activo !== false);
+  const [canSell, setCanSell] = useState(barber?.canSell !== false);
 
   const [salaryMode, setSalaryMode] = useState(barber?.salaryMode === true);
   const [commissionPercentage, setCommissionPercentage] = useState(
@@ -233,13 +268,20 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
       ? ''
       : String(barber?.photoUrl || '').trim();
 
-  const branchOptions = [
-    { value: '', label: 'Selecciona una sede' },
-    ...branches.map((branch) => ({
-      value: String(branch.id ?? branch.branchId),
-      label: branch.name || branch.nombre || branch.branchName || `Sede ${branch.id ?? branch.branchId}`,
-    })),
-  ];
+  const allBranchesSelected = branches.length > 0 && selectedBranchIds.length === branches.length;
+
+  function toggleBranch(id, checked) {
+    setSelectedBranchIds((current) => {
+      const next = new Set(current.map((value) => String(value)));
+      if (checked) next.add(String(id));
+      else next.delete(String(id));
+      return [...next];
+    });
+  }
+
+  function toggleAllBranches(checked) {
+    setSelectedBranchIds(checked ? branches.map((branch) => String(getBranchId(branch))) : []);
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -265,8 +307,8 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
       return;
     }
 
-    if (!branchId) {
-      setErrorMsg('Selecciona una sede.');
+    if (selectedBranchIds.length === 0) {
+      setErrorMsg('Selecciona al menos una sede.');
       return;
     }
 
@@ -299,8 +341,11 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
         apellido: apellido.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim() || null,
-        branchId: Number(branchId),
+        branchId: Number(selectedBranchIds[0]),
+        branchIds: selectedBranchIds.map((id) => Number(id)),
+        allBranches: selectedBranchIds.length === branches.length,
         activo,
+        canSell,
         salaryMode,
         commissionPercentage: salaryMode
           ? null
@@ -466,13 +511,46 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
                   Asignación
                 </h3>
 
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <SelectField
-                    label="Sede"
-                    value={branchId}
-                    onChange={setBranchId}
-                    options={branchOptions}
-                  />
+                <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+                  <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                    <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-white p-3">
+                      <input
+                        type="checkbox"
+                        checked={allBranchesSelected}
+                        onChange={(event) => toggleAllBranches(event.target.checked)}
+                        className="mt-1 h-5 w-5 accent-amber-500"
+                      />
+                      <span>
+                        <span className="block text-sm font-black text-neutral-950">Todas las sedes</span>
+                        <span className="mt-1 block text-xs font-bold text-neutral-500">
+                          Puede vender y aparecer en agenda en cualquier sede.
+                        </span>
+                      </span>
+                    </label>
+
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {branches.map((branch) => {
+                        const id = String(getBranchId(branch));
+                        return (
+                          <label key={id} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-3 py-3 text-sm font-black text-neutral-800">
+                            <input
+                              type="checkbox"
+                              checked={selectedBranchIds.includes(id)}
+                              onChange={(event) => toggleBranch(id, event.target.checked)}
+                              className="h-5 w-5 accent-amber-500"
+                            />
+                            <span>{getBranchName(branch)}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    <div className={'mt-3 text-xs font-black ' + (selectedBranchIds.length === 0 ? 'text-red-600' : 'text-neutral-500')}>
+                      {selectedBranchIds.length === 0
+                        ? 'Selecciona al menos una sede.'
+                        : 'Sedes seleccionadas: ' + selectedBranchIds.length}
+                    </div>
+                  </div>
 
                   <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                     <div className="flex items-center justify-between gap-4">
@@ -495,6 +573,33 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
                         }`}
                       >
                         {activo ? 'Activo' : 'Inactivo'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-black text-neutral-950">
+                          Permiso de venta
+                        </div>
+                        <div className="mt-1 text-xs font-bold text-neutral-500">
+                          {canSell
+                            ? 'Puede registrar ventas desde su cuenta.'
+                            : 'No podrá registrar ventas ni cobrar.'}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setCanSell((prev) => !prev)}
+                        className={`rounded-2xl px-4 py-3 text-sm font-black ${
+                          canSell
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-neutral-950 text-white'
+                        }`}
+                      >
+                        {canSell ? 'Puede vender' : 'Sin venta'}
                       </button>
                     </div>
                   </div>
@@ -695,11 +800,19 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto }) {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="rounded-full bg-neutral-100 px-3 py-2 text-xs font-black text-neutral-700">
-              {barber.branchNombre || 'Sin sede'}
+              {barberBranchLabel(barber)}
             </span>
 
             <span className="rounded-full bg-amber-50 px-3 py-2 text-xs font-black text-amber-700">
               {compensationLabel(barber)}
+            </span>
+
+            <span className={`rounded-full px-3 py-2 text-xs font-black ${
+              barber.canSell === false
+                ? 'bg-red-50 text-red-700'
+                : 'bg-emerald-50 text-emerald-700'
+            }`}>
+              {barber.canSell === false ? 'Sin permiso de venta' : 'Puede vender'}
             </span>
 
             <span className="rounded-full bg-blue-50 px-3 py-2 text-xs font-black text-blue-700">
@@ -793,7 +906,7 @@ export default function OwnerBarbersPage() {
         fullName(item).toLowerCase().includes(term) ||
         String(item.email || '').toLowerCase().includes(term) ||
         String(item.phone || '').toLowerCase().includes(term) ||
-        String(item.branchNombre || '').toLowerCase().includes(term)
+        barberBranchLabel(item).toLowerCase().includes(term)
       );
     });
   }, [barbers, search, showInactive]);
