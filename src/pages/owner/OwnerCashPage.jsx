@@ -1235,6 +1235,16 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
 
   const paymentOptions = paymentSelectOptions(paymentMethods);
 
+  useEffect(() => {
+    let alive = true;
+    setLoadingBarbers(true);
+    getCashBarbers(branch?.id)
+      .then((data) => { if (alive) setBarbers(Array.isArray(data) ? data : []); })
+      .catch(() => { if (alive) setBarbers([]); })
+      .finally(() => { if (alive) setLoadingBarbers(false); });
+    return () => { alive = false; };
+  }, [branch?.id]);
+
   const needsBarber = type === 'ADVANCE_BARBER' || type === 'PAYMENT_BARBER';
   const isTransfer = type === 'PAYMENT_METHOD_TRANSFER';
 
@@ -1454,6 +1464,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
   const [selectedBarberId, setSelectedBarberId] = useState('');
   const [periodFrom, setPeriodFrom] = useState(toDateInputValue(sevenDaysAgo));
   const [periodTo, setPeriodTo] = useState(toDateInputValue(today));
+  const [movementDate, setMovementDate] = useState(toDateInputValue(today));
   const [amountPaid, setAmountPaid] = useState('');
   const [paymentRows, setPaymentRows] = useState([createPaymentDraft('CASH', 0)]);
   const [note, setNote] = useState('');
@@ -1679,7 +1690,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
           />
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <InputField
             label="Desde"
             value={periodFrom}
@@ -2229,11 +2240,33 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
   const [discount, setDiscount] = useState(String(Number(sale?.discount ?? 0).toFixed(2)));
   const [total, setTotal] = useState(String(Number(sale?.total ?? 0).toFixed(2)));
   const [cashReceived, setCashReceived] = useState(String(Number(sale?.cashReceived ?? sale?.total ?? 0).toFixed(2)));
+  const initialItems = saleItemsOf(sale).map((item, index) => ({
+    key: String(item.saleItemId || item.id || `item-${index}`),
+    saleItemId: item.saleItemId || item.id,
+    name: saleItemName(item),
+    type: saleItemTypeLabel(item),
+    quantity: saleItemQuantity(item),
+    barberUserId: item.barberUserId ? String(item.barberUserId) : '',
+    precioUnitario: String(Number(saleItemUnitPrice(item) || 0).toFixed(2)),
+  }));
   const [payments, setPayments] = useState(initialPayments);
+  const [items, setItems] = useState(initialItems);
+  const [barbers, setBarbers] = useState([]);
+  const [loadingBarbers, setLoadingBarbers] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const paymentOptions = paymentSelectOptions(paymentMethods);
+
+  useEffect(() => {
+    let alive = true;
+    setLoadingBarbers(true);
+    getCashBarbers(branch?.id)
+      .then((data) => { if (alive) setBarbers(Array.isArray(data) ? data : []); })
+      .catch(() => { if (alive) setBarbers([]); })
+      .finally(() => { if (alive) setLoadingBarbers(false); });
+    return () => { alive = false; };
+  }, [branch?.id]);
 
   const totalNumber = roundMoney(parseMoneyInput(total));
   const paymentPayloads = payments
@@ -2254,6 +2287,12 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
   const changeAmount = cashPaymentAmount > 0
     ? roundMoney(Math.max(0, cashReceivedNumber - cashPaymentAmount))
     : 0;
+
+  function updateItem(index, patch) {
+    setItems((prev) => prev.map((item, currentIndex) => (
+      currentIndex === index ? { ...item, ...patch } : item
+    )));
+  }
 
   function updatePayment(index, patch) {
     setPayments((prev) => prev.map((payment, currentIndex) => (
@@ -4457,6 +4496,8 @@ function HistoryPaymentPill({ label, value }) {
 
 function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, onClose }) {
   const [sales, setSales] = useState([]);
+  const [editingSale, setEditingSale] = useState(null);
+  const [deletingSaleId, setDeletingSaleId] = useState(null);
   const [paymentMethods] = useState(initialPaymentMethods);
   const [loadingSales, setLoadingSales] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -4557,24 +4598,25 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
                   <th className="px-4 py-3 font-black">Método</th>
                   <th className="px-4 py-3 font-black">Total</th>
                   <th className="px-4 py-3 font-black">Fecha</th>
+                  <th className="px-4 py-3 font-black text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {loadingSales ? (
                   <tr>
-                    <td className="px-4 py-5 text-neutral-500" colSpan="5">
+                    <td className="px-4 py-5 text-neutral-500" colSpan="6">
                       Cargando ventas...
                     </td>
                   </tr>
                 ) : errorMsg ? (
                   <tr>
-                    <td className="px-4 py-5 text-red-600" colSpan="5">
+                    <td className="px-4 py-5 text-red-600" colSpan="6">
                       {errorMsg}
                     </td>
                   </tr>
                 ) : sales.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-5 text-neutral-500" colSpan="5">
+                    <td className="px-4 py-5 text-neutral-500" colSpan="6">
                       No hubo ventas en esta caja.
                     </td>
                   </tr>

@@ -309,6 +309,7 @@ export async function createBarberPayment({
   barberUserId,
   periodFrom,
   periodTo,
+  movementDate = null,
   amountPaid,
   paymentMethod,
   payments = null,
@@ -327,6 +328,7 @@ export async function createBarberPayment({
     barberUserId,
     periodFrom,
     periodTo,
+    movementDate,
     note,
   };
 
@@ -411,6 +413,7 @@ export async function updateCashSale({
   total = 0,
   cashReceived = 0,
   changeAmount = 0,
+  items,
   payments,
 }) {
   const payload = {
@@ -422,6 +425,16 @@ export async function updateCashSale({
     cashReceived: Number(cashReceived || 0),
     changeAmount: Number(changeAmount || 0),
   };
+
+  if (Array.isArray(items)) {
+    payload.items = items.map((item) => ({
+      saleItemId: Number(item.saleItemId || item.id || 0),
+      barberUserId: item.barberUserId === null || item.barberUserId === undefined || item.barberUserId === ''
+        ? null
+        : Number(item.barberUserId),
+      precioUnitario: Number(item.precioUnitario || 0),
+    })).filter((item) => item.saleItemId > 0);
+  }
 
   if (Array.isArray(payments)) {
     payload.payments = payments.map((payment) => ({
