@@ -484,6 +484,19 @@ export async function getCashHistory({ branchId, from, to }) {
   return extractList(data);
 }
 
+export async function getCashAudit({ branchId, cashRegisterId = null, from, to }) {
+  const data = await apiRequest(
+    `/api/owner/cash-registers/audit${toQuery({
+      branchId,
+      cashRegisterId,
+      from,
+      to,
+    })}`
+  );
+
+  return extractList(data);
+}
+
 export async function createCashSale({
   branchId,
   customerId = null,

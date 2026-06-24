@@ -10,6 +10,7 @@ import {
   deleteCashSale,
   getBarberPaymentPreview,
   getCashBarbers,
+  getCashAudit,
   getCashHistory,
   getCashProducts,
   getCashServices,
@@ -429,6 +430,24 @@ function movementTypeLabel(type) {
   };
 
   return labels[type] || type || 'Movimiento';
+}
+
+function auditActionLabel(action) {
+  const labels = {
+    UPDATE: 'Edito',
+    DELETE: 'Elimino',
+  };
+
+  return labels[action] || action || 'Cambio';
+}
+
+function auditEntityLabel(entityType) {
+  const labels = {
+    SALE: 'venta',
+    CASH_MOVEMENT: 'movimiento',
+  };
+
+  return labels[entityType] || 'registro';
 }
 
 function saleValidationStatus(sale) {
@@ -2385,6 +2404,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
         total: totalNumber,
         cashReceived: cashPaymentAmount > 0 ? cashReceivedNumber : totalNumber,
         changeAmount,
+        auditReason: auditReason.trim(),
         payments: totalNumber === 0 ? [] : paymentPayloads,
         items: items.map((item) => ({
           saleItemId: item.saleItemId,
@@ -4603,6 +4623,8 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
   const [paymentMethods] = useState(initialPaymentMethods);
   const [loadingSales, setLoadingSales] = useState(true);
   const [loadingMovements, setLoadingMovements] = useState(false);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   async function loadSales() {
@@ -4641,11 +4663,32 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
     }
   }
 
+  async function loadAudit() {
+    setLoadingAudit(true);
+
+    try {
+      const openedDate = cash?.openedAt ? new Date(cash.openedAt) : new Date();
+      const from = Number.isNaN(openedDate.getTime()) ? toDateInputValue(new Date()) : toDateInputValue(openedDate);
+      const to = toDateInputValue(new Date());
+      const data = await getCashAudit({
+        branchId: branch.id,
+        cashRegisterId: cash.id,
+        from,
+        to,
+      });
+
+      setAuditLogs(Array.isArray(data) ? data : []);
+    } catch (_) {
+      setAuditLogs([]);
+    } finally {
+      setLoadingAudit(false);
+    }
+  }
   useEffect(() => {
     setMovements(Array.isArray(cash?.movements) ? cash.movements : []);
     loadSales();
+    loadAudit();
   }, [branch.id, cash.id]);
-
   const paymentsSource =
     cash?.paymentMethodBalances?.length > 0
       ? cash.paymentMethodBalances
@@ -4668,6 +4711,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
     try {
       await deleteCashSale({ branchId: branch.id, saleId, auditReason: auditReason.trim() });
       await loadSales();
+      await loadAudit();
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo eliminar la venta.');
     } finally {
@@ -4692,6 +4736,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
     try {
       await deleteCashMovement({ branchId: branch.id, movementId, auditReason: auditReason.trim() });
       await loadMovements();
+      await loadAudit();
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo eliminar el movimiento.');
     } finally {
@@ -4891,6 +4936,61 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
         </div>
       </div>
 
+        <div className="rounded-[26px] border border-neutral-200 bg-white p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
+              Actividad de auditoria
+            </div>
+            <div className="text-xs font-bold text-neutral-400">
+              Ediciones y eliminaciones
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {loadingAudit ? (
+              <div className="rounded-2xl bg-neutral-50 p-4 text-sm font-bold text-neutral-500">
+                Cargando actividad...
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <div className="rounded-2xl bg-neutral-50 p-4 text-sm font-bold text-neutral-500">
+                Aun no hay cambios auditados en esta caja.
+              </div>
+            ) : (
+              auditLogs.map((log) => (
+                <div key={log.id} className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="text-sm font-black text-neutral-950">
+                        {auditActionLabel(log.action)} {auditEntityLabel(log.entityType)} #{log.entityId || '-'}
+                      </div>
+                      <div className="mt-1 text-xs font-bold text-neutral-500">
+                        {formatDateTime(log.createdAt)} - {log.actorUserName || 'Sistema'}
+                      </div>
+                      {log.reason && (
+                        <div className="mt-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-neutral-700">
+                          Motivo: {log.reason}
+                        </div>
+                      )}
+                    </div>
+                    <details className="text-xs font-bold text-neutral-500">
+                      <summary className="cursor-pointer select-none rounded-xl border border-neutral-200 bg-white px-3 py-2 text-neutral-700">
+                        Ver datos
+                      </summary>
+                      <div className="mt-2 grid gap-2 lg:grid-cols-2">
+                        <pre className="max-h-48 overflow-auto rounded-xl bg-neutral-950 p-3 text-[11px] text-white">
+                          {log.beforeSnapshot || 'Sin datos previos'}
+                        </pre>
+                        <pre className="max-h-48 overflow-auto rounded-xl bg-neutral-950 p-3 text-[11px] text-white">
+                          {log.afterSnapshot || 'Sin datos nuevos'}
+                        </pre>
+                      </div>
+                    </details>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       {editingSale && (
         <EditSaleModal
           branch={branch}
@@ -4901,6 +5001,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
           onSaved={async () => {
             setEditingSale(null);
             await loadSales();
+            await loadAudit();
           }}
         />
       )}
@@ -4915,6 +5016,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
           onSaved={async () => {
             setEditingMovement(null);
             await loadMovements();
+            await loadAudit();
           }}
         />
       )}
