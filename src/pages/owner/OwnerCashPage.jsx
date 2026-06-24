@@ -2227,7 +2227,7 @@ function SaleDetailModal({ sale, onClose }) {
   );
 }
 
-function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
+function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS, session = null, onClose, onSaved }) {
   const salePayments = salePaymentsOf(sale).filter(
     (payment) => normalizeMethod(payment.method) !== 'DEPOSIT_APPLIED'
   );
@@ -2262,11 +2262,11 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
     let alive = true;
     setLoadingBarbers(true);
     getCashBarbers(branch?.id)
-      .then((data) => { if (alive) setBarbers(Array.isArray(data) ? data : []); })
+      .then((data) => { if (alive) setBarbers(mergeOwnerIntoBarbers(data, session)); })
       .catch(() => { if (alive) setBarbers([]); })
       .finally(() => { if (alive) setLoadingBarbers(false); });
     return () => { alive = false; };
-  }, [branch?.id]);
+  }, [branch?.id, session]);
 
   const totalNumber = roundMoney(parseMoneyInput(total));
   const paymentPayloads = payments
@@ -2362,6 +2362,11 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
         cashReceived: cashPaymentAmount > 0 ? cashReceivedNumber : totalNumber,
         changeAmount,
         payments: totalNumber === 0 ? [] : paymentPayloads,
+        items: items.map((item) => ({
+          saleItemId: item.saleItemId,
+          barberUserId: item.barberUserId || null,
+          precioUnitario: parseMoneyInput(item.precioUnitario),
+        })),
       });
 
       onSaved();
@@ -2456,6 +2461,65 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
               value={formatMoney(Math.abs(remainingPayment))}
               tone={Math.abs(remainingPayment) <= 0.009 ? 'green' : 'red'}
             />
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-neutral-200 bg-white p-5">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.20em] text-amber-600">
+                Items de la venta
+              </div>
+              <p className="mt-1 text-sm font-semibold text-neutral-500">
+                Cambia el profesional asignado a cada servicio o producto registrado.
+              </p>
+            </div>
+            {loadingBarbers && (
+              <div className="text-xs font-black text-neutral-400">Cargando profesionales...</div>
+            )}
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {items.length === 0 ? (
+              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
+                Esta venta no tiene items editables.
+              </div>
+            ) : (
+              items.map((item, index) => (
+                <div key={item.key} className="rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
+                  <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr_180px] lg:items-end">
+                    <div>
+                      <div className="text-sm font-black text-neutral-950">{item.name}</div>
+                      <div className="mt-1 text-xs font-bold text-neutral-500">
+                        {item.type} - {item.quantity} unidad{Number(item.quantity || 0) === 1 ? '' : 'es'}
+                      </div>
+                    </div>
+
+                    <SelectField
+                      label="Profesional"
+                      value={item.barberUserId}
+                      onChange={(value) => updateItem(index, { barberUserId: value })}
+                      options={[
+                        { value: '', label: 'Sin profesional' },
+                        ...barbers.map((barber) => ({
+                          value: String(barber.id),
+                          label: barber.name,
+                        })),
+                      ]}
+                    />
+
+                    <InputField
+                      label="Precio unitario"
+                      value={item.precioUnitario}
+                      onChange={(value) => updateItem(index, { precioUnitario: value })}
+                      type="number"
+                      step="0.01"
+                      prefix={getTenantCurrencySymbol()}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -4494,7 +4558,7 @@ function HistoryPaymentPill({ label, value }) {
   );
 }
 
-function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, onClose }) {
+function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, session = null, onClose }) {
   const [sales, setSales] = useState([]);
   const [movements, setMovements] = useState(Array.isArray(cash?.movements) ? cash.movements : []);
   const [editingSale, setEditingSale] = useState(null);
@@ -4785,6 +4849,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
           branch={branch}
           sale={editingSale}
           paymentMethods={paymentMethods}
+          session={session}
           onClose={() => setEditingSale(null)}
           onSaved={async () => {
             setEditingSale(null);
@@ -4810,7 +4875,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
   );
 }
 
-function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose }) {
+function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, session = null, onClose }) {
   const today = new Date();
   const fromDefault = new Date();
   fromDefault.setDate(today.getDate() - 30);
