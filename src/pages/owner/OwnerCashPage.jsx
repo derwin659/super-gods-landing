@@ -1184,6 +1184,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
   const [amount, setAmount] = useState(initialMovement?.amount ? String(initialMovement.amount) : '');
   const [concept, setConcept] = useState(initialMovement?.concept || 'Gasto general');
   const [note, setNote] = useState(initialMovement?.note || '');
+  const [auditReason, setAuditReason] = useState('');
   const [paymentMethod, setPaymentMethod] = useState(normalizeMethod(initialMovement?.paymentMethod) || 'CASH');
   const [fromPaymentMethod, setFromPaymentMethod] = useState(normalizeMethod(initialMovement?.fromPaymentMethod) || defaultExtraPaymentMethod(paymentMethods));
   const [toPaymentMethod, setToPaymentMethod] = useState(normalizeMethod(initialMovement?.toPaymentMethod) || 'CASH');
@@ -1302,6 +1303,11 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
       return;
     }
 
+    if (isEditing && !auditReason.trim()) {
+      setErrorMsg('Escribe el motivo de auditoria para editar este movimiento.');
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -1316,6 +1322,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
         fromPaymentMethod: isTransfer ? fromPaymentMethod : null,
         toPaymentMethod: isTransfer ? toPaymentMethod : null,
         movementDate: initialMovement?.movementDate || null,
+        auditReason: isEditing ? auditReason.trim() : null,
       };
 
       if (isEditing) {
@@ -1689,6 +1696,17 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
             ]}
           />
         )}
+
+        <div>
+          <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-neutral-500">Motivo de auditoria</label>
+          <textarea
+            value={auditReason}
+            onChange={(event) => setAuditReason(event.target.value)}
+            rows={3}
+            placeholder="Ej. Correccion de barbero, valor o metodo de pago."
+            className="w-full rounded-3xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm font-bold text-neutral-900 outline-none transition focus:border-amber-400 focus:bg-white"
+          />
+        </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
           <InputField
@@ -2240,6 +2258,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
   const [discount, setDiscount] = useState(String(Number(sale?.discount ?? 0).toFixed(2)));
   const [total, setTotal] = useState(String(Number(sale?.total ?? 0).toFixed(2)));
   const [cashReceived, setCashReceived] = useState(String(Number(sale?.cashReceived ?? sale?.total ?? 0).toFixed(2)));
+  const [auditReason, setAuditReason] = useState('');
   const initialItems = saleItemsOf(sale).map((item, index) => ({
     key: String(item.saleItemId || item.id || `item-${index}`),
     saleItemId: item.saleItemId || item.id,
@@ -2342,6 +2361,11 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
       return;
     }
 
+    if (!auditReason.trim()) {
+      setErrorMsg('Escribe el motivo de auditoria para editar esta venta.');
+      return;
+    }
+
     const mainPaymentMethod = totalNumber === 0
       ? 'FREE'
       : paymentPayloads.length > 1
@@ -2380,6 +2404,17 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
   return (
     <ModalShell title="Editar venta" subtitle={branch?.name || 'Sede'} onClose={onClose} maxWidth="max-w-5xl">
       <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-neutral-500">Motivo de auditoria</label>
+          <textarea
+            value={auditReason}
+            onChange={(event) => setAuditReason(event.target.value)}
+            rows={3}
+            placeholder="Ej. Correccion de barbero, valor o metodo de pago."
+            className="w-full rounded-3xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm font-bold text-neutral-900 outline-none transition focus:border-amber-400 focus:bg-white"
+          />
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-3">
           <InputField label="Subtotal" value={subtotal} onChange={setSubtotal} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
           <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
@@ -4619,13 +4654,19 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
   async function handleDeleteHistorySale(sale) {
     const saleId = saleIdOf(sale);
     if (!saleId) return;
+    const auditReason = window.prompt('Motivo para eliminar la venta #' + saleId + ':');
+    if (auditReason === null) return;
+    if (!auditReason.trim()) {
+      setErrorMsg('El motivo de auditoria es obligatorio para eliminar una venta.');
+      return;
+    }
     if (!window.confirm('Eliminar la venta #' + saleId + '? Esta accion no se puede deshacer.')) return;
 
     setDeletingSaleId(saleId);
     setErrorMsg('');
 
     try {
-      await deleteCashSale({ branchId: branch.id, saleId });
+      await deleteCashSale({ branchId: branch.id, saleId, auditReason: auditReason.trim() });
       await loadSales();
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo eliminar la venta.');
@@ -4637,13 +4678,19 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
   async function handleDeleteHistoryMovement(movement) {
     const movementId = movement?.id;
     if (!movementId) return;
+    const auditReason = window.prompt('Motivo para eliminar el movimiento #' + movementId + ':');
+    if (auditReason === null) return;
+    if (!auditReason.trim()) {
+      setErrorMsg('El motivo de auditoria es obligatorio para eliminar un movimiento.');
+      return;
+    }
     if (!window.confirm('Eliminar el movimiento #' + movementId + '? Esta accion no se puede deshacer.')) return;
 
     setDeletingMovementId(movementId);
     setErrorMsg('');
 
     try {
-      await deleteCashMovement({ branchId: branch.id, movementId });
+      await deleteCashMovement({ branchId: branch.id, movementId, auditReason: auditReason.trim() });
       await loadMovements();
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo eliminar el movimiento.');
@@ -5348,6 +5395,12 @@ export default function OwnerCashPage() {
     const saleId = saleIdOf(sale);
     if (!selectedBranch || !saleId) return;
 
+    const auditReason = window.prompt('Motivo para eliminar esta venta:');
+    if (auditReason === null) return;
+    if (!auditReason.trim()) {
+      setErrorMsg('El motivo de auditoria es obligatorio para eliminar una venta.');
+      return;
+    }
     const ok = window.confirm('¿Seguro que deseas eliminar esta venta? Esta acción no se puede deshacer.');
     if (!ok) return;
 
@@ -5357,6 +5410,7 @@ export default function OwnerCashPage() {
       await deleteCashSale({
         branchId: selectedBranch.id,
         saleId,
+        auditReason: auditReason.trim(),
       });
 
       await loadCash(selectedBranchId);
@@ -5368,6 +5422,12 @@ export default function OwnerCashPage() {
   async function handleDeleteMovement(movement) {
     if (!selectedBranch || !movement?.id) return;
 
+    const auditReason = window.prompt('Motivo para eliminar este movimiento:');
+    if (auditReason === null) return;
+    if (!auditReason.trim()) {
+      setErrorMsg('El motivo de auditoria es obligatorio para eliminar un movimiento.');
+      return;
+    }
     const ok = window.confirm('¿Seguro que deseas eliminar este movimiento? Esta acción no se puede deshacer.');
     if (!ok) return;
 
@@ -5377,6 +5437,7 @@ export default function OwnerCashPage() {
       await deleteCashMovement({
         branchId: selectedBranch.id,
         movementId: movement.id,
+        auditReason: auditReason.trim(),
       });
 
       await loadCash(selectedBranchId);

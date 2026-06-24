@@ -183,6 +183,7 @@ export async function updateCashMovement({
   fromPaymentMethod = null,
   toPaymentMethod = null,
   movementDate = null,
+  auditReason = null,
 }) {
   const payload = {
     type,
@@ -199,9 +200,14 @@ export async function updateCashMovement({
     payload.movementDate = movementDate;
   }
 
+  if (auditReason) {
+    payload.auditReason = auditReason;
+  }
+
   return apiRequest(
     `/api/owner/cash-registers/movements/${movementId}${toQuery({
       branchId,
+      auditReason,
     })}`,
     {
       method: 'PUT',
@@ -210,10 +216,11 @@ export async function updateCashMovement({
   );
 }
 
-export async function deleteCashMovement({ branchId, movementId }) {
+export async function deleteCashMovement({ branchId, movementId, auditReason = null }) {
   return apiRequest(
     `/api/owner/cash-registers/movements/${movementId}${toQuery({
       branchId,
+      auditReason,
     })}`,
     {
       method: 'DELETE',
@@ -415,6 +422,7 @@ export async function updateCashSale({
   changeAmount = 0,
   items,
   payments,
+  auditReason = null,
 }) {
   const payload = {
     customerId,
@@ -443,6 +451,10 @@ export async function updateCashSale({
     }));
   }
 
+  if (auditReason) {
+    payload.auditReason = auditReason;
+  }
+
   return apiRequest(
     `/api/owner/cash-sales/${saleId}${toQuery({ branchId })}`,
     {
@@ -451,10 +463,9 @@ export async function updateCashSale({
     }
   );
 }
-
-export async function deleteCashSale({ branchId, saleId }) {
+export async function deleteCashSale({ branchId, saleId, auditReason = null }) {
   return apiRequest(
-    `/api/owner/cash-sales/${saleId}${toQuery({ branchId })}`,
+    `/api/owner/cash-sales/${saleId}${toQuery({ branchId, auditReason })}`,
     {
       method: 'DELETE',
     }
