@@ -489,6 +489,7 @@ export async function getCashAudit({ branchId, cashRegisterId = null, actorUserI
     `/api/owner/cash-registers/audit${toQuery({
       branchId,
       cashRegisterId,
+      actorUserId,
       from,
       to,
     })}`

@@ -39,6 +39,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getBusinessLabels, readBusinessLabels } from '../../utils/businessLabels';
 import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
+import { exportCashHistoryExcel, exportCashHistoryPdf } from '../../utils/cashHistoryExport';
 
 function formatMoney(value) {
   return formatTenantMoney(value);
@@ -5034,6 +5035,7 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
   const [items, setItems] = useState([]);
   const [selectedCash, setSelectedCash] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   async function loadHistory() {
@@ -5059,11 +5061,32 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
     loadHistory();
   }, []);
 
+  async function exportHistory(format) {
+    setExporting(format);
+    setErrorMsg('');
+    try {
+      const details = await Promise.all(items.map(async (cash) => {
+        const [sales, movements] = await Promise.all([
+          getSalesByCashRegister({ branchId: branch.id, cashRegisterId: cash.id }),
+          getCashMovements({ branchId: branch.id, cashRegisterId: cash.id }),
+        ]);
+        return { cash, sales, movements };
+      }));
+      const payload = { branch, items, details, from, to, formatDateTime, statusLabel: cashStatusLabel };
+      if (format === 'excel') exportCashHistoryExcel(payload);
+      else await exportCashHistoryPdf(payload);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo exportar el historial.');
+    } finally {
+      setExporting('');
+    }
+  }
+
   return (
     <>
       <ModalShell title="Historial de caja" subtitle={branch?.name || 'Sede'} onClose={onClose}>
         <div className="space-y-5">
-          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_130px]">
+          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_130px_130px_130px]">
             <InputField label="Desde" value={from} onChange={setFrom} type="date" />
             <InputField label="Hasta" value={to} onChange={setTo} type="date" />
             <button
@@ -5073,6 +5096,8 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
             >
               Buscar
             </button>
+            <button type="button" onClick={() => exportHistory('excel')} disabled={loading || items.length === 0 || Boolean(exporting)} className="self-end rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-black text-emerald-800 disabled:opacity-50">{exporting === 'excel' ? 'Generando...' : 'Excel'}</button>
+            <button type="button" onClick={() => exportHistory('pdf')} disabled={loading || items.length === 0 || Boolean(exporting)} className="self-end rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-black text-red-700 disabled:opacity-50">{exporting === 'pdf' ? 'Generando...' : 'PDF'}</button>
           </div>
 
           {!loading && !errorMsg && items.length > 0 && (
