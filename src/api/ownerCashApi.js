@@ -484,7 +484,7 @@ export async function getCashHistory({ branchId, from, to }) {
   return extractList(data);
 }
 
-export async function getCashAudit({ branchId, cashRegisterId = null, from, to }) {
+export async function getCashAudit({ branchId, cashRegisterId = null, actorUserId = null, from, to }) {
   const data = await apiRequest(
     `/api/owner/cash-registers/audit${toQuery({
       branchId,

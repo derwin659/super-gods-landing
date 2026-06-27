@@ -5145,6 +5145,147 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
 }
 
 
+function CashAuditActivityModal({ branch, onClose }) {
+  const today = new Date();
+  const fromDefault = new Date();
+  fromDefault.setDate(today.getDate() - 7);
+
+  const [from, setFrom] = useState(toDateInputValue(fromDefault));
+  const [to, setTo] = useState(toDateInputValue(today));
+  const [actorUserId, setActorUserId] = useState('');
+  const [items, setItems] = useState([]);
+  const [actorOptions, setActorOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  function mergeActorOptions(logs) {
+    setActorOptions((prev) => {
+      const map = new Map(prev.map((actor) => [String(actor.id), actor]));
+      logs.forEach((log) => {
+        if (log.actorUserId) {
+          map.set(String(log.actorUserId), {
+            id: log.actorUserId,
+            name: log.actorUserName || `Usuario #${log.actorUserId}`,
+          });
+        }
+      });
+      return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+    });
+  }
+
+  async function loadActivity(nextActorUserId = actorUserId) {
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+      const data = await getCashAudit({
+        branchId: branch.id,
+        actorUserId: nextActorUserId || null,
+        from,
+        to,
+      });
+      const logs = Array.isArray(data) ? data : [];
+      setItems(logs);
+      mergeActorOptions(logs);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo cargar la actividad de caja.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadActivity('');
+  }, []);
+
+  function handleActorChange(value) {
+    setActorUserId(value);
+    loadActivity(value);
+  }
+
+  return (
+    <ModalShell title="Actividad de caja" subtitle={branch?.name || 'Sede'} onClose={onClose} maxWidth="max-w-5xl">
+      <div className="space-y-5">
+        <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1.2fr_130px]">
+          <InputField label="Desde" value={from} onChange={setFrom} type="date" />
+          <InputField label="Hasta" value={to} onChange={setTo} type="date" />
+          <SelectField
+            label="Usuario"
+            value={actorUserId}
+            onChange={handleActorChange}
+            options={[
+              { value: '', label: 'Todos los usuarios' },
+              ...actorOptions.map((actor) => ({ value: String(actor.id), label: actor.name })),
+            ]}
+          />
+          <button
+            type="button"
+            onClick={() => loadActivity()}
+            className="self-end rounded-2xl bg-neutral-950 px-5 py-4 text-sm font-black text-white transition hover:scale-[1.01]"
+          >
+            Buscar
+          </button>
+        </div>
+
+        <div className="rounded-[26px] border border-amber-100 bg-amber-50 p-5">
+          <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-700">
+            Cambios recientes
+          </div>
+          <div className="mt-1 text-sm font-bold text-amber-900/70">
+            Auditoria de ediciones y eliminaciones en ventas, gastos, adelantos y pagos.
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-5 text-sm font-black text-neutral-500">
+            Cargando actividad...
+          </div>
+        ) : errorMsg ? (
+          <ErrorBox message={errorMsg} />
+        ) : items.length === 0 ? (
+          <EmptyCard title="Sin actividad" text="No hay cambios auditados para los filtros seleccionados." />
+        ) : (
+          <div className="space-y-3">
+            {items.map((log) => (
+              <div key={log.id} className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.045)]">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="text-sm font-black text-neutral-950">
+                      {auditActionLabel(log.action)} {auditEntityLabel(log.entityType)} #{log.entityId || '-'}
+                    </div>
+                    <div className="mt-1 text-xs font-bold text-neutral-500">
+                      Caja #{log.cashRegisterId || '-'} - {formatDateTime(log.createdAt)} - {log.actorUserName || 'Sistema'}
+                    </div>
+                    {log.reason && (
+                      <div className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">
+                        Motivo: {log.reason}
+                      </div>
+                    )}
+                  </div>
+
+                  <details className="text-xs font-bold text-neutral-500 lg:min-w-[360px]">
+                    <summary className="cursor-pointer select-none rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-neutral-700">
+                      Ver antes/despues
+                    </summary>
+                    <div className="mt-2 grid gap-2">
+                      <pre className="max-h-40 overflow-auto rounded-xl bg-neutral-950 p-3 text-[11px] text-white">
+                        {log.beforeSnapshot || 'Sin datos previos'}
+                      </pre>
+                      <pre className="max-h-40 overflow-auto rounded-xl bg-neutral-950 p-3 text-[11px] text-white">
+                        {log.afterSnapshot || 'Sin datos nuevos'}
+                      </pre>
+                    </div>
+                  </details>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </ModalShell>
+  );
+}
+
 function productOrderStatusLabel(status) {
   const code = String(status || '').toUpperCase();
   if (code === 'APPROVED') return 'Aprobado';
@@ -5282,6 +5423,7 @@ export default function OwnerCashPage() {
   const [showMovementModal, setShowMovementModal] = useState(false);
   const [showSaleModal, setShowSaleModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showAuditActivityModal, setShowAuditActivityModal] = useState(false);
   const [showBarberPaymentModal, setShowBarberPaymentModal] = useState(false);
   const [editingMovement, setEditingMovement] = useState(null);
   const [editingSale, setEditingSale] = useState(null);
@@ -5455,6 +5597,7 @@ export default function OwnerCashPage() {
         showMovementModal ||
         showSaleModal ||
         showHistoryModal ||
+        showAuditActivityModal ||
         showBarberPaymentModal ||
         editingMovement ||
         editingSale ||
@@ -5476,6 +5619,7 @@ export default function OwnerCashPage() {
     showMovementModal,
     showSaleModal,
     showHistoryModal,
+    showAuditActivityModal,
     showBarberPaymentModal,
     editingMovement,
     editingSale,
@@ -5881,6 +6025,13 @@ export default function OwnerCashPage() {
               Historial
             </button>
 
+            <button
+              onClick={() => setShowAuditActivityModal(true)}
+              disabled={!selectedBranch}
+              className="rounded-2xl border border-white/10 bg-white/10 px-5 py-4 text-sm font-black text-white transition hover:bg-white/15 disabled:opacity-60"
+            >
+              Actividad
+            </button>
             {isOpen ? (
               <>
                 <button
@@ -6245,6 +6396,12 @@ export default function OwnerCashPage() {
         />
       )}
 
+      {showAuditActivityModal && selectedBranch && (
+        <CashAuditActivityModal
+          branch={selectedBranch}
+          onClose={() => setShowAuditActivityModal(false)}
+        />
+      )}
       {showHistoryModal && selectedBranch && (
         <CashHistoryModal
           branch={selectedBranch}
