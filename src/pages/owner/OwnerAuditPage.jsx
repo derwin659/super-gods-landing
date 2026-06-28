@@ -9,6 +9,7 @@ const ENTITY_OPTIONS = [
   ['BARBER_SCHEDULE', 'Horarios'],
   ['BARBER_TIME_BLOCK', 'Bloqueos'],
   ['BARBER_BRANCH_ASSIGNMENT', 'Sedes de profesionales'],
+  ['SALE_BARBER_ASSIGNMENT', 'Profesional en venta'],
 ];
 const ACTION_OPTIONS = [['', 'Todas las acciones'], ['CREATE', 'Creacion'], ['UPDATE', 'Edicion'], ['DELETE', 'Eliminacion']];
 
@@ -23,7 +24,7 @@ function formatDate(value) {
 }
 
 function labelEntity(value) {
-  return ({ ADMIN_PERMISSION: 'Permisos', BARBER_SCHEDULE: 'Horario', BARBER_TIME_BLOCK: 'Bloqueo', BARBER_BRANCH_ASSIGNMENT: 'Sedes asignadas' })[value] || value || 'Actividad';
+  return ({ ADMIN_PERMISSION: 'Permisos', BARBER_SCHEDULE: 'Horario', BARBER_TIME_BLOCK: 'Bloqueo', BARBER_BRANCH_ASSIGNMENT: 'Sedes asignadas', SALE_BARBER_ASSIGNMENT: 'Profesional en venta' })[value] || value || 'Actividad';
 }
 
 function labelAction(value) {

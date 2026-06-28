@@ -1469,6 +1469,15 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
           placeholder={needsBarber ? 'Ej. Pago manual o adelanto solicitado.' : 'Detalle opcional'}
         />
 
+        {isEditing && (
+          <TextAreaField
+            label="Motivo de auditoria"
+            value={auditReason}
+            onChange={setAuditReason}
+            placeholder="Ej. Correccion de monto, profesional o metodo de pago."
+          />
+        )}
+
         {errorMsg && <ErrorBox message={errorMsg} />}
 
         <button
