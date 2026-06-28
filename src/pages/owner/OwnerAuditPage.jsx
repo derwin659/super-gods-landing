@@ -42,19 +42,51 @@ function parseSnapshot(value) {
   try { return JSON.parse(value); } catch { return value; }
 }
 
-function Snapshot({ title, value, tone }) {
+const FIELD_LABELS = {
+  branchIds: 'Sedes', barberUserId: 'Profesional', barberName: 'Profesional',
+  itemId: 'Servicio de la venta', enabled: 'Activo', active: 'Activo',
+  canEditSales: 'Puede editar ventas', canDeleteSales: 'Puede eliminar ventas',
+  canManageCash: 'Puede administrar caja', canManageSchedule: 'Puede administrar horarios',
+  dayOfWeek: 'Dia', startTime: 'Desde', endTime: 'Hasta', reason: 'Motivo',
+};
+const DAY_LABELS = { MONDAY: 'Lunes', TUESDAY: 'Martes', WEDNESDAY: 'Miercoles', THURSDAY: 'Jueves', FRIDAY: 'Viernes', SATURDAY: 'Sabado', SUNDAY: 'Domingo' };
+
+function fieldLabel(key) {
+  if (FIELD_LABELS[key]) return FIELD_LABELS[key];
+  return key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ').replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function HumanValue({ value, field, branchMap }) {
+  if (value === null || value === undefined || value === '') return <span className="text-neutral-400">Sin dato</span>;
+  if (typeof value === 'boolean') return <span className={value ? 'font-black text-emerald-700' : 'font-black text-neutral-500'}>{value ? 'Si' : 'No'}</span>;
+  if (field === 'dayOfWeek') return DAY_LABELS[String(value).toUpperCase()] || String(value);
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <span className="text-neutral-400">Ninguno</span>;
+    return <div className="flex flex-wrap gap-2">{value.map((item, index) => {
+      const branchName = typeof item === 'number' || typeof item === 'string' ? branchMap.get(String(item)) : null;
+      return <span key={index} className="border border-neutral-200 bg-white px-2.5 py-1 text-xs font-black text-neutral-700">{branchName || (typeof item === 'object' ? <HumanValue value={item} branchMap={branchMap} /> : String(item))}</span>;
+    })}</div>;
+  }
+  if (typeof value === 'object') return <div className="space-y-2">{Object.entries(value).map(([key, item]) => <div key={key} className="grid gap-1 border-b border-neutral-200 pb-2 last:border-0 sm:grid-cols-[180px_1fr]"><span className="text-xs font-black text-neutral-500">{fieldLabel(key)}</span><div className="text-sm font-bold text-neutral-800"><HumanValue value={item} field={key} branchMap={branchMap} /></div></div>)}</div>;
+  return <span>{String(value)}</span>;
+}
+
+function Snapshot({ title, value, tone, entityType, branchMap }) {
   const parsed = parseSnapshot(value);
+  const isBranchAssignment = entityType === 'BARBER_BRANCH_ASSIGNMENT';
   return (
     <div className={`min-w-0 border p-4 ${tone === 'before' ? 'border-neutral-200 bg-neutral-50' : 'border-emerald-200 bg-emerald-50/60'}`}>
       <div className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-neutral-500">{title}</div>
-      {parsed === null ? <div className="text-sm font-bold text-neutral-400">Sin datos</div> : (
-        <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs font-semibold leading-6 text-neutral-700">{JSON.stringify(parsed, null, 2)}</pre>
+      {parsed === null ? <div className="text-sm font-bold text-neutral-400">Sin datos</div> : isBranchAssignment ? (
+        <HumanValue value={Array.isArray(parsed) ? parsed : []} branchMap={branchMap} />
+      ) : (
+        <HumanValue value={parsed} branchMap={branchMap} />
       )}
     </div>
   );
 }
 
-function AuditRow({ item, branchName }) {
+function AuditRow({ item, branchName, branchMap }) {
   const [open, setOpen] = useState(false);
   return (
     <article className="border-b border-neutral-200 bg-white last:border-b-0">
@@ -73,7 +105,7 @@ function AuditRow({ item, branchName }) {
         </div>
         <div className="flex h-9 w-9 items-center justify-center border border-neutral-200 bg-white text-neutral-600">{open ? <ChevronUp size={17} /> : <ChevronDown size={17} />}</div>
       </button>
-      {open && <div className="grid border-t border-neutral-200 md:grid-cols-2"><Snapshot title="Antes" value={item.beforeSnapshot} tone="before" /><Snapshot title="Despues" value={item.afterSnapshot} tone="after" /></div>}
+      {open && <div className="grid border-t border-neutral-200 md:grid-cols-2"><Snapshot title="Antes" value={item.beforeSnapshot} tone="before" entityType={item.entityType} branchMap={branchMap} /><Snapshot title="Despues" value={item.afterSnapshot} tone="after" entityType={item.entityType} branchMap={branchMap} /></div>}
     </article>
   );
 }
@@ -97,14 +129,22 @@ export default function OwnerAuditPage() {
   async function load(nextActor = actorUserId) {
     setLoading(true); setError('');
     try {
-      const logs = await getGeneralAuditLogs({ branchId: branchId || null, actorUserId: nextActor || null, entityType: entityType || null, action: action || null, from, to });
+      const baseFilters = { branchId: branchId || null, entityType: entityType || null, action: action || null, from, to };
+      const [logs, actorLogs] = await Promise.all([
+        getGeneralAuditLogs({ ...baseFilters, actorUserId: nextActor || null }),
+        getGeneralAuditLogs({ ...baseFilters, actorUserId: null }),
+      ]);
       setItems(logs);
-      setActors((current) => {
-        const map = new Map(current.map((actor) => [String(actor.id), actor]));
-        logs.forEach((log) => { if (log.actorUserId) map.set(String(log.actorUserId), { id: log.actorUserId, name: log.actorUserName || `Usuario #${log.actorUserId}` }); });
-        return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
-      });
-    } catch (err) { setError(err.message || 'No se pudo cargar la auditoria.'); }
+      const actorMap = new Map();
+      actorLogs.forEach((log) => { if (log.actorUserId) actorMap.set(String(log.actorUserId), { id: log.actorUserId, name: log.actorUserName || `Usuario #${log.actorUserId}` }); });
+      setActors([...actorMap.values()].sort((a, b) => a.name.localeCompare(b.name)));
+    } catch (err) {
+      const technicalMessage = String(err?.message || '');
+      const unavailable = technicalMessage.includes('general_audit_log') || technicalMessage.includes('JDBC exception');
+      setError(unavailable
+        ? 'La auditoria general aun no esta disponible. Contacta al soporte para completar la actualizacion.'
+        : technicalMessage || 'No se pudo cargar la auditoria.');
+    }
     finally { setLoading(false); }
   }
 
@@ -131,7 +171,7 @@ export default function OwnerAuditPage() {
           <label className="text-xs font-black text-neutral-500">Desde<input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="mt-2 w-full border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm font-bold text-neutral-900" /></label>
           <label className="text-xs font-black text-neutral-500">Hasta<input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="mt-2 w-full border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm font-bold text-neutral-900" /></label>
           <label className="text-xs font-black text-neutral-500">Sede<select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="mt-2 w-full border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm font-bold"><option value="">Todas</option>{branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
-          <label className="text-xs font-black text-neutral-500">Usuario<select value={actorUserId} onChange={(e) => setActorUserId(e.target.value)} className="mt-2 w-full border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm font-bold"><option value="">Todos</option>{actors.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+          <label className="text-xs font-black text-neutral-500">Usuario con actividad<select value={actorUserId} onChange={(e) => setActorUserId(e.target.value)} className="mt-2 w-full border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm font-bold"><option value="">Todos</option>{actors.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
           <label className="text-xs font-black text-neutral-500">Area<select value={entityType} onChange={(e) => setEntityType(e.target.value)} className="mt-2 w-full border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm font-bold">{ENTITY_OPTIONS.map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label>
           <label className="text-xs font-black text-neutral-500">Accion<select value={action} onChange={(e) => setAction(e.target.value)} className="mt-2 w-full border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm font-bold">{ACTION_OPTIONS.map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label>
         </div>
@@ -139,7 +179,7 @@ export default function OwnerAuditPage() {
       </section>
 
       <section className="overflow-hidden border border-neutral-200 bg-white shadow-sm">
-        {loading ? <div className="p-8 text-center font-bold text-neutral-500">Cargando actividad...</div> : error ? <div className="border border-red-200 bg-red-50 p-5 font-bold text-red-700">{error}</div> : items.length === 0 ? <div className="p-10 text-center"><CalendarRange className="mx-auto text-neutral-300" size={34} /><div className="mt-3 font-black text-neutral-800">Sin cambios en este rango</div><div className="mt-1 text-sm font-semibold text-neutral-500">Prueba ampliando las fechas o quitando filtros.</div></div> : items.map((item) => <AuditRow key={item.id} item={item} branchName={branchName(item.branchId)} />)}
+        {loading ? <div className="p-8 text-center font-bold text-neutral-500">Cargando actividad...</div> : error ? <div className="border border-red-200 bg-red-50 p-5 font-bold text-red-700">{error}</div> : items.length === 0 ? <div className="p-10 text-center"><CalendarRange className="mx-auto text-neutral-300" size={34} /><div className="mt-3 font-black text-neutral-800">Sin cambios en este rango</div><div className="mt-1 text-sm font-semibold text-neutral-500">Prueba ampliando las fechas o quitando filtros.</div></div> : items.map((item) => <AuditRow key={item.id} item={item} branchName={branchName(item.branchId)} branchMap={branchMap} />)}
       </section>
     </div>
   );
