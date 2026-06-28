@@ -47,6 +47,7 @@ import OwnerDashboardPage from './pages/owner/OwnerDashboardPage';
 import OwnerAgendaPage from './pages/owner/OwnerAgendaPage';
 import OwnerCustomersPage from './pages/owner/OwnerCustomersPage';
 import OwnerCashPage from './pages/owner/OwnerCashPage';
+import OwnerAuditPage from './pages/owner/OwnerAuditPage';
 import OwnerProductsPage from './pages/owner/OwnerProductsPage';
 import OwnerReportsPage from './pages/owner/OwnerReportsPage';
 import OwnerConfigPage from './pages/owner/OwnerConfigPage';
@@ -2225,6 +2226,15 @@ export default function App() {
             element={
               <OwnerPermissionRoute permissions={['REPORTS_ACCESS']}>
                 <OwnerReportsPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="auditoria"
+            element={
+              <OwnerPermissionRoute ownerOnly>
+                <OwnerAuditPage />
               </OwnerPermissionRoute>
             }
           />

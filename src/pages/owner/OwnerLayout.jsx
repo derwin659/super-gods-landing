@@ -17,6 +17,7 @@ import {
   UserCog,
   Settings,
   ShieldCheck,
+  Activity,
   LogOut,
   Menu,
   X,
@@ -249,6 +250,19 @@ const navGroups = [
     title: 'Administración',
     subtitle: 'Seguridad y ajustes',
     items: [
+      {
+        to: '/owner/auditoria',
+        label: 'Auditoria',
+        description: 'Cambios sensibles',
+        icon: Activity,
+        tone: {
+          soft: 'bg-amber-50 text-amber-800 ring-amber-100',
+          active: 'from-amber-500 to-yellow-400',
+          glow: 'shadow-amber-300/60',
+        },
+        ownerOnly: true,
+        feature: 'core',
+      },
       {
         to: '/owner/administradores',
         label: 'Administradores',

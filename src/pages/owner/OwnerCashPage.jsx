@@ -1717,17 +1717,6 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
           />
         )}
 
-        <div>
-          <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-neutral-500">Motivo de auditoria</label>
-          <textarea
-            value={auditReason}
-            onChange={(event) => setAuditReason(event.target.value)}
-            rows={3}
-            placeholder="Ej. Correccion de barbero, valor o metodo de pago."
-            className="w-full rounded-3xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm font-bold text-neutral-900 outline-none transition focus:border-amber-400 focus:bg-white"
-          />
-        </div>
-
         <div className="grid gap-3 sm:grid-cols-3">
           <InputField
             label="Desde"
