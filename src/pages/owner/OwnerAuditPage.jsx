@@ -96,7 +96,7 @@ function AuditRow({ item, branchName, branchMap }) {
           <div className="mt-2 text-xs font-bold text-neutral-500">{formatDate(item.createdAt)}</div>
         </div>
         <div className="min-w-0">
-          <div className="font-black text-neutral-950">{labelEntity(item.entityType)} <span className="text-neutral-400">#{item.entityId || '-'}</span></div>
+          <div className="font-black text-neutral-950">{labelEntity(item.entityType)}</div>
           <div className="mt-1 truncate text-sm font-semibold text-neutral-500">{item.reason || 'Cambio registrado por el sistema'}</div>
         </div>
         <div>
