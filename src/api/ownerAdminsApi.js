@@ -192,6 +192,14 @@ export async function updateOwnerAdmin({
   return normalizeUser(data);
 }
 
+export async function updateOwnerUserBranches({ userId, branchIds }) {
+  const data = await apiRequest(`/api/internal/users/${userId}/branches`, {
+    method: 'PUT',
+    body: JSON.stringify({ branchIds: branchIds.map(Number) }),
+  });
+  return normalizeUser(data);
+}
+
 export async function changeOwnerUserRole({ userId, targetRole, branchId }) {
   const data = await apiRequest(`/api/internal/users/${userId}/role`, {
     method: 'PUT',

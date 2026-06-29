@@ -11,6 +11,7 @@ import {
   getOwnerInternalUsers,
   updateAdminPermissions,
   updateOwnerAdmin,
+  updateOwnerUserBranches,
 } from '../../api/ownerAdminsApi';
 
 function initials(name) {
@@ -157,7 +158,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
   const [email, setEmail] = useState(admin?.email || '');
   const [phone, setPhone] = useState(admin?.phone || '');
   const [password, setPassword] = useState('');
-  const [branchId, setBranchId] = useState(admin?.branchId ? String(admin.branchId) : String(branches[0]?.id || ''));
+  const [branchIds, setBranchIds] = useState(() => { const initial = admin?.branchIds?.length ? admin.branchIds : admin?.branchId ? [admin.branchId] : branches[0]?.id ? [branches[0].id] : []; return initial.map(String); });
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -174,7 +175,8 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
     setApellido(barber.apellido || '');
     setEmail(barber.email || '');
     setPhone(barber.phone || '');
-    setBranchId(barber.branchId ? String(barber.branchId) : branchId);
+    const nextBranches = barber.branchIds?.length ? barber.branchIds : barber.branchId ? [barber.branchId] : [];
+    if (nextBranches.length) setBranchIds(nextBranches.map(String));
   }
 
   async function handleSubmit(event) {
@@ -189,8 +191,8 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
     const cleanPhone = String(phone || '').trim();
     const cleanPassword = String(password || '').trim();
 
-    if (!branchId) {
-      setErrorMsg('Selecciona una sede.');
+    if (branchIds.length === 0) {
+      setErrorMsg('Selecciona al menos una sede.');
       return;
     }
 
@@ -225,7 +227,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           nombre: cleanNombre,
           apellido: cleanApellido,
           phone: cleanPhone,
-          branchId,
+          branchId: branchIds[0],
         });
       } else if (usingBarber) {
         saved = await updateOwnerAdmin({
@@ -233,7 +235,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           nombre: cleanNombre,
           apellido: cleanApellido,
           phone: cleanPhone,
-          branchId,
+          branchId: branchIds[0],
         });
       } else {
         saved = await createOwnerAdmin({
@@ -242,10 +244,11 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           email: cleanEmail,
           phone: cleanPhone,
           password: cleanPassword,
-          branchId,
+          branchId: branchIds[0],
         });
       }
 
+      saved = await updateOwnerUserBranches({ userId: saved.id, branchIds });
       onSaved(saved);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo guardar el administrador.');
@@ -325,18 +328,20 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           <InputField label="Contraseña" value={password} onChange={setPassword} placeholder="Mínimo 6 caracteres" type="password" />
         )}
 
-        <SelectField
-          label="Sede asignada"
-          value={branchId}
-          onChange={setBranchId}
-          options={[
-            { value: '', label: 'Seleccionar sede' },
-            ...branches.map((branch) => ({
-              value: String(branch.id),
-              label: branch.nombre,
-            })),
-          ]}
-        />
+        <div className="rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
+          <div className="text-xs font-black uppercase tracking-[0.16em] text-neutral-500">Sedes asignadas</div>
+          <p className="mt-1 text-xs font-semibold text-neutral-500">El administrador solo podrá operar en las sedes seleccionadas.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {branches.map((branch) => {
+              const value = String(branch.id);
+              const checked = branchIds.includes(value);
+              return <label key={branch.id} className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition ${checked ? 'border-amber-300 bg-amber-50' : 'border-neutral-200 bg-white'}`}>
+                <input type="checkbox" checked={checked} onChange={() => setBranchIds((current) => checked ? current.filter((id) => id !== value) : [...current, value])} className="h-4 w-4 accent-amber-500" />
+                <span className="text-sm font-black text-neutral-800">{branch.nombre}</span>
+              </label>;
+            })}
+          </div>
+        </div>
 
         <StickyFormActions errorMsg={errorMsg} saving={saving} editing={editing} />
       </form>
