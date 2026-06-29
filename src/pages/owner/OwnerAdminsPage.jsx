@@ -828,7 +828,7 @@ export default function OwnerAdminsPage() {
             <AdminCard
               key={admin.id}
               admin={admin}
-              branchName={branchById.get(String(admin.branchId)) || admin.branchName}
+              branchName={admin.branchNames?.length ? admin.branchNames.join(', ') : branchById.get(String(admin.branchId)) || admin.branchName}
               onEdit={() => openEditForm(admin)}
               onPermissions={() => setPermissionsAdmin(admin)}
               onPassword={() => setPasswordAdmin(admin)}
