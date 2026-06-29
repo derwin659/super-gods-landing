@@ -44,6 +44,14 @@ function normalizeUser(raw = {}) {
       raw.branchId === null || raw.branchId === undefined
         ? null
         : toNumber(raw.branchId),
+    branchIds: (Array.isArray(raw.branchIds)
+      ? raw.branchIds
+      : raw.branchId !== null && raw.branchId !== undefined
+        ? [raw.branchId]
+        : []).map(toNumber).filter((id) => id > 0),
+    branchNames: (Array.isArray(raw.branchNames) ? raw.branchNames : [])
+      .map((value) => text(value))
+      .filter(Boolean),
     branchName: text(
       raw.branchName ??
         raw.sede ??
