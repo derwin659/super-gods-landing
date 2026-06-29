@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Activity, CalendarRange, ChevronDown, ChevronUp, Filter, RefreshCw, ShieldCheck, UserRound } from 'lucide-react';
 import { getGeneralAuditLogs } from '../../api/ownerAuditApi';
 import { getOwnerBranches } from '../../api/ownerCashApi';
+import { getOwnerBarbers } from '../../api/ownerBarbersApi';
 
 const ENTITY_OPTIONS = [
   ['', 'Todas las areas'],
@@ -63,7 +64,7 @@ function HumanValue({ value, field, branchMap }) {
   if (Array.isArray(value)) {
     if (value.length === 0) return <span className="text-neutral-400">Ninguno</span>;
     return <div className="flex flex-wrap gap-2">{value.map((item, index) => {
-      const branchName = typeof item === 'number' || typeof item === 'string' ? branchMap.get(String(item)) : null;
+      const branchName = typeof item === 'object' && item?.name ? item.name : (typeof item === 'number' || typeof item === 'string' ? branchMap.get(String(item)) : null);
       return <span key={index} className="border border-neutral-200 bg-white px-2.5 py-1 text-xs font-black text-neutral-700">{branchName || (typeof item === 'object' ? <HumanValue value={item} branchMap={branchMap} /> : String(item))}</span>;
     })}</div>;
   }
@@ -78,7 +79,7 @@ function Snapshot({ title, value, tone, entityType, branchMap }) {
     <div className={`min-w-0 border p-4 ${tone === 'before' ? 'border-neutral-200 bg-neutral-50' : 'border-emerald-200 bg-emerald-50/60'}`}>
       <div className="mb-3 text-xs font-black uppercase tracking-[0.16em] text-neutral-500">{title}</div>
       {parsed === null ? <div className="text-sm font-bold text-neutral-400">Sin datos</div> : isBranchAssignment ? (
-        <HumanValue value={Array.isArray(parsed) ? parsed : []} branchMap={branchMap} />
+        <HumanValue value={Array.isArray(parsed) ? parsed : parsed?.branches || []} branchMap={branchMap} />
       ) : (
         <HumanValue value={parsed} branchMap={branchMap} />
       )}
@@ -86,7 +87,11 @@ function Snapshot({ title, value, tone, entityType, branchMap }) {
   );
 }
 
-function AuditRow({ item, branchName, branchMap }) {
+function AuditRow({ item, branchName, branchMap, professionalMap }) {
+  const professionalName = professionalMap.get(String(item.entityId));
+  const description = item.entityType === 'BARBER_BRANCH_ASSIGNMENT' && professionalName
+    ? 'Se actualizaron las sedes de ' + professionalName
+    : item.reason || 'Cambio registrado por el sistema';
   const [open, setOpen] = useState(false);
   return (
     <article className="border-b border-neutral-200 bg-white last:border-b-0">
@@ -96,8 +101,8 @@ function AuditRow({ item, branchName, branchMap }) {
           <div className="mt-2 text-xs font-bold text-neutral-500">{formatDate(item.createdAt)}</div>
         </div>
         <div className="min-w-0">
-          <div className="font-black text-neutral-950">{labelEntity(item.entityType)}</div>
-          <div className="mt-1 truncate text-sm font-semibold text-neutral-500">{item.reason || 'Cambio registrado por el sistema'}</div>
+          <div className="font-black text-neutral-950">{labelEntity(item.entityType)}{professionalName ? ' · ' + professionalName : ''}</div>
+          <div className="mt-1 truncate text-sm font-semibold text-neutral-500">{description}</div>
         </div>
         <div>
           <div className="flex items-center gap-2 text-sm font-black text-neutral-800"><UserRound size={15} />{item.actorUserName || `Usuario #${item.actorUserId || '-'}`}</div>
@@ -121,6 +126,7 @@ export default function OwnerAuditPage() {
   const [entityType, setEntityType] = useState('');
   const [action, setAction] = useState('');
   const [branches, setBranches] = useState([]);
+  const [professionals, setProfessionals] = useState([]);
   const [items, setItems] = useState([]);
   const [actors, setActors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -149,11 +155,14 @@ export default function OwnerAuditPage() {
   }
 
   useEffect(() => {
-    getOwnerBranches().then(setBranches).catch(() => setBranches([]));
+    Promise.all([getOwnerBranches(), getOwnerBarbers()])
+      .then(([branchData, professionalData]) => { setBranches(branchData); setProfessionals(Array.isArray(professionalData) ? professionalData : []); })
+      .catch(() => { setBranches([]); setProfessionals([]); });
     load('');
   }, []);
 
   const branchMap = useMemo(() => new Map(branches.map((branch) => [String(branch.id), branch.name])), [branches]);
+  const professionalMap = useMemo(() => new Map(professionals.map((professional) => [String(professional.id || professional.userId), [professional.nombre || professional.name, professional.apellido || professional.lastName].filter(Boolean).join(' ')])), [professionals]);
   const branchName = (id) => id ? branchMap.get(String(id)) || `Sede #${id}` : 'Todas las sedes';
 
   return (
@@ -179,7 +188,7 @@ export default function OwnerAuditPage() {
       </section>
 
       <section className="overflow-hidden border border-neutral-200 bg-white shadow-sm">
-        {loading ? <div className="p-8 text-center font-bold text-neutral-500">Cargando actividad...</div> : error ? <div className="border border-red-200 bg-red-50 p-5 font-bold text-red-700">{error}</div> : items.length === 0 ? <div className="p-10 text-center"><CalendarRange className="mx-auto text-neutral-300" size={34} /><div className="mt-3 font-black text-neutral-800">Sin cambios en este rango</div><div className="mt-1 text-sm font-semibold text-neutral-500">Prueba ampliando las fechas o quitando filtros.</div></div> : items.map((item) => <AuditRow key={item.id} item={item} branchName={branchName(item.branchId)} branchMap={branchMap} />)}
+        {loading ? <div className="p-8 text-center font-bold text-neutral-500">Cargando actividad...</div> : error ? <div className="border border-red-200 bg-red-50 p-5 font-bold text-red-700">{error}</div> : items.length === 0 ? <div className="p-10 text-center"><CalendarRange className="mx-auto text-neutral-300" size={34} /><div className="mt-3 font-black text-neutral-800">Sin cambios en este rango</div><div className="mt-1 text-sm font-semibold text-neutral-500">Prueba ampliando las fechas o quitando filtros.</div></div> : items.map((item) => <AuditRow key={item.id} item={item} branchName={branchName(item.branchId)} branchMap={branchMap} professionalMap={professionalMap} />)}
       </section>
     </div>
   );
