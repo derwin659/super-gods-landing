@@ -131,14 +131,14 @@ import {
       setCheckingSession(false);
     }, []);
   
-    const signIn = useCallback(async ({ email, password, mode = 'OWNER' }) => {
+    const signIn = useCallback(async ({ email, password, mode = 'OWNER', access = null }) => {
       const basic = await loginBasic(email, password);
-  
+
       const globalRole = String(basic.globalRole || '').toUpperCase();
       const modeClean = String(mode || 'OWNER').toUpperCase();
-  
+
       let finalRes;
-  
+
       if (globalRole === 'SUPER_ADMIN' || modeClean === 'SUPER_ADMIN') {
         finalRes = await loginFinal({
           userId: basic.userId,
@@ -146,39 +146,44 @@ import {
         });
       } else {
         const tenants = Array.isArray(basic.tenants) ? basic.tenants : [];
-  
-        if (tenants.length === 0) {
+        const allowedAccesses = tenants.filter((item) => {
+          const role = String(item.role || '').toUpperCase();
+          return role === 'OWNER' || role === 'ADMIN';
+        });
+
+        if (allowedAccesses.length === 0) {
           throw new Error('Este usuario no tiene barberías asignadas.');
         }
-  
-        const selectedTenant =
-          tenants.find((item) => {
-            const role = String(item.role || '').toUpperCase();
-  
-            if (modeClean === 'OWNER') return role === 'OWNER' || role === 'ADMIN';
-            if (modeClean === 'ADMIN') return role === 'OWNER' || role === 'ADMIN';
-  
-            return false;
-          }) || tenants[0];
-  
-        const selectedRole = String(selectedTenant.role || '').toUpperCase();
-  
-        if (!['OWNER', 'ADMIN'].includes(selectedRole)) {
-          throw new Error(
-            `Este usuario tiene rol ${selectedTenant.role}, pero la web está habilitada para OWNER/ADMIN.`
-          );
+
+        if (!access && allowedAccesses.length > 1) {
+          return {
+            requiresAccessSelection: true,
+            accesses: allowedAccesses,
+          };
         }
-  
+
+        const selectedTenant = access
+          ? allowedAccesses.find((item) =>
+              String(item.tenantId) === String(access.tenantId) &&
+              String(item.branchId) === String(access.branchId)
+            )
+          : allowedAccesses[0];
+
+        if (!selectedTenant) {
+          throw new Error('La sede seleccionada ya no está disponible para este usuario.');
+        }
+
         finalRes = await loginFinal({
           userId: basic.userId,
           tenantId: selectedTenant.tenantId,
+          branchId: selectedTenant.branchId,
           mode: 'TENANT',
         });
       }
-  
+
       const saved = saveSession(finalRes);
       setSession(saved);
-  
+
       return {
         session: saved,
         redirectTo: resolveHomeByRole(saved?.role),

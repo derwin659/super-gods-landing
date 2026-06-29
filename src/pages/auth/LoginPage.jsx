@@ -42,6 +42,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [recoverOpen, setRecoverOpen] = useState(false);
+  const [pendingAccesses, setPendingAccesses] = useState([]);
 
   const modeInfo = useMemo(() => {
     if (mode === 'SUPER_ADMIN') {
@@ -83,9 +84,29 @@ export default function LoginPage() {
         mode,
       });
 
+      if (result.requiresAccessSelection) {
+        setPendingAccesses(result.accesses || []);
+        return;
+      }
+
       navigate(result.redirectTo, { replace: true });
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo iniciar sesión.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleAccessSelection(access) {
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+      const result = await signIn({ email, password, mode, access });
+      navigate(result.redirectTo, { replace: true });
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo iniciar sesión en esta sede.');
+      setPendingAccesses([]);
     } finally {
       setLoading(false);
     }
@@ -286,6 +307,35 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {pendingAccesses.length > 0 && (
+                <div className="rounded-3xl border border-blue-200 bg-blue-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <Building2 className="mt-0.5 shrink-0 text-blue-700" size={20} />
+                    <div>
+                      <p className="font-black text-slate-950">¿En qué sede vas a trabajar?</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-600">El acceso y las operaciones quedarán vinculados a esta sede.</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-2">
+                    {pendingAccesses.map((access) => (
+                      <button
+                        key={`${access.tenantId}-${access.branchId}-${access.role}`}
+                        type="button"
+                        disabled={loading}
+                        onClick={() => handleAccessSelection(access)}
+                        className="flex items-center justify-between rounded-2xl border border-blue-100 bg-white px-4 py-3 text-left transition hover:border-blue-500 hover:shadow-md disabled:opacity-60"
+                      >
+                        <span>
+                          <span className="block font-black text-slate-950">{access.branchName || 'Sede asignada'}</span>
+                          <span className="block text-xs font-bold text-slate-500">{access.tenantName} · {String(access.role || '').toUpperCase() === 'OWNER' ? 'Dueño' : 'Administrador'}</span>
+                        </span>
+                        <ArrowLeft className="rotate-180 text-blue-700" size={18} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {errorMsg && (
                 <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
                   <AlertCircle size={18} strokeWidth={2.6} className="mt-0.5 shrink-0" />
@@ -295,7 +345,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || pendingAccesses.length > 0}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0F2A5F] px-5 py-4 font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (
