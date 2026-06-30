@@ -167,7 +167,6 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [exporting, setExporting] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -949,6 +948,7 @@ export default function OwnerCustomersPage() {
 
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
