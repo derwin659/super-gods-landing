@@ -158,6 +158,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
   const [email, setEmail] = useState(admin?.email || '');
   const [phone, setPhone] = useState(admin?.phone || '');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState(String(admin?.rol || 'ADMIN').toUpperCase());
   const [branchIds, setBranchIds] = useState(() => { const initial = admin?.branchIds?.length ? admin.branchIds : admin?.branchId ? [admin.branchId] : branches[0]?.id ? [branches[0].id] : []; return initial.map(String); });
 
   const [saving, setSaving] = useState(false);
@@ -228,6 +229,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           apellido: cleanApellido,
           phone: cleanPhone,
           branchId: branchIds[0],
+          rol: role,
         });
       } else if (usingBarber) {
         saved = await updateOwnerAdmin({
@@ -236,6 +238,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           apellido: cleanApellido,
           phone: cleanPhone,
           branchId: branchIds[0],
+          rol: role,
         });
       } else {
         saved = await createOwnerAdmin({
@@ -245,6 +248,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           phone: cleanPhone,
           password: cleanPassword,
           branchId: branchIds[0],
+          rol: role,
         });
       }
 
@@ -259,13 +263,23 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
 
   return (
     <ModalShell
-      title={editing ? 'Editar administrador' : 'Nuevo administrador'}
+      title={editing ? 'Editar acceso' : 'Nuevo acceso'}
       subtitle="Control de accesos"
       onClose={onClose}
       maxWidth="max-w-3xl"
     >
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <ErrorBox message={errorMsg} />
+
+        <SelectField
+          label="Tipo de acceso"
+          value={role}
+          onChange={setRole}
+          options={[
+            { value: 'ADMIN', label: 'Administrador' },
+            { value: 'CASHIER', label: 'Cajero' },
+          ]}
+        />
 
         {!editing && (
           <div className="grid gap-2 rounded-[22px] bg-neutral-100 p-2 sm:grid-cols-2">
@@ -310,7 +324,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
               ]}
             />
             <p className="mt-3 text-xs font-bold leading-5 text-amber-800">
-              Esta opción convierte el barbero en ADMIN. Luego podrás devolverlo a BARBERO desde la lista.
+              Esta opción convierte el profesional al tipo de acceso seleccionado. Luego podrás cambiar nuevamente su rol.
             </p>
           </div>
         )}
@@ -330,7 +344,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
 
         <div className="rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
           <div className="text-xs font-black uppercase tracking-[0.16em] text-neutral-500">Sedes asignadas</div>
-          <p className="mt-1 text-xs font-semibold text-neutral-500">El administrador solo podrá operar en las sedes seleccionadas.</p>
+          <p className="mt-1 text-xs font-semibold text-neutral-500">El usuario solo podrá operar en las sedes seleccionadas.</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {branches.map((branch) => {
               const value = String(branch.id);
@@ -641,7 +655,7 @@ export default function OwnerAdminsPage() {
 
   const admins = useMemo(() => {
     return users
-      .filter((item) => String(item.rol || '').toUpperCase() === 'ADMIN')
+      .filter((item) => ['ADMIN', 'CASHIER'].includes(String(item.rol || '').toUpperCase()))
       .sort((a, b) => a.fullName.localeCompare(b.fullName));
   }, [users]);
 
@@ -757,7 +771,7 @@ export default function OwnerAdminsPage() {
             </div>
 
             <h2 className="mt-5 text-4xl font-black tracking-tight">
-              Administradores
+              Administradores y cajeros
             </h2>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">
@@ -779,14 +793,14 @@ export default function OwnerAdminsPage() {
               onClick={openCreateForm}
               className="rounded-2xl bg-amber-400 px-5 py-4 text-sm font-black text-neutral-950 shadow-[0_16px_35px_rgba(251,191,36,0.22)] transition hover:scale-[1.02]"
             >
-              Nuevo admin
+              Nuevo acceso
             </button>
           </div>
         </div>
       </section>
 
       <section className="grid gap-5 md:grid-cols-3">
-        <StatCard title="Administradores" value={admins.length} icon="👮" tone="gold" />
+        <StatCard title="Accesos internos" value={admins.length} icon="👮" tone="gold" />
         <StatCard title="Barberos disponibles" value={barbers.length} icon="💈" tone="blue" />
         <StatCard title="Usuarios internos" value={users.length} icon="👥" tone="green" />
       </section>

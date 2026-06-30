@@ -162,6 +162,7 @@ export async function createOwnerAdmin({
   phone = '',
   password,
   branchId,
+  rol = 'ADMIN',
 }) {
   const data = await apiRequest('/api/internal/users', {
     method: 'POST',
@@ -172,7 +173,7 @@ export async function createOwnerAdmin({
       phone: String(phone || '').trim(),
       password: String(password || '').trim(),
       branchId: Number(branchId),
-      rol: 'ADMIN',
+      rol: String(rol || 'ADMIN').trim().toUpperCase(),
     }),
   });
 
@@ -185,6 +186,7 @@ export async function updateOwnerAdmin({
   apellido = '',
   phone = '',
   branchId,
+  rol = 'ADMIN',
 }) {
   const data = await apiRequest(`/api/internal/users/${userId}`, {
     method: 'PUT',
@@ -193,7 +195,7 @@ export async function updateOwnerAdmin({
       apellido: String(apellido || '').trim(),
       phone: String(phone || '').trim(),
       branchId: Number(branchId),
-      rol: 'ADMIN',
+      rol: String(rol || 'ADMIN').trim().toUpperCase(),
     }),
   });
 

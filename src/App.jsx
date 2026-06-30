@@ -2112,7 +2112,7 @@ export default function App() {
         <Route
           path="/owner"
           element={
-            <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'CASHIER']}>
               <OwnerLayout />
             </ProtectedRoute>
           }

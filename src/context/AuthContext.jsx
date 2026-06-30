@@ -116,7 +116,7 @@ import {
     const cleanRole = String(role || '').toUpperCase();
   
     if (cleanRole === 'OWNER') return '/owner/dashboard';
-    if (cleanRole === 'ADMIN') return '/owner/dashboard';
+    if (cleanRole === 'ADMIN' || cleanRole === 'CASHIER') return '/owner/dashboard';
     if (cleanRole === 'SUPER_ADMIN') return '/super-admin';
   
     return '/login';
@@ -148,7 +148,7 @@ import {
         const tenants = Array.isArray(basic.tenants) ? basic.tenants : [];
         const allowedAccesses = tenants.filter((item) => {
           const role = String(item.role || '').toUpperCase();
-          return role === 'OWNER' || role === 'ADMIN';
+          return role === 'OWNER' || role === 'ADMIN' || role === 'CASHIER';
         });
 
         if (allowedAccesses.length === 0) {
