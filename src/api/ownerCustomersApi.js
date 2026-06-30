@@ -441,3 +441,8 @@ export async function downloadOwnerCustomersExcel() {
   const match = disposition.match(/filename=\"?([^\";]+)\"?/i);
   return { blob, filename: match?.[1] || `clientes-${new Date().toISOString().slice(0, 10)}.xlsx` };
 }
+
+export async function getOwnerCustomersTotal() {
+  const data = await apiRequest('/api/owner/customers/export-count');
+  return Number(data?.total || 0);
+}

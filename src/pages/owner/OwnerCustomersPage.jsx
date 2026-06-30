@@ -10,6 +10,7 @@ import {
   getOwnerCustomerHistory,
   getOwnerCustomerLoyalty,
   getOwnerCustomers,
+  getOwnerCustomersTotal,
   updateOwnerCustomer,
 } from '../../api/ownerCustomersApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
@@ -943,6 +944,7 @@ export default function OwnerCustomersPage() {
   const customerResultsRef = useRef(null);
 
   const [customers, setCustomers] = useState([]);
+  const [totalCustomers, setTotalCustomers] = useState(null);
   const [query, setQuery] = useState('');
 
   const [loading, setLoading] = useState(true);
@@ -985,10 +987,11 @@ export default function OwnerCustomersPage() {
     setErrorMsg('');
 
     try {
-      const data = await getOwnerCustomers({
-        query: nextQuery,
-        limit: 80,
-      });
+      const [data, total] = await Promise.all([
+        getOwnerCustomers({ query: nextQuery, limit: 80 }),
+        getOwnerCustomersTotal(),
+      ]);
+      setTotalCustomers(total);
 
       if (requestId !== customersRequestId.current) return;
 
@@ -1169,6 +1172,15 @@ export default function OwnerCustomersPage() {
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
+              onClick={exportCustomers}
+              disabled={exporting}
+              className="rounded-2xl border border-emerald-300/40 bg-emerald-400/20 px-6 py-4 text-sm font-black text-emerald-100 transition hover:bg-emerald-400/30 disabled:opacity-60"
+            >
+              {exporting ? 'Generando Excel...' : 'Descargar Excel'}
+            </button>
+
+            <button
+              type="button"
               onClick={() => loadCustomers(query)}
               className="rounded-2xl border border-white/10 bg-white/10 px-6 py-4 text-sm font-black text-white transition hover:bg-white/15"
             >
@@ -1187,7 +1199,7 @@ export default function OwnerCustomersPage() {
       </section>
 
       <section className="grid gap-5 md:grid-cols-3">
-        <StatCard label="Clientes cargados" value={customers.length} />
+        <StatCard label="Clientes totales" value={totalCustomers ?? customers.length} />
         <StatCard label="Con teléfono" value={withPhone} tone="blue" />
         <StatCard label="Puntos visibles" value={totalPoints} tone="gold" />
       </section>
@@ -1285,7 +1297,9 @@ export default function OwnerCustomersPage() {
                 : 'Cargando clientes...'
               : isSearching
                 ? `${customers.length} resultado${customers.length === 1 ? '' : 's'} para "${cleanQuery}"`
-                : `${customers.length} clientes registrados`}
+                : totalCustomers != null && totalCustomers > customers.length
+                  ? `Mostrando ${customers.length} de ${totalCustomers} clientes`
+                  : `${customers.length} clientes registrados`}
           </span>
 
           {isSearching ? (
