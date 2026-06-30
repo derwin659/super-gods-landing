@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   buildCustomerWhatsappUrl,
   createOwnerCustomer,
+  downloadOwnerCustomersExcel,
   getInactiveOwnerCustomers,
   getOwnerCustomerCutHistory,
   getOwnerCustomerDetail,
@@ -165,6 +166,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -1047,6 +1049,19 @@ export default function OwnerCustomersPage() {
     } finally {
       setLoadingDetail(false);
     }
+  }
+
+  async function exportCustomers() {
+    setExporting(true);
+    setErrorMsg('');
+    try {
+      const { blob, filename } = await downloadOwnerCustomersExcel();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) { setErrorMsg(error.message || 'No se pudo descargar el Excel.'); }
+    finally { setExporting(false); }
   }
 
   function openCreateForm() {

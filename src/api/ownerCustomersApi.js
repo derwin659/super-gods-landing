@@ -1,4 +1,4 @@
-import { apiRequest } from './apiClient';
+import { apiRequest, getApiBaseUrl, getToken } from './apiClient';
 
 function toQuery(params = {}) {
   const search = new URLSearchParams();
@@ -426,3 +426,18 @@ function normalizeInactiveCustomer(raw = {}) {
   
     return `https://wa.me/${phoneWithCountry}?text=${text}`;
   }
+
+export async function downloadOwnerCustomersExcel() {
+  const response = await fetch(`${getApiBaseUrl()}/api/owner/customers/export.xlsx`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+  if (!response.ok) {
+    let message = 'No se pudo generar el Excel de clientes.';
+    try { const data = await response.json(); message = data.message || data.error || message; } catch {}
+    throw new Error(message);
+  }
+  const blob = await response.blob();
+  const disposition = response.headers.get('content-disposition') || '';
+  const match = disposition.match(/filename=\"?([^\";]+)\"?/i);
+  return { blob, filename: match?.[1] || `clientes-${new Date().toISOString().slice(0, 10)}.xlsx` };
+}
