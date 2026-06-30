@@ -4,8 +4,10 @@ import {
   deleteOwnerBarberPhoto,
   getOwnerBarbers,
   getOwnerBranchesForBarbers,
+  getOwnerBarberCompensation,
   updateOwnerBarber,
   updateOwnerBarberStatus,
+  updateOwnerBarberCompensation,
   uploadOwnerBarberPhoto,
 } from '../../api/ownerBarbersApi';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
@@ -246,15 +248,16 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
   const [activo, setActivo] = useState(barber?.activo !== false);
   const [canSell, setCanSell] = useState(barber?.canSell !== false);
 
-  const [salaryMode, setSalaryMode] = useState(barber?.salaryMode === true);
-  const [commissionPercentage, setCommissionPercentage] = useState(
-    barber?.commissionPercentage ? String(barber.commissionPercentage) : ''
+  const defaultCompensation = {
+    salaryMode: barber?.salaryMode === true,
+    commissionPercentage: barber?.commissionPercentage ? String(barber.commissionPercentage) : '',
+    fixedSalaryAmount: barber?.fixedSalaryAmount ? String(barber.fixedSalaryAmount) : '',
+    salaryFrequency: barber?.salaryFrequency || 'WEEKLY',
+    salaryStartDate: barber?.salaryStartDate || '',
+  };
+  const [branchCompensations, setBranchCompensations] = useState(() =>
+    Object.fromEntries(selectedBranchIds.map((id) => [String(id), { ...defaultCompensation }]))
   );
-  const [fixedSalaryAmount, setFixedSalaryAmount] = useState(
-    barber?.fixedSalaryAmount ? String(barber.fixedSalaryAmount) : ''
-  );
-  const [salaryFrequency, setSalaryFrequency] = useState(barber?.salaryFrequency || 'WEEKLY');
-  const [salaryStartDate, setSalaryStartDate] = useState(barber?.salaryStartDate || '');
 
   const [photoFile, setPhotoFile] = useState(null);
   const [removeCurrentPhoto, setRemoveCurrentPhoto] = useState(false);
@@ -269,6 +272,55 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
       : String(barber?.photoUrl || '').trim();
 
   const allBranchesSelected = branches.length > 0 && selectedBranchIds.length === branches.length;
+
+  useEffect(() => {
+    let cancelled = false;
+    const selected = selectedBranchIds.map(String);
+
+    setBranchCompensations((current) => {
+      const next = { ...current };
+      selected.forEach((id) => {
+        if (!next[id]) next[id] = { ...defaultCompensation };
+      });
+      Object.keys(next).forEach((id) => {
+        if (!selected.includes(id)) delete next[id];
+      });
+      return next;
+    });
+
+    if (!isEdit || selected.length === 0) return () => { cancelled = true; };
+
+    Promise.all(selected.map(async (id) => {
+      const item = await getOwnerBarberCompensation({
+        barberId: getBarberId(barber),
+        branchId: Number(id),
+      });
+      return [id, {
+        salaryMode: item?.salaryMode === true,
+        commissionPercentage: item?.commissionPercentage != null ? String(item.commissionPercentage) : '',
+        fixedSalaryAmount: item?.fixedSalaryAmount != null ? String(item.fixedSalaryAmount) : '',
+        salaryFrequency: item?.salaryFrequency || 'WEEKLY',
+        salaryStartDate: item?.salaryStartDate || '',
+      }];
+    })).then((entries) => {
+      if (!cancelled) setBranchCompensations((current) => ({ ...current, ...Object.fromEntries(entries) }));
+    }).catch((error) => {
+      if (!cancelled) setErrorMsg(error.message || 'No se pudieron cargar las comisiones por sede.');
+    });
+
+    return () => { cancelled = true; };
+  }, [isEdit, selectedBranchIds.join(','), barber]);
+
+  function updateBranchCompensation(branchId, patch) {
+    setBranchCompensations((current) => ({
+      ...current,
+      [String(branchId)]: {
+        ...defaultCompensation,
+        ...(current[String(branchId)] || {}),
+        ...patch,
+      },
+    }));
+  }
 
   function toggleBranch(id, checked) {
     setSelectedBranchIds((current) => {
@@ -312,30 +364,34 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
       return;
     }
 
-    if (salaryMode) {
-      const salary = Number(String(fixedSalaryAmount).replace(',', '.'));
+    for (const branchId of selectedBranchIds) {
+      const compensation = branchCompensations[String(branchId)] || defaultCompensation;
+      const branch = branches.find((item) => String(getBranchId(item)) === String(branchId));
+      const branchName = branch ? getBranchName(branch) : 'la sede seleccionada';
 
-      if (Number.isNaN(salary) || salary <= 0) {
-        setErrorMsg('Ingresa un sueldo fijo válido.');
-        return;
-      }
-
-      if (!salaryFrequency) {
-        setErrorMsg('Selecciona la periodicidad del sueldo.');
-        return;
-      }
-    } else {
-      const commission = Number(String(commissionPercentage).replace(',', '.'));
-
-      if (Number.isNaN(commission) || commission <= 0) {
-        setErrorMsg('Ingresa un porcentaje de comisión válido.');
-        return;
+      if (compensation.salaryMode) {
+        const salary = Number(String(compensation.fixedSalaryAmount).replace(',', '.'));
+        if (Number.isNaN(salary) || salary <= 0) {
+          setErrorMsg(`Ingresa un sueldo fijo válido para ${branchName}.`);
+          return;
+        }
+        if (!compensation.salaryFrequency) {
+          setErrorMsg(`Selecciona la periodicidad del sueldo para ${branchName}.`);
+          return;
+        }
+      } else {
+        const commission = Number(String(compensation.commissionPercentage).replace(',', '.'));
+        if (Number.isNaN(commission) || commission <= 0 || commission > 100) {
+          setErrorMsg(`La comisión de ${branchName} debe estar entre 0 y 100.`);
+          return;
+        }
       }
     }
 
     setSaving(true);
 
     try {
+      const primaryCompensation = branchCompensations[String(selectedBranchIds[0])] || defaultCompensation;
       const payload = {
         nombre: nombre.trim(),
         apellido: apellido.trim(),
@@ -346,15 +402,17 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
         allBranches: selectedBranchIds.length === branches.length,
         activo,
         canSell,
-        salaryMode,
-        commissionPercentage: salaryMode
+        salaryMode: primaryCompensation.salaryMode,
+        commissionPercentage: primaryCompensation.salaryMode
           ? null
-          : Number(String(commissionPercentage).replace(',', '.')),
-        salaryFrequency: salaryMode ? salaryFrequency : null,
-        fixedSalaryAmount: salaryMode
-          ? Number(String(fixedSalaryAmount).replace(',', '.'))
+          : Number(String(primaryCompensation.commissionPercentage).replace(',', '.')),
+        salaryFrequency: primaryCompensation.salaryMode ? primaryCompensation.salaryFrequency : null,
+        fixedSalaryAmount: primaryCompensation.salaryMode
+          ? Number(String(primaryCompensation.fixedSalaryAmount).replace(',', '.'))
           : null,
-        salaryStartDate: salaryMode && salaryStartDate ? salaryStartDate : null,
+        salaryStartDate: primaryCompensation.salaryMode && primaryCompensation.salaryStartDate
+          ? primaryCompensation.salaryStartDate
+          : null,
       };
 
       if (!isEdit) {
@@ -369,6 +427,27 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
         : await createOwnerBarber(payload);
 
       const savedId = getBarberId(saved);
+
+      await Promise.all(selectedBranchIds.map((branchId) => {
+        const compensation = branchCompensations[String(branchId)] || defaultCompensation;
+        return updateOwnerBarberCompensation({
+          barberId: savedId,
+          branchId: Number(branchId),
+          payload: {
+            salaryMode: compensation.salaryMode,
+            commissionPercentage: compensation.salaryMode
+              ? null
+              : Number(String(compensation.commissionPercentage).replace(',', '.')),
+            salaryFrequency: compensation.salaryMode ? compensation.salaryFrequency : null,
+            fixedSalaryAmount: compensation.salaryMode
+              ? Number(String(compensation.fixedSalaryAmount).replace(',', '.'))
+              : null,
+            salaryStartDate: compensation.salaryMode && compensation.salaryStartDate
+              ? compensation.salaryStartDate
+              : null,
+          },
+        });
+      }));
 
       if (removeCurrentPhoto && isEdit && barber?.photoUrl) {
         saved = await deleteOwnerBarberPhoto(getBarberId(barber));
@@ -608,79 +687,87 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
 
               <div>
                 <h3 className="text-lg font-black text-neutral-950">
-                  Modelo de pago
+                  Modelo de pago por sede
                 </h3>
+                <p className="mt-1 text-xs font-bold text-neutral-500">
+                  Cada sede puede tener un porcentaje o sueldo diferente.
+                </p>
 
-                <div className="mt-4 rounded-2xl border border-neutral-200 bg-white p-4">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <button
-                      type="button"
-                      onClick={() => setSalaryMode(false)}
-                      className={`rounded-2xl px-4 py-4 text-sm font-black ${
-                        !salaryMode
-                          ? 'bg-neutral-950 text-white'
-                          : 'border border-neutral-200 bg-neutral-50 text-neutral-700'
-                      }`}
-                    >
-                      Por comisión
-                    </button>
+                <div className="mt-4 space-y-4">
+                  {selectedBranchIds.map((branchId) => {
+                    const branch = branches.find((item) => String(getBranchId(item)) === String(branchId));
+                    const compensation = branchCompensations[String(branchId)] || defaultCompensation;
+                    return (
+                      <div key={branchId} className="rounded-3xl border border-neutral-200 bg-white p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-xs font-black uppercase tracking-[0.14em] text-amber-700">Sede</div>
+                            <div className="mt-1 font-black text-neutral-950">{branch ? getBranchName(branch) : `Sede ${branchId}`}</div>
+                          </div>
+                          <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">Configuración independiente</div>
+                        </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setSalaryMode(true)}
-                      className={`rounded-2xl px-4 py-4 text-sm font-black ${
-                        salaryMode
-                          ? 'bg-neutral-950 text-white'
-                          : 'border border-neutral-200 bg-neutral-50 text-neutral-700'
-                      }`}
-                    >
-                      Sueldo fijo
-                    </button>
-                  </div>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          <button
+                            type="button"
+                            onClick={() => updateBranchCompensation(branchId, { salaryMode: false })}
+                            className={`rounded-2xl px-4 py-3 text-sm font-black ${!compensation.salaryMode ? 'bg-neutral-950 text-white' : 'border border-neutral-200 bg-neutral-50 text-neutral-700'}`}
+                          >
+                            Por comisión
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateBranchCompensation(branchId, { salaryMode: true })}
+                            className={`rounded-2xl px-4 py-3 text-sm font-black ${compensation.salaryMode ? 'bg-neutral-950 text-white' : 'border border-neutral-200 bg-neutral-50 text-neutral-700'}`}
+                          >
+                            Sueldo fijo
+                          </button>
+                        </div>
 
-                  {!salaryMode ? (
-                    <div className="mt-4">
-                      <InputField
-                        label="Porcentaje de comisión"
-                        value={commissionPercentage}
-                        onChange={setCommissionPercentage}
-                        placeholder="Ej. 50"
-                        type="number"
-                        step="0.01"
-                        prefix="%"
-                      />
-                    </div>
-                  ) : (
-                    <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                      <InputField
-                        label="Sueldo fijo"
-                        value={fixedSalaryAmount}
-                        onChange={setFixedSalaryAmount}
-                        placeholder="Ej. 1200"
-                        type="number"
-                        step="0.01"
-                        prefix={getTenantCurrencySymbol()}
-                      />
-
-                      <SelectField
-                        label="Frecuencia"
-                        value={salaryFrequency}
-                        onChange={setSalaryFrequency}
-                        options={[
-                          { value: 'WEEKLY', label: 'Semanal' },
-                          { value: 'BIWEEKLY', label: 'Quincenal' },
-                          { value: 'MONTHLY', label: 'Mensual' },
-                        ]}
-                      />
-
-                      <InputField
-                        label="Inicio"
-                        value={salaryStartDate}
-                        onChange={setSalaryStartDate}
-                        type="date"
-                      />
-                    </div>
-                  )}
+                        {!compensation.salaryMode ? (
+                          <div className="mt-4">
+                            <InputField
+                              label="Porcentaje de comisión"
+                              value={compensation.commissionPercentage}
+                              onChange={(value) => updateBranchCompensation(branchId, { commissionPercentage: value })}
+                              placeholder="Ej. 50"
+                              type="number"
+                              step="0.01"
+                              prefix="%"
+                            />
+                          </div>
+                        ) : (
+                          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                            <InputField
+                              label="Sueldo fijo"
+                              value={compensation.fixedSalaryAmount}
+                              onChange={(value) => updateBranchCompensation(branchId, { fixedSalaryAmount: value })}
+                              placeholder="Ej. 1200"
+                              type="number"
+                              step="0.01"
+                              prefix={getTenantCurrencySymbol()}
+                            />
+                            <SelectField
+                              label="Frecuencia"
+                              value={compensation.salaryFrequency}
+                              onChange={(value) => updateBranchCompensation(branchId, { salaryFrequency: value })}
+                              options={[
+                                { value: 'WEEKLY', label: 'Semanal' },
+                                { value: 'BIWEEKLY', label: 'Quincenal' },
+                                { value: 'MONTHLY', label: 'Mensual' },
+                              ]}
+                            />
+                            <InputField
+                              label="Inicio"
+                              value={compensation.salaryStartDate}
+                              onChange={(value) => updateBranchCompensation(branchId, { salaryStartDate: value })}
+                              type="date"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

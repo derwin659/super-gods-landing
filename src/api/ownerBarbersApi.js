@@ -83,3 +83,18 @@ export async function deleteOwnerBarberPhoto(barberId) {
     method: 'DELETE',
   });
 }
+export async function getOwnerBarberCompensation({ barberId, branchId }) {
+  return apiRequest(
+    `/api/owner/barbers/${barberId}/compensation${buildQuery({ branchId })}`
+  );
+}
+
+export async function updateOwnerBarberCompensation({ barberId, branchId, payload }) {
+  return apiRequest(
+    `/api/owner/barbers/${barberId}/compensation${buildQuery({ branchId })}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }
+  );
+}
