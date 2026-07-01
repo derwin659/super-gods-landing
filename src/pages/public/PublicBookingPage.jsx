@@ -386,6 +386,22 @@ export default function PublicBookingPage() {
 
   const selectedBranch = branches.find((b) => String(b.id) === String(selectedBranchId));
   const selectedBarber = allBarbers.find((b) => String(b.id) === String(selectedBarberId));
+  const bookableFilteredServices = useMemo(() => {
+    if (!selectedBarber || !selectedBranchId) return filteredServices;
+    const configuredIds = selectedBarber.serviceIdsByBranch?.[String(Number(selectedBranchId))];
+    if (!Array.isArray(configuredIds)) return filteredServices;
+    const allowed = new Set(configuredIds.map(Number));
+    return filteredServices.filter((service) => allowed.has(Number(service.id)));
+  }, [filteredServices, selectedBarber, selectedBranchId]);
+  useEffect(() => {
+    if (!selectedBarber || !selectedBranchId) return;
+    const configuredIds = selectedBarber.serviceIdsByBranch?.[String(Number(selectedBranchId))];
+    if (!Array.isArray(configuredIds)) return;
+    const allowed = new Set(configuredIds.map(Number));
+    setSelectedServiceIds((current) => current.filter((id) => allowed.has(Number(id))));
+    setSelectedServiceId((current) => current && !allowed.has(Number(current)) ? '' : current);
+  }, [selectedBarber, selectedBranchId]);
+
   const selectedServices = useMemo(() => {
     return selectedServiceIds
       .map((id) => services.find((service) => String(service.id) === String(id)))
@@ -946,7 +962,7 @@ export default function PublicBookingPage() {
                     No encontramos servicios con esa busqueda. Prueba con otra palabra o categoria.
                   </div>
                 ) : null}
-                {filteredServices.map((service) => (
+                {bookableFilteredServices.map((service) => (
                   <SelectableCard
                     key={service.id}
                     selected={selectedServiceIds.includes(String(service.id))}

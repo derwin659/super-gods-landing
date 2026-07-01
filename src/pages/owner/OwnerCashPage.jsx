@@ -44,14 +44,18 @@ import { exportCashHistoryExcel, exportCashHistoryPdf } from '../../utils/cashHi
 
 function useAllowedServicesForBarber({ barberId, branchId, setSelectedServiceId }) {
   const [allowedServiceIds, setAllowedServiceIds] = useState(null);
+  const [loadingAllowedServices, setLoadingAllowedServices] = useState(false);
 
   useEffect(() => {
     let active = true;
     if (!barberId || !branchId) {
       setAllowedServiceIds(null);
+      setLoadingAllowedServices(false);
       return () => { active = false; };
     }
 
+    setLoadingAllowedServices(true);
+    setAllowedServiceIds([]);
     getBarberServiceAssignment({ barberId: Number(barberId), branchId: Number(branchId) })
       .then((assignment) => {
         if (!active) return;
@@ -59,6 +63,7 @@ function useAllowedServicesForBarber({ barberId, branchId, setSelectedServiceId 
           ? (assignment.serviceIds || []).map(Number)
           : null;
         setAllowedServiceIds(next);
+        setLoadingAllowedServices(false);
         if (Array.isArray(next)) {
           setSelectedServiceId((current) =>
             current && !next.includes(Number(current)) ? '' : current
@@ -66,13 +71,16 @@ function useAllowedServicesForBarber({ barberId, branchId, setSelectedServiceId 
         }
       })
       .catch(() => {
-        if (active) setAllowedServiceIds(null);
+        if (active) {
+          setAllowedServiceIds([]);
+          setLoadingAllowedServices(false);
+        }
       });
 
     return () => { active = false; };
   }, [barberId, branchId, setSelectedServiceId]);
 
-  return allowedServiceIds;
+  return { allowedServiceIds, loadingAllowedServices };
 }
 
 function filterServicesForBarber(services, allowedServiceIds) {
@@ -1148,7 +1156,7 @@ function OpenCashModal({ branch, onClose, onSaved }) {
         {errorMsg && <ErrorBox message={errorMsg} />}
 
         <button
-          disabled={saving}
+          disabled={saving || loadingAllowedServices}
           className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
         >
           {saving ? 'Abriendo...' : 'Abrir caja'}
@@ -1228,7 +1236,7 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
         {errorMsg && <ErrorBox message={errorMsg} />}
 
         <button
-          disabled={saving}
+          disabled={saving || loadingAllowedServices}
           className="w-full rounded-2xl bg-neutral-950 px-5 py-4 font-black text-white transition hover:scale-[1.01] disabled:opacity-60"
         >
           {saving ? 'Cerrando...' : 'Cerrar caja'}
@@ -1521,7 +1529,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
         {errorMsg && <ErrorBox message={errorMsg} />}
 
         <button
-          disabled={saving}
+          disabled={saving || loadingAllowedServices}
           className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
         >
           {saving ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Guardar movimiento'}
@@ -1906,7 +1914,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
         {errorMsg && <ErrorBox message={errorMsg} />}
 
         <button
-          disabled={saving}
+          disabled={saving || loadingAllowedServices}
           className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
         >
           {saving ? 'Registrando pago...' : 'Confirmar pago'}
@@ -2624,7 +2632,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
         {errorMsg && <ErrorBox message={errorMsg} />}
 
         <button
-          disabled={saving}
+          disabled={saving || loadingAllowedServices}
           className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
         >
           {saving ? 'Guardando...' : 'Guardar cambios'}
@@ -2721,7 +2729,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const allowedServiceIds = useAllowedServicesForBarber({ barberId: selectedBarberId, branchId: branch?.id, setSelectedServiceId });
+  const { allowedServiceIds, loadingAllowedServices } = useAllowedServicesForBarber({ barberId: selectedBarberId, branchId: branch?.id, setSelectedServiceId });
   const availableServices = useMemo(() => filterServicesForBarber(services, allowedServiceIds), [services, allowedServiceIds]);
 
   const paymentOptions = paymentSelectOptions(paymentMethods);
@@ -3403,7 +3411,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
           {errorMsg && <ErrorBox message={errorMsg} />}
 
           <button
-            disabled={saving}
+            disabled={saving || loadingAllowedServices}
             className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
           >
             {saving ? 'Guardando venta...' : 'Cobrar y finalizar atención'}
@@ -3447,7 +3455,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const allowedServiceIds = useAllowedServicesForBarber({ barberId: selectedBarberId, branchId: branch?.id, setSelectedServiceId });
+  const { allowedServiceIds, loadingAllowedServices } = useAllowedServicesForBarber({ barberId: selectedBarberId, branchId: branch?.id, setSelectedServiceId });
   const availableServices = useMemo(() => filterServicesForBarber(services, allowedServiceIds), [services, allowedServiceIds]);
 
   const paymentOptions = paymentSelectOptions(paymentMethods);
@@ -4397,7 +4405,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
           {errorMsg && <ErrorBox message={errorMsg} />}
 
           <button
-            disabled={saving}
+            disabled={saving || loadingAllowedServices}
             className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
           >
             {saving ? 'Guardando venta...' : isCourtesy ? 'Guardar cortesia gratis' : 'Guardar nueva venta'}
