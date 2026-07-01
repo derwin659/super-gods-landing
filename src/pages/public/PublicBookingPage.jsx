@@ -103,6 +103,9 @@ function normalizeBarber(raw) {
     photoUrl: firstText(raw.photoUrl, raw.barberPhotoUrl, raw.imageUrl, raw.googlePictureUrl),
     branchId,
     branchIds: branchIds.length > 0 ? branchIds : (branchId ? [branchId] : []),
+    serviceIdsByBranch: raw.serviceIdsByBranch && typeof raw.serviceIdsByBranch === 'object'
+      ? raw.serviceIdsByBranch
+      : {},
   };
 }
 
@@ -370,8 +373,16 @@ export default function PublicBookingPage() {
       }
       return b.branchId === selected;
     });
-    return withBranch.length > 0 ? withBranch : allBarbers;
-  }, [allBarbers, selectedBranchId]);
+    const branchBarbers = withBranch.length > 0 ? withBranch : allBarbers;
+    if (selectedServiceIds.length === 0) return branchBarbers;
+
+    return branchBarbers.filter((barber) => {
+      const configuredIds = barber.serviceIdsByBranch?.[String(selected)];
+      if (!Array.isArray(configuredIds)) return true;
+      const allowed = new Set(configuredIds.map((id) => Number(id)));
+      return selectedServiceIds.every((id) => allowed.has(Number(id)));
+    });
+  }, [allBarbers, selectedBranchId, selectedServiceIds]);
 
   const selectedBranch = branches.find((b) => String(b.id) === String(selectedBranchId));
   const selectedBarber = allBarbers.find((b) => String(b.id) === String(selectedBarberId));
