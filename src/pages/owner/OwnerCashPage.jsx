@@ -28,6 +28,7 @@ import {
   updateCashSale,
 } from '../../api/ownerCashApi';
 import { createOwnerCustomer, getOwnerCustomers } from '../../api/ownerCustomersApi';
+import { getBarberServiceAssignment } from '../../api/ownerBarbersApi';
 import {
   approveOwnerProductOrder,
   deliverOwnerProductOrder,
@@ -40,6 +41,45 @@ import { getBusinessLabels, readBusinessLabels } from '../../utils/businessLabel
 import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 import { exportCashHistoryExcel, exportCashHistoryPdf } from '../../utils/cashHistoryExport';
+
+function useAllowedServicesForBarber({ barberId, branchId, setSelectedServiceId }) {
+  const [allowedServiceIds, setAllowedServiceIds] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!barberId || !branchId) {
+      setAllowedServiceIds(null);
+      return () => { active = false; };
+    }
+
+    getBarberServiceAssignment({ barberId: Number(barberId), branchId: Number(branchId) })
+      .then((assignment) => {
+        if (!active) return;
+        const next = assignment?.configured
+          ? (assignment.serviceIds || []).map(Number)
+          : null;
+        setAllowedServiceIds(next);
+        if (Array.isArray(next)) {
+          setSelectedServiceId((current) =>
+            current && !next.includes(Number(current)) ? '' : current
+          );
+        }
+      })
+      .catch(() => {
+        if (active) setAllowedServiceIds(null);
+      });
+
+    return () => { active = false; };
+  }, [barberId, branchId, setSelectedServiceId]);
+
+  return allowedServiceIds;
+}
+
+function filterServicesForBarber(services, allowedServiceIds) {
+  if (!Array.isArray(allowedServiceIds)) return services;
+  const allowed = new Set(allowedServiceIds.map(Number));
+  return services.filter((service) => allowed.has(Number(service.id)));
+}
 
 function formatMoney(value) {
   return formatTenantMoney(value);
@@ -2681,6 +2721,8 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const allowedServiceIds = useAllowedServicesForBarber({ barberId: selectedBarberId, branchId: branch?.id, setSelectedServiceId });
+  const availableServices = useMemo(() => filterServicesForBarber(services, allowedServiceIds), [services, allowedServiceIds]);
 
   const paymentOptions = paymentSelectOptions(paymentMethods);
 
@@ -3090,7 +3132,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                   onChange={setSelectedServiceId}
                   options={[
                     { value: '', label: 'Selecciona servicio' },
-                    ...services.map((service) => ({
+                    ...availableServices.map((service) => ({
                       value: String(service.id),
                       label: `${service.name} · ${servicePriceLabel(service)}`,
                     })),
@@ -3405,6 +3447,8 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const allowedServiceIds = useAllowedServicesForBarber({ barberId: selectedBarberId, branchId: branch?.id, setSelectedServiceId });
+  const availableServices = useMemo(() => filterServicesForBarber(services, allowedServiceIds), [services, allowedServiceIds]);
 
   const paymentOptions = paymentSelectOptions(paymentMethods);
 
@@ -4014,7 +4058,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                     onChange={setSelectedServiceId}
                     options={[
                       { value: '', label: 'Selecciona servicio' },
-                      ...services.map((service) => ({
+                      ...availableServices.map((service) => ({
                         value: String(service.id),
                         label: `${service.name} · ${servicePriceLabel(service)}`,
                       })),
