@@ -4738,6 +4738,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
   useEffect(() => {
     setMovements(Array.isArray(cash?.movements) ? cash.movements : []);
     loadSales();
+    loadMovements();
     loadAudit();
   }, [branch.id, cash.id]);
   const paymentsSource =
