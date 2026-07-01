@@ -1156,7 +1156,7 @@ function OpenCashModal({ branch, onClose, onSaved }) {
         {errorMsg && <ErrorBox message={errorMsg} />}
 
         <button
-          disabled={saving || loadingAllowedServices}
+          disabled={saving}
           className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
         >
           {saving ? 'Abriendo...' : 'Abrir caja'}
@@ -1236,7 +1236,7 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
         {errorMsg && <ErrorBox message={errorMsg} />}
 
         <button
-          disabled={saving || loadingAllowedServices}
+          disabled={saving}
           className="w-full rounded-2xl bg-neutral-950 px-5 py-4 font-black text-white transition hover:scale-[1.01] disabled:opacity-60"
         >
           {saving ? 'Cerrando...' : 'Cerrar caja'}
@@ -1529,7 +1529,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
         {errorMsg && <ErrorBox message={errorMsg} />}
 
         <button
-          disabled={saving || loadingAllowedServices}
+          disabled={saving}
           className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
         >
           {saving ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Guardar movimiento'}
@@ -1914,7 +1914,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
         {errorMsg && <ErrorBox message={errorMsg} />}
 
         <button
-          disabled={saving || loadingAllowedServices}
+          disabled={saving}
           className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
         >
           {saving ? 'Registrando pago...' : 'Confirmar pago'}
@@ -2632,7 +2632,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
         {errorMsg && <ErrorBox message={errorMsg} />}
 
         <button
-          disabled={saving || loadingAllowedServices}
+          disabled={saving}
           className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
         >
           {saving ? 'Guardando...' : 'Guardar cambios'}
