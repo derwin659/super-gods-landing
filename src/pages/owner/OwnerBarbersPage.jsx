@@ -5,6 +5,9 @@ import {
   getOwnerBarbers,
   getOwnerBranchesForBarbers,
   getOwnerBarberCompensation,
+  getBarberServiceAssignment,
+  updateBarberServiceAssignment,
+  resetBarberServiceAssignment,
   getOwnerProfessionalProfile,
   updateOwnerProfessionalProfile,
   disableOwnerProfessionalProfile,
@@ -13,6 +16,7 @@ import {
   updateOwnerBarberCompensation,
   uploadOwnerBarberPhoto,
 } from '../../api/ownerBarbersApi';
+import { getOwnerServices } from '../../api/ownerServicesApi';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 
 function formatMoney(value) {
@@ -853,7 +857,7 @@ function ToggleConfirmModal({ barber, onCancel, onConfirm, saving }) {
   );
 }
 
-function BarberCard({ barber, onEdit, onToggle, onDeletePhoto }) {
+function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices }) {
   const active = barber.activo !== false;
 
   return (
@@ -912,7 +916,13 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto }) {
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <button
+          type="button"
+          onClick={onServices}
+          className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-800 hover:bg-amber-100"
+        >Servicios que realiza</button>
+
         <button
           type="button"
           onClick={onEdit}
@@ -944,8 +954,48 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto }) {
   );
 }
 
+function BarberServicesModal({ barber, branches, services, onClose }) {
+  const assignedBranches = getBarberBranchIds(barber).map(String);
+  const availableBranches = branches.filter((branch) => assignedBranches.includes(String(branch.id ?? branch.branchId)));
+  const [branchId, setBranchId] = useState(String(availableBranches[0]?.id ?? availableBranches[0]?.branchId ?? ''));
+  const [selected, setSelected] = useState([]);
+  const [configured, setConfigured] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (!branchId) return;
+    setLoading(true); setError('');
+    getBarberServiceAssignment({ barberId: getBarberId(barber), branchId: Number(branchId) })
+      .then((data) => { setConfigured(data?.configured === true); setSelected((data?.serviceIds || []).map(String)); })
+      .catch((e) => setError(e.message || 'No se pudieron cargar los servicios.'))
+      .finally(() => setLoading(false));
+  }, [branchId]);
+  async function save() {
+    if (selected.length === 0) { setError('Selecciona al menos un servicio o usa Restablecer todos.'); return; }
+    setSaving(true); setError('');
+    try { await updateBarberServiceAssignment({ barberId: getBarberId(barber), branchId: Number(branchId), serviceIds: selected.map(Number) }); onClose(); }
+    catch (e) { setError(e.message || 'No se pudo guardar.'); } finally { setSaving(false); }
+  }
+  async function reset() {
+    setSaving(true); setError('');
+    try { await resetBarberServiceAssignment({ barberId: getBarberId(barber), branchId: Number(branchId) }); onClose(); }
+    catch (e) { setError(e.message || 'No se pudo restablecer.'); } finally { setSaving(false); }
+  }
+  return <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-6"><div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-[32px] bg-white p-6 shadow-2xl sm:rounded-[32px]">
+    <div className="flex items-start justify-between gap-4"><div><div className="text-xs font-black uppercase tracking-[0.2em] text-amber-600">Servicios por sede</div><h3 className="mt-2 text-2xl font-black">{fullName(barber)}</h3><p className="mt-1 text-sm font-semibold text-neutral-500">Define qué servicios puede realizar en cada sede.</p></div><button onClick={onClose} className="rounded-full bg-neutral-100 px-4 py-3 font-black">×</button></div>
+    <label className="mt-6 block text-sm font-black">Sede<select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 p-4 font-bold">{availableBranches.map((branch) => <option key={branch.id ?? branch.branchId} value={branch.id ?? branch.branchId}>{branch.name || branch.nombre || branch.branchName}</option>)}</select></label>
+    <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">{configured ? selected.length + ' servicios configurados para esta sede.' : 'Sin configuración: puede realizar todos los servicios activos.'}</div>
+    {error && <div className="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
+    {loading ? <div className="p-10 text-center font-bold">Cargando...</div> : <div className="mt-5 grid gap-3 sm:grid-cols-2">{services.map((service) => { const id=String(service.id ?? service.serviceId); const checked=selected.includes(id); return <button type="button" key={id} onClick={() => setSelected((prev) => checked ? prev.filter((x) => x!==id) : [...prev,id])} className={'flex items-center gap-3 rounded-2xl border p-4 text-left font-black ' + (checked ? 'border-amber-400 bg-amber-50 text-neutral-950' : 'border-neutral-200 bg-white text-neutral-600')}><span className={'grid h-6 w-6 place-items-center rounded-full ' + (checked ? 'bg-amber-400' : 'bg-neutral-100')}>{checked ? '✓' : ''}</span>{service.nombre || service.name}</button>; })}</div>}
+    <div className="mt-6 flex flex-col gap-3 sm:flex-row"><button disabled={saving} onClick={save} className="flex-1 rounded-2xl bg-neutral-950 px-5 py-4 font-black text-white disabled:opacity-50">Guardar servicios</button><button disabled={saving} onClick={reset} className="rounded-2xl border border-neutral-200 px-5 py-4 font-black text-neutral-700 disabled:opacity-50">Restablecer todos</button></div>
+  </div></div>;
+}
+
 export default function OwnerBarbersPage() {
   const [barbers, setBarbers] = useState([]);
+  const [services, setServices] = useState([]);
+  const [serviceBarber, setServiceBarber] = useState(null);
   const [branches, setBranches] = useState([]);
   const [branchId, setBranchId] = useState('');
   const [showInactive, setShowInactive] = useState(false);
@@ -969,14 +1019,16 @@ export default function OwnerBarbersPage() {
     setErrorMsg('');
 
     try {
-      const [barberData, branchData, ownerProfile] = await Promise.all([
+      const [barberData, branchData, ownerProfile, serviceData] = await Promise.all([
         getOwnerBarbers({ branchId: branchId || undefined }),
         getOwnerBranchesForBarbers(),
         isOwnerSession ? getOwnerProfessionalProfile() : Promise.resolve(null),
+        getOwnerServices({ onlyActive: true }),
       ]);
 
       setBarbers(Array.isArray(barberData) ? barberData : []);
       setBranches(Array.isArray(branchData) ? branchData : []);
+      setServices(Array.isArray(serviceData) ? serviceData : []);
       if (ownerProfile) {
         setOwnerProfessional(ownerProfile);
         setOwnerProfessionalBranchIds((ownerProfile.branches || []).map((item) => String(item.id)));
@@ -1272,11 +1324,21 @@ export default function OwnerBarbersPage() {
               key={getBarberId(barber)}
               barber={barber}
               onEdit={() => setFormBarber(barber)}
+              onServices={() => setServiceBarber(barber)}
               onToggle={() => setToggleBarber(barber)}
               onDeletePhoto={() => handleDeletePhoto(barber)}
             />
           ))}
         </section>
+      )}
+
+      {serviceBarber && (
+        <BarberServicesModal
+          barber={serviceBarber}
+          branches={branches}
+          services={services}
+          onClose={() => setServiceBarber(null)}
+        />
       )}
 
       {(showCreate || formBarber) && (

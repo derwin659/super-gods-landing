@@ -102,3 +102,7 @@ export async function updateOwnerBarberCompensation({ barberId, branchId, payloa
 export async function getOwnerProfessionalProfile() { return apiRequest('/api/owner/barbers/self-professional'); }
 export async function updateOwnerProfessionalProfile(branchIds) { return apiRequest('/api/owner/barbers/self-professional', { method: 'PUT', body: JSON.stringify({ branchIds, allBranches: false }) }); }
 export async function disableOwnerProfessionalProfile() { return apiRequest('/api/owner/barbers/self-professional', { method: 'DELETE' }); }
+
+export async function getBarberServiceAssignment({ barberId, branchId }) { return apiRequest(`/api/owner/barbers/${barberId}/services${buildQuery({ branchId })}`); }
+export async function updateBarberServiceAssignment({ barberId, branchId, serviceIds }) { return apiRequest(`/api/owner/barbers/${barberId}/services${buildQuery({ branchId })}`, { method: 'PUT', body: JSON.stringify({ serviceIds }) }); }
+export async function resetBarberServiceAssignment({ barberId, branchId }) { return apiRequest(`/api/owner/barbers/${barberId}/services${buildQuery({ branchId })}`, { method: 'DELETE' }); }
