@@ -955,7 +955,7 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices }) {
 }
 
 function BarberServicesModal({ barber, branches, services, onClose }) {
-  const assignedBranches = getBarberBranchIds(barber).map(String);
+  const assignedBranches = barberBranchIds(barber).map(String);
   const availableBranches = branches.filter((branch) => assignedBranches.includes(String(branch.id ?? branch.branchId)));
   const [branchId, setBranchId] = useState(String(availableBranches[0]?.id ?? availableBranches[0]?.branchId ?? ''));
   const [selected, setSelected] = useState([]);
