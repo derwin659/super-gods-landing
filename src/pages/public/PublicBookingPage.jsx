@@ -387,7 +387,8 @@ export default function PublicBookingPage() {
   const selectedBranch = branches.find((b) => String(b.id) === String(selectedBranchId));
   const selectedBarber = allBarbers.find((b) => String(b.id) === String(selectedBarberId));
   const bookableFilteredServices = useMemo(() => {
-    if (!selectedBarber || !selectedBranchId) return filteredServices;
+    if (!selectedBranchId) return [];
+    if (!selectedBarber) return filteredServices;
     const configuredIds = selectedBarber.serviceIdsByBranch?.[String(Number(selectedBranchId))];
     if (!Array.isArray(configuredIds)) return filteredServices;
     const allowed = new Set(configuredIds.map(Number));
@@ -570,6 +571,10 @@ export default function PublicBookingPage() {
   }
 
   function toggleService(serviceId) {
+    if (!selectedBranchId) {
+      setError('Primero selecciona una sede.');
+      return;
+    }
     const id = String(serviceId);
     setSelectedTime('');
     setSelectedServiceIds((prev) => {
@@ -826,7 +831,11 @@ export default function PublicBookingPage() {
                     onClick={() => {
                       if (forcedBranch) return;
                       setSelectedBranchId(String(branch.id));
-                      setSelectedBarberId('');
+                      setSelectedBarberId(forcedBarber ? String(barberIdFromUrl) : '');
+                      setSelectedServiceId('');
+                      setSelectedServiceIds([]);
+                      setSelectedDate('');
+                      setSelectedTime('');
                     }}
                   >
                     <ImageThumb src={branch.imageUrl} fallbackIcon={Store} />
@@ -851,7 +860,11 @@ export default function PublicBookingPage() {
                 {!forcedBarber ? (
                   <SelectableCard
                     selected={!selectedBarberId}
-                    onClick={() => setSelectedBarberId('')}
+                    disabled={!selectedBranchId}
+                    onClick={() => {
+                      if (!selectedBranchId) return;
+                      setSelectedBarberId('');
+                    }}
                   >
                     <ImageThumb fallbackIcon={Sparkles} />
                     <div>
@@ -865,9 +878,9 @@ export default function PublicBookingPage() {
                   <SelectableCard
                     key={barber.id}
                     selected={String(selectedBarberId) === String(barber.id)}
-                    disabled={forcedBarber && String(barberIdFromUrl) !== String(barber.id)}
+                    disabled={!selectedBranchId || (forcedBarber && String(barberIdFromUrl) !== String(barber.id))}
                     onClick={() => {
-                      if (forcedBarber) return;
+                      if (!selectedBranchId || forcedBarber) return;
                       setSelectedBarberId(String(barber.id));
                     }}
                   >
@@ -933,7 +946,12 @@ export default function PublicBookingPage() {
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
-                {isWalkInMode ? (
+                {!selectedBranchId ? (
+                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-800 md:col-span-2">
+                    Primero selecciona una sede para mostrar servicios compatibles con sus profesionales.
+                  </div>
+                ) : null}
+                {isWalkInMode && selectedBranchId ? (
                   <SelectableCard
                     selected={selectedServiceIds.length === 0}
                     onClick={() => {
