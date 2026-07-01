@@ -216,6 +216,15 @@ export default function PublicBookingPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const stepsRef = useRef(null);
+
+  function advanceBookingStep() {
+    requestAnimationFrame(() => {
+      const container = stepsRef.current;
+      if (!container || window.innerWidth < 1024) return;
+      container.scrollBy({ left: container.clientWidth, behavior: 'smooth' });
+    });
+  }
+
   const [selectedBranchId, setSelectedBranchId] = useState(branchIdFromUrl || '');
   const [selectedBarberId, setSelectedBarberId] = useState(barberIdFromUrl || '');
   const [selectedServiceId, setSelectedServiceId] = useState('');
@@ -865,6 +874,7 @@ export default function PublicBookingPage() {
                       setSelectedServiceIds([]);
                       setSelectedDate('');
                       setSelectedTime('');
+                      advanceBookingStep();
                     }}
                   >
                     <ImageThumb src={branch.imageUrl} fallbackIcon={Store} />
@@ -893,6 +903,7 @@ export default function PublicBookingPage() {
                     onClick={() => {
                       if (!selectedBranchId) return;
                       setSelectedBarberId('');
+                      advanceBookingStep();
                     }}
                   >
                     <ImageThumb fallbackIcon={Sparkles} />
@@ -911,6 +922,7 @@ export default function PublicBookingPage() {
                     onClick={() => {
                       if (!selectedBranchId || forcedBarber) return;
                       setSelectedBarberId(String(barber.id));
+                      advanceBookingStep();
                     }}
                   >
                     <ImageThumb src={barber.photoUrl} fallbackIcon={UserRound} roundedFull />
