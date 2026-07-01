@@ -5,6 +5,9 @@ import {
   getOwnerBarbers,
   getOwnerBranchesForBarbers,
   getOwnerBarberCompensation,
+  getOwnerProfessionalProfile,
+  updateOwnerProfessionalProfile,
+  disableOwnerProfessionalProfile,
   updateOwnerBarber,
   updateOwnerBarberStatus,
   updateOwnerBarberCompensation,
@@ -956,19 +959,28 @@ export default function OwnerBarbersPage() {
 
   const [toggleBarber, setToggleBarber] = useState(null);
   const [toggleSaving, setToggleSaving] = useState(false);
+  const [ownerProfessional, setOwnerProfessional] = useState({ enabled: false, branches: [] });
+  const [ownerProfessionalBranchIds, setOwnerProfessionalBranchIds] = useState([]);
+  const [ownerProfessionalSaving, setOwnerProfessionalSaving] = useState(false);
+  const isOwnerSession = String(localStorage.getItem('ROLE') || '').toUpperCase() === 'OWNER';
 
   async function loadAll() {
     setLoading(true);
     setErrorMsg('');
 
     try {
-      const [barberData, branchData] = await Promise.all([
+      const [barberData, branchData, ownerProfile] = await Promise.all([
         getOwnerBarbers({ branchId: branchId || undefined }),
         getOwnerBranchesForBarbers(),
+        isOwnerSession ? getOwnerProfessionalProfile() : Promise.resolve(null),
       ]);
 
       setBarbers(Array.isArray(barberData) ? barberData : []);
       setBranches(Array.isArray(branchData) ? branchData : []);
+      if (ownerProfile) {
+        setOwnerProfessional(ownerProfile);
+        setOwnerProfessionalBranchIds((ownerProfile.branches || []).map((item) => String(item.id)));
+      }
     } catch (error) {
       setErrorMsg(error.message || 'No se pudieron cargar los barberos.');
       setBarbers([]);
@@ -1021,6 +1033,28 @@ export default function OwnerBarbersPage() {
       label: branch.name || branch.nombre || branch.branchName || `Sede ${branch.id ?? branch.branchId}`,
     })),
   ];
+
+  async function saveOwnerProfessional() {
+    if (ownerProfessionalBranchIds.length === 0) {
+      setErrorMsg('Selecciona al menos una sede.');
+      return;
+    }
+    setOwnerProfessionalSaving(true);
+    setErrorMsg('');
+    try {
+      await updateOwnerProfessionalProfile(ownerProfessionalBranchIds.map(Number));
+      await loadAll();
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo actualizar tu perfil profesional.');
+    } finally { setOwnerProfessionalSaving(false); }
+  }
+
+  async function disableOwnerProfessional() {
+    setOwnerProfessionalSaving(true);
+    try { await disableOwnerProfessionalProfile(); await loadAll(); }
+    catch (error) { setErrorMsg(error.message || 'No se pudo desactivar el perfil profesional.'); }
+    finally { setOwnerProfessionalSaving(false); }
+  }
 
   async function handleSaved() {
     setFormBarber(null);
@@ -1094,6 +1128,31 @@ export default function OwnerBarbersPage() {
           </button>
         </div>
       </section>
+
+      {isOwnerSession && (
+        <section className="overflow-hidden rounded-[30px] border border-amber-400/40 bg-[linear-gradient(135deg,#17131E_0%,#2B2038_100%)] p-6 text-white shadow-[0_18px_45px_rgba(23,19,30,0.16)]">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+            <div className="max-w-xl">
+              <div className="inline-flex rounded-full bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">Perfil profesional del dueño</div>
+              <h3 className="mt-4 text-2xl font-black">{ownerProfessional.enabled ? 'Ya apareces como profesional' : '¿También atiendes clientes?'}</h3>
+              <p className="mt-2 text-sm font-semibold text-white/65">Selecciona las sedes donde tus clientes podrán reservar contigo.</p>
+            </div>
+            <div className="min-w-0 flex-1 xl:max-w-2xl">
+              <div className="flex flex-wrap gap-2">
+                {branches.map((branch) => {
+                  const id = String(branch.id ?? branch.branchId);
+                  const selected = ownerProfessionalBranchIds.includes(id);
+                  return <button key={id} type="button" onClick={() => setOwnerProfessionalBranchIds((prev) => selected ? prev.filter((item) => item !== id) : [...prev, id])} className={`rounded-full border px-4 py-2 text-xs font-black transition ${selected ? 'border-amber-300 bg-amber-300 text-neutral-950' : 'border-white/20 bg-white/5 text-white'}`}>{branch.name || branch.nombre || branch.branchName}</button>;
+                })}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button type="button" disabled={ownerProfessionalSaving} onClick={saveOwnerProfessional} className="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-neutral-950 disabled:opacity-60">{ownerProfessionalSaving ? 'Guardando...' : 'Guardar sedes donde atiendo'}</button>
+                {ownerProfessional.enabled && <button type="button" disabled={ownerProfessionalSaving} onClick={disableOwnerProfessional} className="rounded-2xl border border-white/20 px-5 py-3 text-sm font-black text-white">Dejar de aparecer</button>}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard

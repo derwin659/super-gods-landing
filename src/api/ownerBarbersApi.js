@@ -98,3 +98,7 @@ export async function updateOwnerBarberCompensation({ barberId, branchId, payloa
     }
   );
 }
+
+export async function getOwnerProfessionalProfile() { return apiRequest('/api/owner/barbers/self-professional'); }
+export async function updateOwnerProfessionalProfile(branchIds) { return apiRequest('/api/owner/barbers/self-professional', { method: 'PUT', body: JSON.stringify({ branchIds, allBranches: false }) }); }
+export async function disableOwnerProfessionalProfile() { return apiRequest('/api/owner/barbers/self-professional', { method: 'DELETE' }); }
