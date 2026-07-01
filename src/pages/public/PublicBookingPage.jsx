@@ -1,8 +1,9 @@
-import { createElement, useEffect, useMemo, useState } from 'react';
+import { createElement, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import {
   CalendarDays,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
   Clock3,
   CreditCard,
@@ -214,6 +215,7 @@ export default function PublicBookingPage() {
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const stepsRef = useRef(null);
   const [selectedBranchId, setSelectedBranchId] = useState(branchIdFromUrl || '');
   const [selectedBarberId, setSelectedBarberId] = useState(barberIdFromUrl || '');
   const [selectedServiceId, setSelectedServiceId] = useState('');
@@ -814,8 +816,35 @@ export default function PublicBookingPage() {
           <SuccessPanel success={success} onNewBooking={() => setSuccess(null)} />
         ) : null}
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
-          <main className="grid gap-6">
+        <div className="mt-6 hidden items-center justify-between rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm lg:flex">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Reserva paso a paso</p>
+            <p className="mt-1 text-sm font-bold text-slate-500">Avanza de izquierda a derecha sin recorrer toda la página.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => stepsRef.current?.scrollBy({ left: -stepsRef.current.clientWidth, behavior: 'smooth' })}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-900 transition hover:border-slate-950"
+              aria-label="Paso anterior"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => stepsRef.current?.scrollBy({ left: stepsRef.current.clientWidth, behavior: 'smooth' })}
+              className="flex h-11 items-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black text-white transition hover:bg-blue-900"
+            >
+              Siguiente paso <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <main
+            ref={stepsRef}
+            className="grid gap-6 lg:flex lg:max-h-[76vh] lg:snap-x lg:snap-mandatory lg:overflow-x-auto lg:overflow-y-hidden lg:scroll-smooth lg:pb-3 lg:[&>section]:max-h-[74vh] lg:[&>section]:w-full lg:[&>section]:shrink-0 lg:[&>section]:snap-start lg:[&>section]:overflow-y-auto"
+          >
             <PremiumSection
               number="1"
               title="Elige sede"
