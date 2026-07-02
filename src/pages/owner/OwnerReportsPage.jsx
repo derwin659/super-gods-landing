@@ -208,6 +208,7 @@ function StatCard({ title, value, helper, tone = 'default' }) {
     green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
     red: 'border-red-200 bg-red-50 text-red-800',
     blue: 'border-blue-200 bg-blue-50 text-blue-800',
+    violet: 'border-violet-200 bg-violet-50 text-violet-800',
   };
 
   return (
@@ -1082,8 +1083,7 @@ export default function OwnerReportsPage() {
   const totalIncome = n(profitability?.totalSales) + n(profitability?.additionalIncome);
   const totalExpenses =
     n(profitability?.operationalExpenses) +
-    n(profitability?.barberPayments) +
-    n(profitability?.barberAdvances);
+    n(profitability?.barberCommissionsAccrued);
 
   return (
     <div className="min-w-0 space-y-5 sm:space-y-7">
@@ -1148,7 +1148,7 @@ export default function OwnerReportsPage() {
         <>
           <InsightCard insights={insights} />
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <StatCard
               title="Ventas totales"
               value={formatMoney(profitability?.totalSales)}
@@ -1164,6 +1164,13 @@ export default function OwnerReportsPage() {
             />
 
             <StatCard
+              title="Comisiones devengadas"
+              value={formatMoney(profitability?.barberCommissionsAccrued)}
+              helper="Costo real generado por ventas"
+              tone="violet"
+            />
+
+            <StatCard
               title="Utilidad estimada"
               value={formatMoney(profitability?.netProfit)}
               helper={`Margen ${formatPercent(profitability?.profitMargin)}`}
@@ -1173,7 +1180,7 @@ export default function OwnerReportsPage() {
             <StatCard
               title="Total egresos"
               value={formatMoney(totalExpenses)}
-              helper="Gastos + pagos + adelantos"
+              helper="Gastos + comisiones devengadas"
               tone="red"
             />
           </section>
@@ -1184,6 +1191,13 @@ export default function OwnerReportsPage() {
               value={formatMoney(totalIncome)}
               helper="Ventas + adicionales"
               tone="gold"
+            />
+
+            <StatCard
+              title="Flujo después de liquidaciones"
+              value={formatMoney(profitability?.cashFlowAfterBarberSettlements)}
+              helper="Vista de caja: pagos y adelantos realizados"
+              tone="blue"
             />
 
             <StatCard
