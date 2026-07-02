@@ -516,8 +516,14 @@ function BarberDetailModal({ barber, loading, errorMsg, items, onClose }) {
         )}
 
         {!loading && items.length > 0 && (
-          <div className="overflow-x-auto rounded-[24px] border border-neutral-200">
-            <table className="w-full min-w-[780px] text-left text-sm">
+          <>
+            <div className="mb-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4"><div className="text-[10px] font-black uppercase tracking-[.16em] text-neutral-400">Producción</div><div className="mt-2 text-xl font-black text-neutral-950">{formatMoney(items.reduce((sum, item) => sum + n(item.total), 0))}</div></div>
+              <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4"><div className="text-[10px] font-black uppercase tracking-[.16em] text-violet-500">Comisión aplicada</div><div className="mt-2 text-xl font-black text-violet-800">{formatMoney(items.reduce((sum, item) => sum + n(item.commissionAmountApplied), 0))}</div></div>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="text-[10px] font-black uppercase tracking-[.16em] text-emerald-600">Neto del negocio</div><div className="mt-2 text-xl font-black text-emerald-800">{formatMoney(items.reduce((sum, item) => sum + n(item.ownerNetAmount), 0))}</div></div>
+            </div>
+            <div className="overflow-x-auto rounded-[24px] border border-neutral-200">
+            <table className="w-full min-w-[1080px] text-left text-sm">
               <thead className="bg-neutral-50 text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
                 <tr>
                   <th className="px-4 py-4">Fecha</th>
@@ -525,6 +531,8 @@ function BarberDetailModal({ barber, loading, errorMsg, items, onClose }) {
                   <th className="px-4 py-4">Servicios</th>
                   <th className="px-4 py-4">Método</th>
                   <th className="px-4 py-4 text-right">Total</th>
+                  <th className="px-4 py-4 text-right">Comisión aplicada</th>
+                  <th className="px-4 py-4 text-right">Neto negocio</th>
                 </tr>
               </thead>
 
@@ -546,11 +554,17 @@ function BarberDetailModal({ barber, loading, errorMsg, items, onClose }) {
                     <td className="px-4 py-4 text-right font-black text-neutral-950">
                       {formatMoney(item.total)}
                     </td>
+                    <td className="px-4 py-4 text-right">
+                      <div className="font-black text-violet-700">{formatMoney(item.commissionAmountApplied)}</div>
+                      <div className="mt-1 text-[11px] font-bold text-neutral-400">{item.commissionSnapshotComplete ? `${n(item.effectiveCommissionPercentage).toFixed(2)}% efectivo` : 'Venta anterior · respaldo'}</div>
+                    </td>
+                    <td className="px-4 py-4 text-right font-black text-emerald-700">{formatMoney(item.ownerNetAmount)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </div>
