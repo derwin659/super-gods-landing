@@ -15,6 +15,7 @@ import {
   validateAppointmentDeposit,
 } from '../../api/ownerAgendaApi';
 import { getOwnerProductOrders } from '../../api/ownerProductOrdersApi';
+import { getBarberServiceAssignment } from '../../api/ownerBarbersApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
 
 function toDateInputValue(date) {
@@ -663,6 +664,7 @@ function AppointmentFormModal({
 
   const [barbers, setBarbers] = useState([]);
   const [services, setServices] = useState([]);
+  const [serviceIdsByBarber, setServiceIdsByBarber] = useState({});
   const [customers, setCustomers] = useState([]);
   const [slots, setSlots] = useState([]);
 
@@ -727,6 +729,23 @@ function AppointmentFormModal({
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+
+  const visibleServices = useMemo(() => {
+    if (!barberUserId) return services;
+    const configured = serviceIdsByBarber[String(barberUserId)];
+    if (!Array.isArray(configured)) return services;
+    const allowed = new Set(configured.map(Number));
+    return services.filter((service) => allowed.has(Number(service.id)));
+  }, [services, barberUserId, serviceIdsByBarber]);
+
+  const visibleBarbers = useMemo(() => {
+    if (!serviceId) return barbers;
+    return barbers.filter((barber) => {
+      const configured = serviceIdsByBarber[String(barber.id)];
+      return !Array.isArray(configured) || configured.map(Number).includes(Number(serviceId));
+    });
+  }, [barbers, serviceId, serviceIdsByBarber]);
 
   async function loadCatalogs() {
     setLoadingCatalogs(true);
@@ -1102,13 +1121,13 @@ function AppointmentFormModal({
                     Servicio
                   </div>
 
-                  {services.length === 0 ? (
+                  {visibleServices.length === 0 ? (
                     <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
                       No hay servicios disponibles.
                     </div>
                   ) : (
                     <div className="grid gap-3">
-                      {services.map((service) => (
+                      {visibleServices.map((service) => (
                         <OptionCard
                           key={service.id}
                           selected={String(service.id) === String(serviceId)}
@@ -1118,6 +1137,12 @@ function AppointmentFormModal({
                           icon="✂️"
                           onClick={() => {
                             setServiceId(String(service.id));
+                            if (barberUserId) {
+                              const configured = serviceIdsByBarber[String(barberUserId)];
+                              if (Array.isArray(configured) && !configured.map(Number).includes(Number(service.id))) {
+                                setBarberUserId('');
+                              }
+                            }
                             setSelectedSlot(null);
                           }}
                         />
@@ -1131,13 +1156,13 @@ function AppointmentFormModal({
                     Barbero
                   </div>
 
-                  {barbers.length === 0 ? (
+                  {visibleBarbers.length === 0 ? (
                     <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
                       No hay barberos disponibles para esta sede.
                     </div>
                   ) : (
                     <div className="grid gap-3 sm:grid-cols-2">
-                      {barbers.map((barber) => (
+                      {visibleBarbers.map((barber) => (
                         <OptionCard
                           key={barber.id}
                           selected={String(barber.id) === String(barberUserId)}
@@ -1147,6 +1172,12 @@ function AppointmentFormModal({
                           icon="💈"
                           onClick={() => {
                             setBarberUserId(String(barber.id));
+                            if (serviceId) {
+                              const configured = serviceIdsByBarber[String(barber.id)];
+                              if (Array.isArray(configured) && !configured.map(Number).includes(Number(serviceId))) {
+                                setServiceId('');
+                              }
+                            }
                             setSelectedSlot(null);
                           }}
                         />
