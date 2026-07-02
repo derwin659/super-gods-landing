@@ -87,3 +87,13 @@ export async function deleteOwnerServiceImage(serviceId) {
     method: 'DELETE',
   });
 }
+export async function getOwnerServiceDeletionPreview(serviceId) {
+  return apiRequest(`/api/owner/services/${serviceId}/deletion-preview`);
+}
+
+export async function deleteOwnerService({ serviceId, reason }) {
+  return apiRequest(`/api/owner/services/${serviceId}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ reason }),
+  });
+}

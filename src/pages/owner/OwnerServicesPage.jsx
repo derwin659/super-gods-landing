@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   createOwnerService,
   deleteOwnerServiceImage,
+  getOwnerServiceDeletionPreview,
+  deleteOwnerService,
   getOwnerServices,
   toggleOwnerService,
   updateOwnerService,
@@ -533,7 +535,7 @@ function ToggleConfirmModal({ service, onCancel, onConfirm, saving }) {
   );
 }
 
-function ServiceCard({ service, onEdit, onToggle }) {
+function ServiceCard({ service, onEdit, onToggle, onDelete }) {
   const active = service.activo !== false;
   const variablePrice =
     service.precioVariable ??
@@ -593,7 +595,7 @@ function ServiceCard({ service, onEdit, onToggle }) {
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <button
           type="button"
           onClick={onEdit}
@@ -611,9 +613,58 @@ function ServiceCard({ service, onEdit, onToggle }) {
         >
           {active ? 'Ocultar' : 'Activar'}
         </button>
+
+        <button type="button" onClick={onDelete} className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700 transition hover:bg-red-100">Eliminar</button>
       </div>
     </div>
   );
+}
+
+
+function DeleteServiceModal({ service, onClose, onDeleted }) {
+  const [preview, setPreview] = useState(null);
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setLoading(true); setError('');
+    getOwnerServiceDeletionPreview(service.serviceId)
+      .then(setPreview)
+      .catch((e) => setError(e.message || 'No se pudo analizar el servicio.'))
+      .finally(() => setLoading(false));
+  }, [service.serviceId]);
+
+  async function confirmDelete() {
+    if (reason.trim().length < 5) { setError('Escribe un motivo de al menos 5 caracteres.'); return; }
+    setSaving(true); setError('');
+    try {
+      const result = await deleteOwnerService({ serviceId: service.serviceId, reason: reason.trim() });
+      await onDeleted(result);
+    } catch (e) { setError(e.message || 'No se pudo eliminar el servicio.'); }
+    finally { setSaving(false); }
+  }
+
+  const linkedCount = Number(preview?.appointments || 0) + Number(preview?.saleItems || 0) + Number(preview?.legacySaleDetails || 0) + Number(preview?.localConsumptionItems || 0) + Number(preview?.promotions || 0) + Number(preview?.configurations || 0);
+  return <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/70 backdrop-blur-md sm:items-center sm:p-6">
+    <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-[34px] bg-[#F8F6F2] shadow-2xl sm:rounded-[34px]">
+      <div className="relative overflow-hidden bg-[radial-gradient(circle_at_10%_0%,rgba(248,113,113,.25),transparent_35%),linear-gradient(135deg,#100B0D,#29151B)] p-6 text-white">
+        <div className="flex items-start justify-between gap-4"><div><div className="text-[10px] font-black uppercase tracking-[.22em] text-red-300">Eliminación segura</div><h3 className="mt-2 text-2xl font-black">Eliminar {service.nombre}</h3><p className="mt-2 text-sm font-semibold text-white/60">Analizamos el historial antes de realizar cualquier cambio irreversible.</p></div><button onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/10 text-xl font-black">×</button></div>
+      </div>
+      <div className="space-y-4 p-5 sm:p-6">
+        {loading ? <div className="rounded-2xl bg-white p-8 text-center font-black text-neutral-500">Analizando citas y ventas...</div> : preview && <>
+          <div className={'rounded-[24px] border p-5 ' + (preview.hasHistory ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50')}>
+            <div className="text-3xl">{preview.hasHistory ? '🛡️' : '🗑️'}</div><h4 className="mt-3 text-lg font-black text-neutral-950">{preview.hasHistory ? 'El historial quedará protegido' : 'Puede eliminarse definitivamente'}</h4><p className="mt-2 text-sm font-semibold leading-6 text-neutral-600">{preview.explanation}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3"><div className="rounded-2xl border border-neutral-200 bg-white p-4"><div className="text-xs font-black text-neutral-400">CITAS</div><div className="mt-1 text-2xl font-black">{preview.appointments || 0}</div></div><div className="rounded-2xl border border-neutral-200 bg-white p-4"><div className="text-xs font-black text-neutral-400">REGISTROS VINCULADOS</div><div className="mt-1 text-2xl font-black">{linkedCount}</div></div></div>
+          <label className="block"><span className="text-sm font-black text-neutral-800">Motivo de eliminación</span><textarea value={reason} onChange={(e) => setReason(e.target.value)} rows="3" placeholder="Ejemplo: servicio duplicado o ya no se ofrece" className="mt-2 w-full resize-none rounded-2xl border border-neutral-200 bg-white p-4 font-semibold outline-none focus:border-red-400" /></label>
+        </>}
+        {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-black text-red-700">{error}</div>}
+        <div className="grid gap-3 sm:grid-cols-2"><button type="button" onClick={onClose} disabled={saving} className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 font-black text-neutral-700">Cancelar</button><button type="button" onClick={confirmDelete} disabled={loading || saving || !preview} className="rounded-2xl bg-red-600 px-5 py-4 font-black text-white shadow-[0_12px_30px_rgba(220,38,38,.25)] disabled:opacity-50">{saving ? 'Eliminando...' : preview?.hasHistory ? 'Eliminar y proteger historial' : 'Eliminar definitivamente'}</button></div>
+      </div>
+    </div>
+  </div>;
 }
 
 export default function OwnerServicesPage() {
@@ -629,6 +680,7 @@ export default function OwnerServicesPage() {
 
   const [toggleServiceItem, setToggleServiceItem] = useState(null);
   const [toggleSaving, setToggleSaving] = useState(false);
+  const [deleteServiceItem, setDeleteServiceItem] = useState(null);
 
   async function loadServices() {
     setLoading(true);
@@ -842,6 +894,7 @@ export default function OwnerServicesPage() {
               service={service}
               onEdit={() => setFormService(service)}
               onToggle={() => setToggleServiceItem(service)}
+              onDelete={() => setDeleteServiceItem(service)}
             />
           ))}
         </section>
@@ -855,6 +908,14 @@ export default function OwnerServicesPage() {
             setFormService(null);
           }}
           onSaved={handleSaved}
+        />
+      )}
+
+      {deleteServiceItem && (
+        <DeleteServiceModal
+          service={deleteServiceItem}
+          onClose={() => setDeleteServiceItem(null)}
+          onDeleted={async () => { setDeleteServiceItem(null); await loadServices(); }}
         />
       )}
 
