@@ -106,3 +106,6 @@ export async function disableOwnerProfessionalProfile() { return apiRequest('/ap
 export async function getBarberServiceAssignment({ barberId, branchId }) { return apiRequest(`/api/owner/barbers/${barberId}/services${buildQuery({ branchId })}`); }
 export async function updateBarberServiceAssignment({ barberId, branchId, serviceIds }) { return apiRequest(`/api/owner/barbers/${barberId}/services${buildQuery({ branchId })}`, { method: 'PUT', body: JSON.stringify({ serviceIds }) }); }
 export async function resetBarberServiceAssignment({ barberId, branchId }) { return apiRequest(`/api/owner/barbers/${barberId}/services${buildQuery({ branchId })}`, { method: 'DELETE' }); }
+
+export async function getBarberServiceCommissions({ barberId, branchId }) { return apiRequest(`/api/owner/barbers/${barberId}/service-commissions${buildQuery({ branchId })}`); }
+export async function updateBarberServiceCommissions({ barberId, branchId, servicePercentages }) { return apiRequest(`/api/owner/barbers/${barberId}/service-commissions${buildQuery({ branchId })}`, { method: 'PUT', body: JSON.stringify({ servicePercentages }) }); }

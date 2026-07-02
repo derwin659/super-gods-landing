@@ -8,6 +8,8 @@ import {
   getBarberServiceAssignment,
   updateBarberServiceAssignment,
   resetBarberServiceAssignment,
+  getBarberServiceCommissions,
+  updateBarberServiceCommissions,
   getOwnerProfessionalProfile,
   updateOwnerProfessionalProfile,
   disableOwnerProfessionalProfile,
@@ -857,7 +859,7 @@ function ToggleConfirmModal({ barber, onCancel, onConfirm, saving }) {
   );
 }
 
-function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices }) {
+function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCommissions }) {
   const active = barber.activo !== false;
 
   return (
@@ -916,12 +918,18 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices }) {
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <button
           type="button"
           onClick={onServices}
           className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-800 hover:bg-amber-100"
         >Servicios que realiza</button>
+
+        <button
+          type="button"
+          onClick={onCommissions}
+          className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-black text-violet-800 transition hover:-translate-y-0.5 hover:bg-violet-100"
+        >Comisiones por servicio</button>
 
         <button
           type="button"
@@ -992,10 +1000,119 @@ function BarberServicesModal({ barber, branches, services, onClose }) {
   </div></div>;
 }
 
+
+function BarberCommissionsModal({ barber, branches, onClose }) {
+  const assignedBranches = barberBranchIds(barber).map(String);
+  const availableBranches = branches.filter((branch) => assignedBranches.includes(String(branch.id ?? branch.branchId)));
+  const [branchId, setBranchId] = useState(String(availableBranches[0]?.id ?? availableBranches[0]?.branchId ?? ''));
+  const [data, setData] = useState(null);
+  const [overrides, setOverrides] = useState({});
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const branchName = availableBranches.find((branch) => String(branch.id ?? branch.branchId) === branchId)?.name
+    || availableBranches.find((branch) => String(branch.id ?? branch.branchId) === branchId)?.nombre
+    || 'Sede';
+
+  useEffect(() => {
+    if (!branchId) return;
+    setLoading(true); setError('');
+    getBarberServiceCommissions({ barberId: getBarberId(barber), branchId: Number(branchId) })
+      .then((response) => {
+        setData(response);
+        const next = {};
+        (response?.services || []).forEach((service) => {
+          if (service.custom === true) next[String(service.serviceId)] = String(service.percentage ?? '');
+        });
+        setOverrides(next);
+      })
+      .catch((e) => setError(e.message || 'No se pudieron cargar las comisiones.'))
+      .finally(() => setLoading(false));
+  }, [branchId]);
+
+  const visibleServices = (data?.services || []).filter((service) =>
+    String(service.serviceName || '').toLowerCase().includes(search.trim().toLowerCase())
+  );
+
+  function personalize(service) {
+    const id = String(service.serviceId);
+    setOverrides((current) => ({ ...current, [id]: String(service.percentage ?? data?.defaultPercentage ?? 0) }));
+  }
+
+  function useDefault(serviceId) {
+    setOverrides((current) => {
+      const next = { ...current };
+      delete next[String(serviceId)];
+      return next;
+    });
+  }
+
+  async function save() {
+    const payload = {};
+    for (const [serviceId, raw] of Object.entries(overrides)) {
+      const value = Number(raw);
+      if (!Number.isFinite(value) || value < 0 || value > 100) {
+        setError('Cada porcentaje personalizado debe estar entre 0 y 100.');
+        return;
+      }
+      payload[serviceId] = value;
+    }
+    setSaving(true); setError('');
+    try {
+      await updateBarberServiceCommissions({ barberId: getBarberId(barber), branchId: Number(branchId), servicePercentages: payload });
+      onClose();
+    } catch (e) {
+      setError(e.message || 'No se pudieron guardar las comisiones.');
+    } finally { setSaving(false); }
+  }
+
+  return <div className="fixed inset-0 z-[95] flex items-end justify-center bg-slate-950/70 backdrop-blur-md sm:items-center sm:p-6">
+    <div className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-t-[36px] border border-white/10 bg-[#F7F6FA] shadow-[0_30px_100px_rgba(0,0,0,.45)] sm:rounded-[36px]">
+      <div className="relative overflow-hidden bg-[radial-gradient(circle_at_10%_0%,rgba(250,204,21,.22),transparent_34%),linear-gradient(135deg,#0B0910,#24172F_55%,#111827)] p-6 text-white sm:p-8">
+        <div className="flex items-start justify-between gap-5">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-amber-300/80 bg-white/10 shadow-xl">
+              {barber.photoUrl ? <img src={barber.photoUrl} alt={fullName(barber)} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xl font-black text-amber-300">{initials(barber)}</div>}
+            </div>
+            <div className="min-w-0"><div className="text-[11px] font-black uppercase tracking-[.24em] text-amber-300">Esquema premium de pago</div><h3 className="mt-2 truncate text-2xl font-black sm:text-3xl">{fullName(barber)}</h3><p className="mt-1 text-sm font-semibold text-white/60">Configura excepciones sin perder la comisión general.</p></div>
+          </div>
+          <button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/10 bg-white/10 text-xl font-black hover:bg-white/20">×</button>
+        </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+          <label className="text-xs font-black uppercase tracking-[.16em] text-white/60">Sede
+            <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="mt-2 w-full rounded-2xl border border-white/15 bg-white/10 p-4 text-sm font-black text-white outline-none [color-scheme:dark]">{availableBranches.map((branch) => <option key={branch.id ?? branch.branchId} value={branch.id ?? branch.branchId}>{branch.name || branch.nombre || branch.branchName}</option>)}</select>
+          </label>
+          <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-5 py-3"><div className="text-[10px] font-black uppercase tracking-[.18em] text-amber-200">Comisión general</div><div className="mt-1 text-2xl font-black text-amber-300">{Number(data?.defaultPercentage ?? 0).toFixed(2)}%</div></div>
+        </div>
+      </div>
+
+      <div className="p-5 sm:p-7">
+        <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 text-sm font-bold leading-6 text-violet-900"><span className="font-black">¿Cómo funciona?</span> Todos los servicios usan la comisión general. Personaliza únicamente los que pagan un porcentaje distinto.</div>
+        {error && <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-black text-red-700">{error}</div>}
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h4 className="text-lg font-black text-neutral-950">Comisiones de {branchName}</h4><p className="text-sm font-semibold text-neutral-500">{Object.keys(overrides).length} excepciones personalizadas</p></div><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar servicio" className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-violet-400" /></div>
+
+        {loading ? <div className="py-16 text-center font-black text-neutral-500">Cargando esquema de comisiones...</div> : <div className="mt-5 grid gap-3 sm:grid-cols-2">{visibleServices.map((service) => {
+          const id = String(service.serviceId); const custom = Object.prototype.hasOwnProperty.call(overrides, id); const effective = custom ? overrides[id] : String(data?.defaultPercentage ?? service.percentage ?? 0);
+          return <div key={id} className={'rounded-[24px] border p-4 transition ' + (custom ? 'border-violet-300 bg-white shadow-[0_12px_30px_rgba(109,40,217,.10)]' : 'border-neutral-200 bg-white/70')}>
+            <div className="flex items-center gap-3"><div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-neutral-100">{service.imageUrl ? <img src={service.imageUrl} alt={service.serviceName} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xl">✂</div>}</div><div className="min-w-0 flex-1"><div className="truncate font-black text-neutral-950">{service.serviceName}</div><span className={'mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ' + (custom ? 'bg-violet-100 text-violet-700' : 'bg-neutral-100 text-neutral-600')}>{custom ? 'Personalizada' : 'Usa general'}</span></div></div>
+            <div className="mt-4 flex items-center gap-3">{custom ? <label className="flex flex-1 items-center rounded-2xl border-2 border-violet-200 bg-violet-50 px-4"><input type="number" min="0" max="100" step="0.01" value={effective} onChange={(e) => setOverrides((current) => ({ ...current, [id]: e.target.value }))} className="min-w-0 flex-1 bg-transparent py-3 text-xl font-black text-violet-950 outline-none" /><span className="font-black text-violet-600">%</span></label> : <div className="flex-1 rounded-2xl bg-neutral-100 px-4 py-3"><div className="text-[10px] font-black uppercase tracking-wide text-neutral-400">Por este servicio</div><div className="text-xl font-black text-neutral-800">{Number(effective).toFixed(2)}%</div></div>}
+              <button type="button" onClick={() => custom ? useDefault(id) : personalize(service)} className={'rounded-2xl px-4 py-3 text-xs font-black ' + (custom ? 'border border-neutral-200 bg-white text-neutral-700' : 'bg-violet-600 text-white')}>{custom ? 'Usar general' : 'Personalizar'}</button>
+            </div>
+          </div>;
+        })}</div>}
+        {!loading && visibleServices.length === 0 && <div className="mt-5 rounded-2xl border border-dashed border-neutral-300 p-10 text-center font-bold text-neutral-500">No encontramos servicios con ese nombre.</div>}
+        <div className="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-neutral-200 bg-[#F7F6FA]/95 pt-5 backdrop-blur sm:flex-row"><button type="button" onClick={onClose} className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 font-black text-neutral-700">Cancelar</button><button type="button" disabled={saving || loading} onClick={save} className="flex-1 rounded-2xl bg-[linear-gradient(135deg,#6D28D9,#4C1D95)] px-5 py-4 font-black text-white shadow-[0_12px_30px_rgba(109,40,217,.28)] disabled:opacity-50">{saving ? 'Guardando esquema...' : 'Guardar comisiones'}</button></div>
+      </div>
+    </div>
+  </div>;
+}
+
 export default function OwnerBarbersPage() {
   const [barbers, setBarbers] = useState([]);
   const [services, setServices] = useState([]);
   const [serviceBarber, setServiceBarber] = useState(null);
+  const [commissionBarber, setCommissionBarber] = useState(null);
   const [branches, setBranches] = useState([]);
   const [branchId, setBranchId] = useState('');
   const [showInactive, setShowInactive] = useState(false);
@@ -1325,6 +1442,7 @@ export default function OwnerBarbersPage() {
               barber={barber}
               onEdit={() => setFormBarber(barber)}
               onServices={() => setServiceBarber(barber)}
+              onCommissions={() => setCommissionBarber(barber)}
               onToggle={() => setToggleBarber(barber)}
               onDeletePhoto={() => handleDeletePhoto(barber)}
             />
@@ -1338,6 +1456,14 @@ export default function OwnerBarbersPage() {
           branches={branches}
           services={services}
           onClose={() => setServiceBarber(null)}
+        />
+      )}
+
+      {commissionBarber && (
+        <BarberCommissionsModal
+          barber={commissionBarber}
+          branches={branches}
+          onClose={() => setCommissionBarber(null)}
         />
       )}
 
