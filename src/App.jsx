@@ -236,9 +236,9 @@ function PublicHomePage() {
     {
       name: 'Basic',
       price: formatSubscriptionPrice(getPlanPriceFromMap('BASIC', pricingCountry, publicPriceMap)),
-      badge: 'Independiente',
-      description: 'Para profesionales independientes o servicios a domicilio.',
-      items: ['1 profesional', '1 agenda', 'Reservas online', 'Clientes e historial'],
+      badge: 'Starter compacto',
+      description: 'La operación Starter para equipos pequeños.',
+      items: ['1 sede', '2 profesionales', '1 admin', 'Caja y puntos'],
     },
     {
       name: 'Starter',
@@ -273,18 +273,18 @@ function PublicHomePage() {
 
   const planComparison = [
     { feature: 'Reservas online', basic: 'Incluido', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
-    { feature: 'Agenda por profesional', basic: '1 agenda', starter: '5 profesionales', growth: '10 profesionales', pro: '18 profesionales', enterprise: 'Ilimitado' },
-    { feature: 'Sedes', basic: '1 agenda', starter: '1 sede', growth: '2 sedes', pro: '3 sedes', enterprise: 'Ilimitadas' },
+    { feature: 'Agenda por profesional', basic: '2 profesionales', starter: '5 profesionales', growth: '10 profesionales', pro: '18 profesionales', enterprise: 'Ilimitado' },
+    { feature: 'Sedes', basic: '1 sede', starter: '1 sede', growth: '2 sedes', pro: '3 sedes', enterprise: 'Ilimitadas' },
     { feature: 'Clientes e historial', basic: 'Incluido', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
-    { feature: 'Caja y ventas', basic: 'No incluido', starter: 'Basica', growth: 'Completa', pro: 'Avanzada', enterprise: 'Avanzada' },
-    { feature: 'Consumo en local con QR', basic: 'No incluido', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
-    { feature: 'Puntos y recompensas', basic: 'No incluido', starter: 'Basico', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Caja y ventas', basic: 'Basica', starter: 'Basica', growth: 'Completa', pro: 'Avanzada', enterprise: 'Avanzada' },
+    { feature: 'Consumo en local con QR', basic: 'Incluido', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Puntos y recompensas', basic: 'Basico', starter: 'Basico', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
     { feature: 'Promociones', basic: 'No incluido', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
     { feature: 'Campanas automatizadas', basic: 'No incluido', starter: 'No incluido', growth: 'Push notifications', pro: 'Push + segmentos', enterprise: 'Avanzado' },
-    { feature: 'WhatsApp', basic: 'No incluido', starter: 'Manual', growth: 'Premium', pro: 'Premium', enterprise: 'Prioritario' },
+    { feature: 'WhatsApp', basic: 'Manual', starter: 'Manual', growth: 'Premium', pro: 'Premium', enterprise: 'Prioritario' },
     { feature: 'Inventario por sede', basic: 'No incluido', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
     { feature: 'Reportes', basic: 'Basicos', starter: 'Basicos', growth: 'Por sede', pro: 'Avanzados', enterprise: 'Avanzados' },
-    { feature: 'Roles de administrador', basic: 'No incluido', starter: '1 admin', growth: '3 admins', pro: '6 admins', enterprise: 'Ilimitados' },
+    { feature: 'Roles de administrador', basic: '1 admin', starter: '1 admin', growth: '3 admins', pro: '6 admins', enterprise: 'Ilimitados' },
     { feature: 'Gods AI Pro', basic: 'No incluido', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
     { feature: 'Soporte', basic: 'Estandar', starter: 'Estandar', growth: 'Prioridad media', pro: 'Prioritario', enterprise: 'Directo' },
   ];
