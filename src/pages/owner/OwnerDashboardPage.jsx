@@ -76,6 +76,94 @@ function MetricCard({ title, value, helper, tone = 'default' }) {
   );
 }
 
+function ExecutivePulse({ dashboard, branches }) {
+  const expectedCash = Number(dashboard?.expectedCash || 0);
+  const professionalPayments = Number(dashboard?.todayProfessionalPayments || 0);
+  const pendingPayments = Number(dashboard?.pendingProfessionalPayments || 0);
+  const yesterdaySales = Number(dashboard?.yesterdaySales || 0);
+  const previousWeekSales = Number(dashboard?.previousWeekSales || 0);
+  const todaySales = Number(dashboard?.todaySales || 0);
+  const alerts = Array.isArray(dashboard?.alerts) ? dashboard.alerts : [];
+  const topBranch = [...branches].sort(
+    (left, right) => Number(right.todaySales || 0) - Number(left.todaySales || 0),
+  )[0];
+  const comparison = (previous) => previous <= 0
+    ? null
+    : ((todaySales - previous) / previous) * 100;
+  const comparisonCard = (label, value) => {
+    const positive = value != null && value >= 0;
+    const tone = value == null
+      ? 'bg-neutral-100 text-neutral-500'
+      : positive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700';
+    return (
+      <div className={`rounded-2xl px-4 py-3 ${tone}`}>
+        <div className="text-[10px] font-black uppercase tracking-[0.15em] opacity-65">{label}</div>
+        <div className="mt-1 text-lg font-black">
+          {value == null ? 'Sin referencia' : `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`}
+        </div>
+      </div>
+    );
+  };
+  const leaders = [
+    ['Profesional líder', dashboard?.topBarber?.name || 'Sin ventas todavía', dashboard?.topBarber ? formatMoney(dashboard.topBarber.amount) : '—'],
+    ['Servicio líder', dashboard?.topService?.name || 'Sin servicios todavía', dashboard?.topService ? `${dashboard.topService.count || 0} atenciones` : '—'],
+    ['Sede líder', topBranch?.branchName || 'Sin sedes', topBranch ? formatMoney(topBranch.todaySales) : '—'],
+  ];
+
+  return (
+    <section className="grid gap-5 xl:grid-cols-[1.4fr_0.6fr]">
+      <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">Pulso del negocio</div>
+            <h3 className="mt-2 text-2xl font-black text-neutral-950">Lo esencial en menos de 10 segundos</h3>
+          </div>
+          <span className="rounded-full bg-amber-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Hoy</span>
+        </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <MetricCard title="Caja esperada" value={formatMoney(expectedCash)} helper="Efectivo neto estimado" tone="gold" />
+          <MetricCard title="Pagado al equipo" value={formatMoney(professionalPayments)} helper="Pagos profesionales de hoy" />
+          <MetricCard title="Pagos pendientes" value={formatMoney(pendingPayments)} helper="Saldos registrados por completar" tone="dark" />
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {comparisonCard('Ventas vs. ayer', comparison(yesterdaySales))}
+          {comparisonCard('Ventas vs. semana anterior', comparison(previousWeekSales))}
+        </div>
+        <div className="mt-5 overflow-hidden rounded-[24px] border border-neutral-200">
+          {leaders.map(([label, name, detail], index) => (
+            <div key={label} className={`flex items-center gap-4 px-5 py-4 ${index ? 'border-t border-neutral-200' : ''}`}>
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 font-black text-amber-700">{index + 1}</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-black uppercase tracking-[0.14em] text-neutral-400">{label}</div>
+                <div className="mt-1 truncate text-sm font-black text-neutral-950">{name}</div>
+              </div>
+              <div className="text-sm font-black text-neutral-600">{detail}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="rounded-[32px] border border-amber-200 bg-amber-50/70 p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-700">Alertas</div>
+            <h3 className="mt-2 text-xl font-black text-neutral-950">Atención requerida</h3>
+          </div>
+          <span className="rounded-full bg-white px-3 py-2 text-sm font-black text-amber-700">{alerts.length}</span>
+        </div>
+        <div className="mt-5 space-y-3">
+          {alerts.length === 0 ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">Sin alertas importantes por ahora.</div>
+          ) : alerts.slice(0, 4).map((alert) => (
+            <div key={`${alert.type}-${alert.title}`} className="rounded-2xl border border-amber-200 bg-white p-4">
+              <div className="font-black text-neutral-950">{alert.title}</div>
+              {alert.message && <div className="mt-1 text-sm leading-6 text-neutral-500">{alert.message}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 function QuickAction({ title, text, label }) {
   return (
     <div className="rounded-[26px] border border-neutral-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.045)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
@@ -831,6 +919,8 @@ export default function OwnerDashboardPage() {
               helper="Egresos registrados"
             />
           </section>
+
+          <ExecutivePulse dashboard={dashboard} branches={branches} />
 
           <OnboardingChecklist
             dashboard={dashboard}
