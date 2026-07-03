@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   createOwnerBarber,
   deleteOwnerBarberPhoto,
+  getOwnerBarberDeletionPreview,
+  deleteOwnerBarber,
   getOwnerBarbers,
   getOwnerBranchesForBarbers,
   getOwnerBarberCompensation,
@@ -859,7 +861,7 @@ function ToggleConfirmModal({ barber, onCancel, onConfirm, saving }) {
   );
 }
 
-function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCommissions }) {
+function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCommissions, onDelete }) {
   const active = barber.activo !== false;
 
   return (
@@ -918,7 +920,7 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCom
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <button
           type="button"
           onClick={onServices}
@@ -956,6 +958,10 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCom
           className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Quitar foto
+        </button>
+
+        <button type="button" onClick={onDelete} className="rounded-2xl border border-red-300 bg-white px-4 py-3 text-sm font-black text-red-700 transition hover:-translate-y-0.5 hover:bg-red-50">
+          Retirar profesional
         </button>
       </div>
     </div>
@@ -1108,6 +1114,36 @@ function BarberCommissionsModal({ barber, branches, onClose }) {
   </div>;
 }
 
+
+function DeleteBarberModal({ barber, onClose, onDeleted }) {
+  const [preview, setPreview] = useState(null);
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    getOwnerBarberDeletionPreview(getBarberId(barber)).then(setPreview).catch((e) => setError(e.message || 'No se pudo analizar al profesional.')).finally(() => setLoading(false));
+  }, [barber]);
+  async function confirmDelete() {
+    if (reason.trim().length < 5) { setError('Escribe un motivo de al menos 5 caracteres.'); return; }
+    setSaving(true); setError('');
+    try { await deleteOwnerBarber({ barberId: getBarberId(barber), reason: reason.trim() }); await onDeleted(); }
+    catch (e) { setError(e.message || 'No se pudo retirar al profesional.'); } finally { setSaving(false); }
+  }
+  const historyTotal = Number(preview?.historicalAppointments || 0) + Number(preview?.saleItems || 0) + Number(preview?.payments || 0) + Number(preview?.advances || 0);
+  return <div className="fixed inset-0 z-[110] flex items-end justify-center bg-slate-950/75 backdrop-blur-md sm:items-center sm:p-6"><div className="max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-t-[36px] bg-[#F7F4EF] shadow-2xl sm:rounded-[36px]">
+    <header className="relative overflow-hidden bg-[radial-gradient(circle_at_0%_0%,rgba(251,191,36,.24),transparent_38%),linear-gradient(135deg,#09080A,#281529)] p-6 text-white"><div className="flex items-start gap-4"><BarberAvatar barber={barber}/><div className="min-w-0 flex-1"><div className="text-[10px] font-black uppercase tracking-[.24em] text-amber-300">Retiro protegido</div><h3 className="mt-2 text-2xl font-black">{fullName(barber)}</h3><p className="mt-2 text-sm font-semibold text-white/60">Validamos agenda, ventas y pagos antes de retirar el acceso.</p></div><button onClick={onClose} className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-xl font-black">×</button></div></header>
+    <div className="space-y-4 p-5 sm:p-6">{loading ? <div className="rounded-3xl bg-white p-8 text-center font-black text-neutral-500">Analizando historial...</div> : preview && <>
+      <div className={`rounded-[26px] border p-5 ${preview.blocked ? 'border-red-200 bg-red-50' : preview.hasHistory ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}><div className="text-xs font-black uppercase tracking-[.18em] text-neutral-500">{preview.deletionMode === 'HARD_DELETE' ? 'Eliminación definitiva' : preview.blocked ? 'Acción pendiente' : 'Historial protegido'}</div><h4 className="mt-2 text-xl font-black text-neutral-950">{preview.blocked ? 'Primero resuelve las citas futuras' : preview.hasHistory ? 'Se retirará sin perder información' : 'Puede eliminarse por completo'}</h4><p className="mt-2 text-sm font-semibold leading-6 text-neutral-600">{preview.explanation}</p></div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4"><Metric label="Citas futuras" value={preview.futureAppointments}/><Metric label="Historial" value={historyTotal}/><Metric label="Horarios" value={preview.schedules}/><Metric label="Configuración" value={preview.configurations}/></div>
+      {!preview.blocked && <label className="block"><span className="text-sm font-black text-neutral-800">Motivo del retiro</span><textarea rows="3" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ejemplo: terminó su relación laboral" className="mt-2 w-full resize-none rounded-2xl border border-neutral-200 bg-white p-4 font-semibold outline-none focus:border-amber-400"/></label>}
+    </>}
+    {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-black text-red-700">{error}</div>}
+    <div className="grid gap-3 sm:grid-cols-2"><button onClick={onClose} className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 font-black">Cancelar</button><button onClick={confirmDelete} disabled={loading || saving || !preview || preview.blocked} className="rounded-2xl bg-red-600 px-5 py-4 font-black text-white shadow-[0_14px_30px_rgba(220,38,38,.22)] disabled:opacity-40">{saving ? 'Procesando...' : preview?.hasHistory ? 'Retirar y proteger historial' : 'Eliminar definitivamente'}</button></div>
+    </div></div></div>;
+}
+function Metric({ label, value }) { return <div className="rounded-2xl border border-neutral-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-wider text-neutral-400">{label}</div><div className="mt-2 text-2xl font-black text-neutral-950">{Number(value || 0)}</div></div>; }
+
 export default function OwnerBarbersPage() {
   const [barbers, setBarbers] = useState([]);
   const [services, setServices] = useState([]);
@@ -1125,6 +1161,7 @@ export default function OwnerBarbersPage() {
   const [showCreate, setShowCreate] = useState(false);
 
   const [toggleBarber, setToggleBarber] = useState(null);
+  const [deleteBarberItem, setDeleteBarberItem] = useState(null);
   const [toggleSaving, setToggleSaving] = useState(false);
   const [ownerProfessional, setOwnerProfessional] = useState({ enabled: false, branches: [] });
   const [ownerProfessionalBranchIds, setOwnerProfessionalBranchIds] = useState([]);
@@ -1445,6 +1482,7 @@ export default function OwnerBarbersPage() {
               onCommissions={() => setCommissionBarber(barber)}
               onToggle={() => setToggleBarber(barber)}
               onDeletePhoto={() => handleDeletePhoto(barber)}
+              onDelete={() => setDeleteBarberItem(barber)}
             />
           ))}
         </section>
@@ -1478,6 +1516,8 @@ export default function OwnerBarbersPage() {
           onSaved={handleSaved}
         />
       )}
+
+      {deleteBarberItem && <DeleteBarberModal barber={deleteBarberItem} onClose={() => setDeleteBarberItem(null)} onDeleted={async () => { setDeleteBarberItem(null); await loadAll(); }} />}
 
       {toggleBarber && (
         <ToggleConfirmModal

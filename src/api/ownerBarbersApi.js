@@ -109,3 +109,14 @@ export async function resetBarberServiceAssignment({ barberId, branchId }) { ret
 
 export async function getBarberServiceCommissions({ barberId, branchId }) { return apiRequest(`/api/owner/barbers/${barberId}/service-commissions${buildQuery({ branchId })}`); }
 export async function updateBarberServiceCommissions({ barberId, branchId, servicePercentages }) { return apiRequest(`/api/owner/barbers/${barberId}/service-commissions${buildQuery({ branchId })}`, { method: 'PUT', body: JSON.stringify({ servicePercentages }) }); }
+
+export async function getOwnerBarberDeletionPreview(barberId) {
+  return apiRequest(`/api/owner/barbers/${barberId}/deletion-preview`);
+}
+
+export async function deleteOwnerBarber({ barberId, reason }) {
+  return apiRequest(`/api/owner/barbers/${barberId}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ reason }),
+  });
+}
