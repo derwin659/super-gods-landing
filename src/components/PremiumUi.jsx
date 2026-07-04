@@ -1,5 +1,6 @@
 import { AlertTriangle, Sparkles, X } from 'lucide-react';
 import { createRoot } from 'react-dom/client';
+import { useState } from 'react';
 
 export function humanizeError(error) {
   const raw = String(error?.message || error || '').replace(/^Error:\s*/i, '').trim();
@@ -109,6 +110,42 @@ export function premiumConfirm(message, options = {}) {
         title={options.title || 'Confirmar acción'}
         confirmLabel={options.confirmLabel || 'Confirmar'}
         destructive={options.destructive !== false}
+        resolve={resolve}
+      />,
+    );
+  });
+}
+function PremiumPromptDialog({ message, title, confirmLabel, placeholder, resolve }) {
+  const [value, setValue] = useState("");
+  const cleanValue = value.trim();
+  return (
+    <PremiumModalShell title={title} subtitle="Registro auditado" onClose={() => resolve(null)} maxWidth="max-w-lg">
+      <p className="text-sm font-semibold leading-7 text-neutral-600">{message}</p>
+      <textarea autoFocus rows={4} value={value} onChange={(event) => setValue(event.target.value)} placeholder={placeholder} className={`${premiumFieldClass} mt-4 resize-none`} />
+      <div className="mt-6 flex justify-end gap-3">
+        <PremiumButton type="button" tone="secondary" onClick={() => resolve(null)}>Cancelar</PremiumButton>
+        <PremiumButton type="button" tone="danger" disabled={cleanValue.length < 3} onClick={() => resolve(cleanValue)}>{confirmLabel}</PremiumButton>
+      </div>
+    </PremiumModalShell>
+  );
+}
+
+export function premiumPrompt(message, options = {}) {
+  const host = document.createElement("div");
+  document.body.appendChild(host);
+  const root = createRoot(host);
+  return new Promise((finish) => {
+    const resolve = (value) => {
+      root.unmount();
+      host.remove();
+      finish(value);
+    };
+    root.render(
+      <PremiumPromptDialog
+        message={message}
+        title={options.title || "Indica el motivo"}
+        confirmLabel={options.confirmLabel || "Guardar motivo"}
+        placeholder={options.placeholder || "Escribe un motivo claro..."}
         resolve={resolve}
       />,
     );

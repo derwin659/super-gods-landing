@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { PremiumButton, PremiumEmptyState, PremiumErrorState, premiumConfirm } from '../../components/PremiumUi';
+import { PremiumButton, PremiumEmptyState, PremiumErrorState, premiumConfirm, premiumPrompt } from '../../components/PremiumUi';
 import { Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   cancelOwnerAppointment,
+  markOwnerAppointmentNoShow,
   createOwnerAppointment,
   createQuickAgendaCustomer,
   getAgendaBarbers,
@@ -96,6 +97,7 @@ function statusLabel(item) {
     FINALIZADO: 'Finalizado',
     COMPLETADO: 'Completado',
     CANCELADO: 'Cancelado',
+    NO_SHOW: 'No asistió',
   };
 
   return labels[code] || item?.estado || 'Reserva';
@@ -120,7 +122,7 @@ function statusClasses(item) {
     };
   }
 
-  if (code === 'DEPOSIT_REJECTED' || code === 'CANCELADO') {
+  if (code === 'DEPOSIT_REJECTED' || code === 'CANCELADO' || code === 'NO_SHOW') {
     return {
       pill: 'border-red-200 bg-red-50 text-red-700',
       dot: 'bg-red-500',
@@ -364,19 +366,31 @@ function DepositRejectedBox({ item }) {
   );
 }
 
+function canMarkNoShow(item) {
+  const status = String(item?.estado || "").trim().toUpperCase();
+  if (["CANCELADO", "NO_SHOW", "ATENDIDO", "FINALIZADO", "COMPLETADO"].includes(status)) return false;
+  const date = String(item?.fecha || "").trim();
+  const time = String(item?.horaFin || item?.hora || "").trim();
+  if (!date || !time) return false;
+  const end = new Date(`${date}T${time.length === 5 ? `${time}:00` : time}`);
+  return !Number.isNaN(end.getTime()) && end.getTime() < Date.now();
+}
+
 function AppointmentCard({
   item,
   onApproveDeposit,
   onRejectDeposit,
   onEdit,
   onCancel,
+  onNoShow,
   onAttend,
 }) {
   const styles = statusClasses(item);
   const pendingDeposit = statusCode(item) === 'PENDING_DEPOSIT';
   const approvedDeposit = statusCode(item) === 'DEPOSIT_OK';
   const rejectedDeposit = statusCode(item) === 'DEPOSIT_REJECTED';
-  const canceled = String(item?.estado || '').toUpperCase() === 'CANCELADO';
+  const finalStatus = ['CANCELADO', 'NO_SHOW', 'ATENDIDO', 'FINALIZADO', 'COMPLETADO'].includes(String(item?.estado || '').toUpperCase());
+  const noShowAllowed = canMarkNoShow(item);
 
   return (
     <div
@@ -446,7 +460,7 @@ function AppointmentCard({
             <button
               type="button"
               onClick={() => onEdit(item)}
-              disabled={canceled}
+              disabled={finalStatus}
               className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-black text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
             >
               Editar
@@ -454,13 +468,21 @@ function AppointmentCard({
             <button
               type="button"
               onClick={() => onCancel(item)}
-              disabled={canceled}
+              disabled={finalStatus}
               className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:opacity-50"
             >
               Cancelar
             </button>
           </div>
 
+          <button
+            type="button"
+            onClick={() => onNoShow(item)}
+            disabled={!noShowAllowed}
+            className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-black text-orange-700 transition hover:bg-orange-100 disabled:opacity-50"
+          >
+            No asistió
+          </button>
           <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-xs font-bold text-neutral-500">
             Atender queda preparado para conectar con el flujo de venta/caja.
           </div>
@@ -1517,26 +1539,44 @@ export default function OwnerAgendaPage() {
   }
 
   async function handleCancelAppointment(item) {
-    const ok = await premiumConfirm(
-      `¿Seguro que deseas cancelar la cita de ${item.cliente}?`
+    const reason = await premiumPrompt(
+      `Indica por qué se cancela la cita de ${item.cliente}.`,
+      { title: "Cancelar cita", confirmLabel: "Cancelar cita" }
     );
+    if (!reason) return;
 
-    if (!ok) return;
-
-    setErrorMsg('');
-
+    setErrorMsg("");
     try {
       await cancelOwnerAppointment({
         branchId: item.branchId || selectedBranchId,
         appointmentId: item.appointmentId,
+        reason,
       });
-
       await loadAgenda({ silent: true });
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudo cancelar la cita.');
+      setErrorMsg(error.message || "No se pudo cancelar la cita.");
     }
   }
 
+  async function handleNoShowAppointment(item) {
+    const reason = await premiumPrompt(
+      `Indica por qué ${item.cliente} no asistió a la cita.`,
+      { title: "Marcar no-show", confirmLabel: "Marcar no asistió" }
+    );
+    if (!reason) return;
+
+    setErrorMsg("");
+    try {
+      await markOwnerAppointmentNoShow({
+        branchId: item.branchId || selectedBranchId,
+        appointmentId: item.appointmentId,
+        reason,
+      });
+      await loadAgenda({ silent: true });
+    } catch (error) {
+      setErrorMsg(error.message || "No se pudo marcar la inasistencia.");
+    }
+  }
   function openCreateAppointment() {
     setEditingAppointment(null);
     setShowAppointmentModal(true);
@@ -1671,6 +1711,7 @@ export default function OwnerAgendaPage() {
               item={item}
               onEdit={openEditAppointment}
               onCancel={handleCancelAppointment}
+              onNoShow={handleNoShowAppointment}
               onAttend={handleAttendAppointment}
               onApproveDeposit={(agendaItem) =>
                 handleValidateDeposit(agendaItem, true)

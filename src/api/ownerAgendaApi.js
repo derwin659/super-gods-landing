@@ -499,13 +499,26 @@ export async function updateOwnerAppointment(payload) {
   return normalizeAgendaItem(data);
 }
 
-export async function cancelOwnerAppointment({ appointmentId, branchId }) {
+export async function cancelOwnerAppointment({ appointmentId, branchId, reason }) {
   const data = await apiRequest(
     `/api/owner/agenda/appointments/${appointmentId}${toQuery({
       branchId,
+      reason,
     })}`,
     {
       method: 'DELETE',
+    }
+  );
+
+  return normalizeAgendaItem(data);
+}
+
+export async function markOwnerAppointmentNoShow({ appointmentId, branchId, reason }) {
+  const data = await apiRequest(
+    `/api/owner/agenda/appointments/${appointmentId}/no-show${toQuery({ branchId })}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ reason }),
     }
   );
 
