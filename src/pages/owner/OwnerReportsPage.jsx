@@ -900,7 +900,7 @@ export default function OwnerReportsPage() {
       to,
       type: expenseType || undefined,
     };
-  }, [branchId, from, to, expenseType]);
+  }, [branchId, from, to]);
 
   async function loadBranches() {
     setBranchesLoading(true);
@@ -947,7 +947,7 @@ export default function OwnerReportsPage() {
   }
 
   async function loadReports() {
-    setLoading(true);
+    setLoading(!salesReport);
     setErrorMsg('');
 
     try {
@@ -1000,6 +1000,14 @@ export default function OwnerReportsPage() {
     }
   }
 
+  async function loadExpenseReportOnly() {
+    try {
+      const data = await getExpenseReport({ branchId: branchId || undefined, from, to, type: expenseType || undefined });
+      setExpenseReport(data);
+    } catch (error) {
+      setErrorMsg(error.message || "No se pudo actualizar el detalle de gastos.");
+    }
+  }
   async function loadProfessionalPaymentsOnly() {
     try {
       const data = await getProfessionalPaymentReport({ branchId: branchId || undefined, from, to, barberUserId: paymentBarberId || undefined, status: paymentStatus || undefined });
@@ -1018,6 +1026,10 @@ export default function OwnerReportsPage() {
     loadReports();
   }, [query, branchesLoading, branches]);
 
+  useEffect(() => {
+    if (!from || !to || branchesLoading) return;
+    loadExpenseReportOnly();
+  }, [expenseType]);
   useEffect(() => {
     if (!from || !to || branchesLoading) return;
     loadProfessionalPaymentsOnly();
