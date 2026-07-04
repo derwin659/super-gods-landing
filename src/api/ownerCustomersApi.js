@@ -376,6 +376,10 @@ export async function getOwnerCustomerLoyalty(customerId) {
             data.totalPoints ??
             data.accumulatedPoints
         ),
+        customerStatus: String(data.customerStatus ?? data.status ?? "NEW").toUpperCase(),
+        completedVisits: toNumber(data.completedVisits ?? data.visits),
+        noShows: toNumber(data.noShows),
+        lastVisit: data.lastVisit ? String(data.lastVisit) : null,
         raw: data,
       };
     }

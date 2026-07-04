@@ -428,6 +428,17 @@ function CutHistoryCard({ item }) {
   );
 }
 
+function customerStatusMeta(status) {
+  const code = String(status || "NEW").toUpperCase();
+  const values = {
+    VIP: { label: "VIP", className: "border-amber-300 bg-amber-100 text-amber-800" },
+    FREQUENT: { label: "Frecuente", className: "border-emerald-300 bg-emerald-100 text-emerald-800" },
+    INACTIVE: { label: "Inactivo", className: "border-red-300 bg-red-100 text-red-800" },
+    NEW: { label: "Nuevo", className: "border-blue-300 bg-blue-100 text-blue-800" },
+  };
+  return values[code] || values.NEW;
+}
+
 function CustomerDetailModal({
   customer,
   detail,
@@ -445,6 +456,7 @@ function CustomerDetailModal({
 
   const pointsAccumulated =
     loyalty?.puntosAcumulados ?? detail?.puntosAcumulados ?? customer?.puntosAcumulados ?? 0;
+  const statusMeta = customerStatusMeta(loyalty?.customerStatus);
 
   const totalSpent = history.reduce(
     (acc, item) => acc + Number(item.monto || 0),
@@ -500,6 +512,10 @@ function CustomerDetailModal({
                       {customer?.nombreCompleto}
                     </h3>
 
+                    <span className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusMeta.className}`}>
+                      {statusMeta.label}
+                    </span>
+
                     <div className="mt-2 text-sm font-bold text-white/65">
                       {customer?.telefono || 'Sin teléfono'}
                     </div>
@@ -517,6 +533,8 @@ function CustomerDetailModal({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <StatCard label="Puntos disponibles" value={pointsAvailable} tone="gold" />
                   <StatCard label="Puntos acumulados" value={pointsAccumulated} tone="green" />
+                  <StatCard label="Visitas completadas" value={loyalty?.completedVisits || 0} tone="default" />
+                  <StatCard label="No-show" value={loyalty?.noShows || 0} tone="default" />
                 </div>
 
                 <div className="mt-5 grid gap-3">
