@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { PremiumEmptyState, PremiumErrorState } from '../../components/PremiumUi';
+import { PremiumButton, PremiumEmptyState, PremiumErrorState } from '../../components/PremiumUi';
 import { Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -198,9 +198,9 @@ function ErrorBox({ message }) {
 }
 function EmptyCard({ onCreate }) {
   const action = (
-    <button type="button" onClick={onCreate} className="rounded-2xl bg-neutral-950 px-5 py-4 text-sm font-black text-white transition hover:-translate-y-0.5">
+    <PremiumButton type="button" onClick={onCreate}>
       Crear primera cita
-    </button>
+    </PremiumButton>
   );
   return <PremiumEmptyState title="No hay citas para esta fecha" message="Cuando existan reservas, clientes en cola o pagos iniciales por validar, aparecerán en este panel." action={action} />;
 }

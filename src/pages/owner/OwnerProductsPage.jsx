@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { PremiumEmptyState, PremiumErrorState } from '../../components/PremiumUi';
+import { PremiumEmptyState, PremiumErrorState, PremiumSelect } from '../../components/PremiumUi';
 import {
   adjustOwnerProductStock,
   createOwnerProduct,
@@ -112,17 +112,17 @@ function SelectField({ label, value, onChange, options }) {
   return (
     <label className="block">
       <span className="text-sm font-black text-neutral-700">{label}</span>
-      <select
+      <PremiumSelect
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition focus:border-amber-400"
+        className="mt-2 bg-neutral-50"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
-      </select>
+      </PremiumSelect>
     </label>
   );
 }
