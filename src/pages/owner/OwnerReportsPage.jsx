@@ -23,6 +23,7 @@ import {
   getDailySales,
   getExpenseReport,
   getProductReport,
+  getProfessionalPaymentReport,
   getPaymentSummary,
   getProfitabilityReport,
   getSalesReport,
@@ -79,6 +80,11 @@ function ExpenseTypePicker({ value, onChange }) {
       )}
     </div>
   );
+}
+function PremiumReportPicker({ value, onChange, options, label }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((option) => String(option.value) === String(value)) || options[0];
+  return <div className="relative z-20 min-w-[210px]"><button type="button" onClick={() => setOpen((current) => !current)} className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-3 py-2.5 text-left shadow-sm transition hover:border-amber-300"><span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-100 font-black text-amber-800">{selected.icon || "✦"}</span><span className="min-w-0 flex-1"><span className="block text-[10px] font-black uppercase tracking-wide text-neutral-400">{label}</span><span className="block truncate text-sm font-black text-neutral-900">{selected.label}</span></span><span className={`text-amber-800 transition ${open ? "rotate-180" : ""}`}>⌄</span></button>{open && <div className="absolute right-0 top-[calc(100%+8px)] max-h-72 w-full overflow-auto rounded-2xl border border-neutral-200 bg-white p-2 shadow-[0_20px_45px_rgba(15,23,42,0.18)]">{options.map((option) => <button key={String(option.value)} type="button" onClick={() => { onChange(option.value); setOpen(false); }} className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition ${String(option.value) === String(value) ? "bg-amber-50 text-amber-900" : "text-neutral-700 hover:bg-neutral-50"}`}><span className="flex-1">{option.label}</span>{String(option.value) === String(value) && <span className="font-black text-amber-600">✓</span>}</button>)}</div>}</div>;
 }
 function formatMoney(value) {
   return formatTenantMoney(value);
@@ -872,6 +878,9 @@ export default function OwnerReportsPage() {
   const [branchReports, setBranchReports] = useState([]);
   const [expenseReport, setExpenseReport] = useState(null);
   const [productReport, setProductReport] = useState(null);
+  const [professionalPaymentReport, setProfessionalPaymentReport] = useState(null);
+  const [paymentBarberId, setPaymentBarberId] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState("");
   const [expenseType, setExpenseType] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -891,7 +900,7 @@ export default function OwnerReportsPage() {
       to,
       type: expenseType || undefined,
     };
-  }, [branchId, from, to, expenseType]);
+  }, [branchId, from, to, expenseType, paymentBarberId, paymentStatus]);
 
   async function loadBranches() {
     setBranchesLoading(true);
@@ -952,6 +961,7 @@ export default function OwnerReportsPage() {
         branchReportsData,
         expenseData,
         productData,
+        professionalPaymentData,
       ] = await Promise.all([
         getProfitabilityReport(query),
         getSalesReport(query),
@@ -962,6 +972,7 @@ export default function OwnerReportsPage() {
         loadBranchReportsForRange(),
         getExpenseReport({ ...query, type: expenseType || undefined }),
         getProductReport(query),
+        getProfessionalPaymentReport({ ...query, barberUserId: paymentBarberId || undefined, status: paymentStatus || undefined }),
       ]);
 
       setProfitability(profitabilityData);
@@ -973,6 +984,7 @@ export default function OwnerReportsPage() {
       setBranchReports(Array.isArray(branchReportsData) ? branchReportsData : []);
       setExpenseReport(expenseData);
       setProductReport(productData);
+      setProfessionalPaymentReport(professionalPaymentData);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudieron cargar los reportes.');
       setProfitability(null);
@@ -1294,6 +1306,11 @@ export default function OwnerReportsPage() {
               {(expenseReport?.items || []).map((item) => <tr key={item.id}><td className="px-4 py-3 font-bold">{String(item.date || "").slice(0, 10)}</td><td className="px-4 py-3 font-black text-amber-700">{expenseTypeLabel(item.type)}</td><td className="px-4 py-3">{item.concept}</td><td className="px-4 py-3">{item.branchName}{item.professional ? ` · ${item.professional}` : ""}</td><td className="px-4 py-3 text-right font-black">{formatMoney(item.amount)}</td></tr>)}
               {(expenseReport?.items || []).length === 0 && <tr><td colSpan="5" className="px-4 py-8 text-center font-bold text-neutral-400">Sin gastos para estos filtros.</td></tr>}
             </tbody></table></div>
+          </section>
+          <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)] sm:rounded-[30px] sm:p-5">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between"><div><h3 className="text-xl font-black text-neutral-950">Pagos profesionales</h3><p className="mt-1 text-sm text-neutral-500">Liquidaciones, adelantos y saldos por profesional.</p></div><div className="flex flex-col gap-2 sm:flex-row"><PremiumReportPicker label="Profesional" value={paymentBarberId} onChange={setPaymentBarberId} options={[{ value: "", label: "Todos los profesionales", icon: "✦" }, ...barbers.map((barber) => ({ value: barber.barberId, label: barber.barberName, icon: "♙" }))]} /><PremiumReportPicker label="Estado" value={paymentStatus} onChange={setPaymentStatus} options={[{ value: "", label: "Todos los estados" }, { value: "PENDING", label: "Pendiente" }, { value: "PARTIAL", label: "Pago parcial" }, { value: "PAID", label: "Pagado" }, { value: "CANCELLED", label: "Cancelado" }]} /></div></div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-6"><StatCard label="Sueldos" value={formatMoney(professionalPaymentReport?.totalSalary)} /><StatCard label="Comisiones" value={formatMoney(professionalPaymentReport?.totalCommissions)} /><StatCard label="Propinas" value={formatMoney(professionalPaymentReport?.totalTips)} /><StatCard label="Adelantos" value={formatMoney(professionalPaymentReport?.totalAdvances)} tone="red" /><StatCard label="Pagado" value={formatMoney(professionalPaymentReport?.totalPaid)} tone="green" /><StatCard label="Pendiente" value={formatMoney(professionalPaymentReport?.totalPending)} tone="amber" /></div>
+            <div className="mt-5 max-h-[420px] overflow-auto rounded-2xl border border-neutral-200"><table className="w-full min-w-[960px] text-left text-sm"><thead className="sticky top-0 bg-neutral-50 text-xs font-black uppercase text-neutral-400"><tr><th className="px-4 py-3">Profesional</th><th className="px-4 py-3">Periodo</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Sueldo</th><th className="px-4 py-3 text-right">Comisión</th><th className="px-4 py-3 text-right">Propinas</th><th className="px-4 py-3 text-right">Adelantos</th><th className="px-4 py-3 text-right">Pagado</th><th className="px-4 py-3 text-right">Saldo</th></tr></thead><tbody className="divide-y divide-neutral-100">{(professionalPaymentReport?.items || []).map((item) => <tr key={item.paymentId}><td className="px-4 py-3"><p className="font-black">{item.barberName}</p><p className="text-xs text-neutral-400">{item.branchName}</p></td><td className="px-4 py-3 font-bold">{item.periodFrom} → {item.periodTo}</td><td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-black ${item.status === "PAID" ? "bg-emerald-100 text-emerald-800" : item.status === "CANCELLED" ? "bg-neutral-200 text-neutral-600" : "bg-amber-100 text-amber-800"}`}>{({ PAID: "Pagado", PENDING: "Pendiente", PARTIAL: "Parcial", CANCELLED: "Cancelado" })[item.status] || item.status}</span></td><td className="px-4 py-3 text-right font-bold">{formatMoney(item.salaryAmount)}</td><td className="px-4 py-3 text-right font-bold">{formatMoney(item.commissionAmount)}</td><td className="px-4 py-3 text-right font-bold">{formatMoney(item.tipsAmount)}</td><td className="px-4 py-3 text-right font-bold text-red-700">{formatMoney(item.advancesApplied)}</td><td className="px-4 py-3 text-right font-black text-emerald-700">{formatMoney(item.amountPaid)}</td><td className="px-4 py-3 text-right font-black text-amber-700">{formatMoney(item.remainingAmount)}</td></tr>)}{(professionalPaymentReport?.items || []).length === 0 && <tr><td colSpan="9" className="px-4 py-10 text-center font-bold text-neutral-400">No hay liquidaciones para estos filtros.</td></tr>}</tbody></table></div>
           </section>
           <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)] sm:rounded-[30px] sm:p-5">
             <div><h3 className="text-xl font-black text-neutral-950">Rendimiento de productos</h3><p className="mt-1 text-sm text-neutral-500">Unidades, ingresos y margen estimado por producto vendido.</p></div>

@@ -37,6 +37,9 @@ export async function getTopServices({ branchId, from, to }) {
   return apiRequest(`/api/owner/reports/services/top${buildQuery({ branchId, from, to })}`);
 }
 
+export async function getProfessionalPaymentReport({ branchId, barberUserId, status, from, to }) {
+  return apiRequest(`/api/owner/reports/professional-payments${buildQuery({ branchId, barberUserId, status, from, to })}`);
+}
 export async function getProductReport({ branchId, from, to }) {
   return apiRequest(`/api/owner/reports/products${buildQuery({ branchId, from, to })}`);
 }
