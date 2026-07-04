@@ -22,6 +22,7 @@ import {
   getBranchDetail,
   getDailySales,
   getExpenseReport,
+  getProductReport,
   getPaymentSummary,
   getProfitabilityReport,
   getSalesReport,
@@ -870,6 +871,7 @@ export default function OwnerReportsPage() {
   const [paymentSummary, setPaymentSummary] = useState(null);
   const [branchReports, setBranchReports] = useState([]);
   const [expenseReport, setExpenseReport] = useState(null);
+  const [productReport, setProductReport] = useState(null);
   const [expenseType, setExpenseType] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -949,6 +951,7 @@ export default function OwnerReportsPage() {
         paymentData,
         branchReportsData,
         expenseData,
+        productData,
       ] = await Promise.all([
         getProfitabilityReport(query),
         getSalesReport(query),
@@ -958,6 +961,7 @@ export default function OwnerReportsPage() {
         getPaymentSummary(query),
         loadBranchReportsForRange(),
         getExpenseReport({ ...query, type: expenseType || undefined }),
+        getProductReport(query),
       ]);
 
       setProfitability(profitabilityData);
@@ -968,6 +972,7 @@ export default function OwnerReportsPage() {
       setPaymentSummary(paymentData);
       setBranchReports(Array.isArray(branchReportsData) ? branchReportsData : []);
       setExpenseReport(expenseData);
+      setProductReport(productData);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudieron cargar los reportes.');
       setProfitability(null);
@@ -1288,6 +1293,14 @@ export default function OwnerReportsPage() {
             <div className="mt-5 max-h-[360px] overflow-auto rounded-2xl border border-neutral-200"><table className="w-full min-w-[760px] text-left text-sm"><thead className="sticky top-0 bg-neutral-50 text-xs font-black uppercase text-neutral-400"><tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Concepto</th><th className="px-4 py-3">Sede / profesional</th><th className="px-4 py-3 text-right">Monto</th></tr></thead><tbody className="divide-y divide-neutral-100">
               {(expenseReport?.items || []).map((item) => <tr key={item.id}><td className="px-4 py-3 font-bold">{String(item.date || "").slice(0, 10)}</td><td className="px-4 py-3 font-black text-amber-700">{expenseTypeLabel(item.type)}</td><td className="px-4 py-3">{item.concept}</td><td className="px-4 py-3">{item.branchName}{item.professional ? ` · ${item.professional}` : ""}</td><td className="px-4 py-3 text-right font-black">{formatMoney(item.amount)}</td></tr>)}
               {(expenseReport?.items || []).length === 0 && <tr><td colSpan="5" className="px-4 py-8 text-center font-bold text-neutral-400">Sin gastos para estos filtros.</td></tr>}
+            </tbody></table></div>
+          </section>
+          <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)] sm:rounded-[30px] sm:p-5">
+            <div><h3 className="text-xl font-black text-neutral-950">Rendimiento de productos</h3><p className="mt-1 text-sm text-neutral-500">Unidades, ingresos y margen estimado por producto vendido.</p></div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-4"><StatCard label="Productos vendidos" value={n(productReport?.productCount)} /><StatCard label="Unidades" value={n(productReport?.unitsSold)} /><StatCard label="Ingresos" value={formatMoney(productReport?.revenue)} tone="blue" /><StatCard label="Margen estimado" value={formatMoney(productReport?.estimatedMargin)} tone="green" /></div>
+            <div className="mt-5 max-h-[380px] overflow-auto rounded-2xl border border-neutral-200"><table className="w-full min-w-[780px] text-left text-sm"><thead className="sticky top-0 bg-neutral-50 text-xs font-black uppercase text-neutral-400"><tr><th className="px-4 py-3">Producto</th><th className="px-4 py-3">Categoría</th><th className="px-4 py-3 text-right">Unidades</th><th className="px-4 py-3 text-right">Ventas</th><th className="px-4 py-3 text-right">Ingresos</th><th className="px-4 py-3 text-right">Costo est.</th><th className="px-4 py-3 text-right">Margen est.</th></tr></thead><tbody className="divide-y divide-neutral-100">
+              {(productReport?.items || []).map((item, index) => <tr key={item.productId}><td className="px-4 py-3"><div className="flex items-center gap-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-100 font-black text-amber-800">{index + 1}</span><div><p className="font-black text-neutral-900">{item.productName}</p><p className="text-xs font-semibold text-neutral-400">{item.sku || "Sin SKU"}</p></div></div></td><td className="px-4 py-3 font-bold text-neutral-600">{item.category}</td><td className="px-4 py-3 text-right font-black">{n(item.unitsSold)}</td><td className="px-4 py-3 text-right font-bold">{n(item.salesCount)}</td><td className="px-4 py-3 text-right font-black text-blue-700">{formatMoney(item.revenue)}</td><td className="px-4 py-3 text-right font-bold text-neutral-500">{formatMoney(item.estimatedCost)}</td><td className={`px-4 py-3 text-right font-black ${n(item.estimatedMargin) >= 0 ? "text-emerald-700" : "text-red-700"}`}>{formatMoney(item.estimatedMargin)}</td></tr>)}
+              {(productReport?.items || []).length === 0 && <tr><td colSpan="7" className="px-4 py-10 text-center font-bold text-neutral-400">Aún no hay productos vendidos en este rango.</td></tr>}
             </tbody></table></div>
           </section>
           <section className="grid gap-5 xl:grid-cols-2">
