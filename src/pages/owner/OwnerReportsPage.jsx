@@ -46,6 +46,39 @@ function expenseTypeLabel(type) {
   return { EXPENSE: "Gasto operativo", ADVANCE_BARBER: "Adelanto profesional", PAYMENT_BARBER: "Pago profesional" }[String(type || "").toUpperCase()] || "Otro movimiento";
 }
 
+function ExpenseTypePicker({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const options = [
+    { value: "", label: "Todos los gastos", helper: "Vista completa", icon: "✦", tone: "bg-amber-100 text-amber-800" },
+    { value: "EXPENSE", label: "Gastos operativos", helper: "Compras y operación", icon: "▤", tone: "bg-rose-100 text-rose-700" },
+    { value: "ADVANCE_BARBER", label: "Adelantos", helper: "Anticipos a profesionales", icon: "↗", tone: "bg-orange-100 text-orange-700" },
+    { value: "PAYMENT_BARBER", label: "Pagos profesionales", helper: "Liquidaciones realizadas", icon: "$", tone: "bg-blue-100 text-blue-700" },
+  ];
+  const selected = options.find((option) => option.value === value) || options[0];
+
+  return (
+    <div className="relative z-20 w-full md:w-[270px]">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white px-3 py-2.5 text-left shadow-sm transition hover:border-amber-300 hover:shadow-md"
+      >
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg font-black ${selected.tone}`}>{selected.icon}</span>
+        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-black text-neutral-900">{selected.label}</span><span className="block truncate text-xs font-semibold text-neutral-500">{selected.helper}</span></span>
+        <span className={`text-lg text-amber-800 transition-transform ${open ? "rotate-180" : ""}`}>⌄</span>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-[calc(100%+8px)] w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white p-2 shadow-[0_20px_45px_rgba(15,23,42,0.18)]">
+          {options.map((option) => {
+            const active = option.value === value;
+            return <button key={option.value || "all"} type="button" onClick={() => { onChange(option.value); setOpen(false); }} className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition ${active ? "bg-amber-50" : "hover:bg-neutral-50"}`}><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl font-black ${option.tone}`}>{option.icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-black text-neutral-900">{option.label}</span><span className="block text-xs font-semibold text-neutral-500">{option.helper}</span></span>{active && <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-500 text-xs font-black text-white">✓</span>}</button>;
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 function formatMoney(value) {
   return formatTenantMoney(value);
 }
@@ -1250,7 +1283,7 @@ export default function OwnerReportsPage() {
 
           <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)] sm:rounded-[30px] sm:p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><h3 className="text-xl font-black text-neutral-950">Gastos detallados</h3><p className="mt-1 text-sm text-neutral-500">Operación, adelantos y pagos profesionales del rango.</p></div>
-              <select value={expenseType} onChange={(event) => setExpenseType(event.target.value)} className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-black"><option value="">Todos</option><option value="EXPENSE">Operativos</option><option value="ADVANCE_BARBER">Adelantos</option><option value="PAYMENT_BARBER">Pagos profesionales</option></select></div>
+              <ExpenseTypePicker value={expenseType} onChange={setExpenseType} /></div>
             <div className="mt-4 grid gap-3 sm:grid-cols-4"><StatCard label="Total" value={formatMoney(expenseReport?.total)} tone="red" /><StatCard label="Movimientos" value={n(expenseReport?.count)} /><StatCard label="Operativos" value={formatMoney(expenseReport?.totalsByType?.EXPENSE)} /><StatCard label="Pagos + adelantos" value={formatMoney(n(expenseReport?.totalsByType?.ADVANCE_BARBER) + n(expenseReport?.totalsByType?.PAYMENT_BARBER))} /></div>
             <div className="mt-5 max-h-[360px] overflow-auto rounded-2xl border border-neutral-200"><table className="w-full min-w-[760px] text-left text-sm"><thead className="sticky top-0 bg-neutral-50 text-xs font-black uppercase text-neutral-400"><tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Concepto</th><th className="px-4 py-3">Sede / profesional</th><th className="px-4 py-3 text-right">Monto</th></tr></thead><tbody className="divide-y divide-neutral-100">
               {(expenseReport?.items || []).map((item) => <tr key={item.id}><td className="px-4 py-3 font-bold">{String(item.date || "").slice(0, 10)}</td><td className="px-4 py-3 font-black text-amber-700">{expenseTypeLabel(item.type)}</td><td className="px-4 py-3">{item.concept}</td><td className="px-4 py-3">{item.branchName}{item.professional ? ` · ${item.professional}` : ""}</td><td className="px-4 py-3 text-right font-black">{formatMoney(item.amount)}</td></tr>)}
