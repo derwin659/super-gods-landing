@@ -900,7 +900,7 @@ export default function OwnerReportsPage() {
       to,
       type: expenseType || undefined,
     };
-  }, [branchId, from, to, expenseType, paymentBarberId, paymentStatus]);
+  }, [branchId, from, to, expenseType]);
 
   async function loadBranches() {
     setBranchesLoading(true);
@@ -1000,6 +1000,14 @@ export default function OwnerReportsPage() {
     }
   }
 
+  async function loadProfessionalPaymentsOnly() {
+    try {
+      const data = await getProfessionalPaymentReport({ branchId: branchId || undefined, from, to, barberUserId: paymentBarberId || undefined, status: paymentStatus || undefined });
+      setProfessionalPaymentReport(data);
+    } catch (error) {
+      setErrorMsg(error.message || "No se pudo actualizar pagos profesionales.");
+    }
+  }
   useEffect(() => {
     loadBranches();
   }, []);
@@ -1010,6 +1018,10 @@ export default function OwnerReportsPage() {
     loadReports();
   }, [query, branchesLoading, branches]);
 
+  useEffect(() => {
+    if (!from || !to || branchesLoading) return;
+    loadProfessionalPaymentsOnly();
+  }, [paymentBarberId, paymentStatus]);
   const totalBarberSales = useMemo(() => {
     return barbers.reduce((sum, item) => sum + n(item.totalSales), 0);
   }, [barbers]);
