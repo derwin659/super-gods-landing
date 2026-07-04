@@ -37,6 +37,10 @@ export async function getTopServices({ branchId, from, to }) {
   return apiRequest(`/api/owner/reports/services/top${buildQuery({ branchId, from, to })}`);
 }
 
+export async function getExpenseReport({ branchId, from, to, type }) {
+  return apiRequest(`/api/owner/reports/expenses${buildQuery({ branchId, from, to, type })}`);
+}
+
 export async function getPaymentSummary({ branchId, from, to }) {
   return apiRequest(`/api/owner/reports/payments/summary${buildQuery({ branchId, from, to })}`);
 }

@@ -21,6 +21,7 @@ import {
   getBarberSummary,
   getBranchDetail,
   getDailySales,
+  getExpenseReport,
   getPaymentSummary,
   getProfitabilityReport,
   getSalesReport,
@@ -831,6 +832,8 @@ export default function OwnerReportsPage() {
   const [topServices, setTopServices] = useState([]);
   const [paymentSummary, setPaymentSummary] = useState(null);
   const [branchReports, setBranchReports] = useState([]);
+  const [expenseReport, setExpenseReport] = useState(null);
+  const [expenseType, setExpenseType] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [branchesLoading, setBranchesLoading] = useState(true);
@@ -847,8 +850,9 @@ export default function OwnerReportsPage() {
       branchId: branchId || undefined,
       from,
       to,
+      type: expenseType || undefined,
     };
-  }, [branchId, from, to]);
+  }, [branchId, from, to, expenseType]);
 
   async function loadBranches() {
     setBranchesLoading(true);
@@ -907,6 +911,7 @@ export default function OwnerReportsPage() {
         servicesData,
         paymentData,
         branchReportsData,
+        expenseData,
       ] = await Promise.all([
         getProfitabilityReport(query),
         getSalesReport(query),
@@ -915,6 +920,7 @@ export default function OwnerReportsPage() {
         getTopServices(query),
         getPaymentSummary(query),
         loadBranchReportsForRange(),
+        getExpenseReport({ ...query, type: expenseType || undefined }),
       ]);
 
       setProfitability(profitabilityData);
@@ -924,6 +930,7 @@ export default function OwnerReportsPage() {
       setTopServices(Array.isArray(servicesData) ? servicesData : []);
       setPaymentSummary(paymentData);
       setBranchReports(Array.isArray(branchReportsData) ? branchReportsData : []);
+      setExpenseReport(expenseData);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudieron cargar los reportes.');
       setProfitability(null);
@@ -933,6 +940,7 @@ export default function OwnerReportsPage() {
       setTopServices([]);
       setPaymentSummary(null);
       setBranchReports([]);
+      setExpenseReport(null);
     } finally {
       setLoading(false);
     }
@@ -1236,6 +1244,15 @@ export default function OwnerReportsPage() {
             onOpenDetail={setSelectedBranchReport}
           />
 
+          <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)] sm:rounded-[30px] sm:p-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><h3 className="text-xl font-black text-neutral-950">Gastos detallados</h3><p className="mt-1 text-sm text-neutral-500">Operación, adelantos y pagos profesionales del rango.</p></div>
+              <select value={expenseType} onChange={(event) => setExpenseType(event.target.value)} className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-black"><option value="">Todos</option><option value="EXPENSE">Operativos</option><option value="ADVANCE_BARBER">Adelantos</option><option value="PAYMENT_BARBER">Pagos profesionales</option></select></div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-4"><StatCard label="Total" value={formatMoney(expenseReport?.total)} tone="red" /><StatCard label="Movimientos" value={n(expenseReport?.count)} /><StatCard label="Operativos" value={formatMoney(expenseReport?.totalsByType?.EXPENSE)} /><StatCard label="Pagos + adelantos" value={formatMoney(n(expenseReport?.totalsByType?.ADVANCE_BARBER) + n(expenseReport?.totalsByType?.PAYMENT_BARBER))} /></div>
+            <div className="mt-5 max-h-[360px] overflow-auto rounded-2xl border border-neutral-200"><table className="w-full min-w-[760px] text-left text-sm"><thead className="sticky top-0 bg-neutral-50 text-xs font-black uppercase text-neutral-400"><tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Concepto</th><th className="px-4 py-3">Sede / profesional</th><th className="px-4 py-3 text-right">Monto</th></tr></thead><tbody className="divide-y divide-neutral-100">
+              {(expenseReport?.items || []).map((item) => <tr key={item.id}><td className="px-4 py-3 font-bold">{String(item.date || "").slice(0, 10)}</td><td className="px-4 py-3 font-black text-amber-700">{item.type}</td><td className="px-4 py-3">{item.concept}</td><td className="px-4 py-3">{item.branchName}{item.professional ? ` · ${item.professional}` : ""}</td><td className="px-4 py-3 text-right font-black">{formatMoney(item.amount)}</td></tr>)}
+              {(expenseReport?.items || []).length === 0 && <tr><td colSpan="5" className="px-4 py-8 text-center font-bold text-neutral-400">Sin gastos para estos filtros.</td></tr>}
+            </tbody></table></div>
+          </section>
           <section className="grid gap-5 xl:grid-cols-2">
             <ChartCard
               title="Ventas por día"
