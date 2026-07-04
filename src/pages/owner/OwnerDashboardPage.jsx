@@ -1064,6 +1064,14 @@ export default function OwnerDashboardPage() {
                 />
 
                 <QuickActionLink
+                  icon={CreditCard}
+                  title="Pagar profesionales"
+                  label="Pagos"
+                  to="/owner/caja"
+                  text="Abre la caja y gestiona pagos, adelantos y saldos del equipo."
+                />
+
+                <QuickActionLink
                   icon={ChartNoAxesCombined}
                   title="Analizar reportes"
                   label="Reportes"
