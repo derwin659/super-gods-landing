@@ -10,6 +10,7 @@ import {
   getAgendaBarbers,
   getAgendaServices,
   getAppointmentAvailability,
+  getReassignmentSuggestions,
   getOwnerAgenda,
   getOwnerBranchesForAgenda,
   searchAgendaCustomers,
@@ -669,6 +670,8 @@ function AppointmentFormModal({
   const [serviceIdsByBarber, setServiceIdsByBarber] = useState({});
   const [customers, setCustomers] = useState([]);
   const [slots, setSlots] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const [customerSearch, setCustomerSearch] = useState(
     appointment?.cliente || ''
@@ -808,6 +811,24 @@ function AppointmentFormModal({
     }
   }
 
+  async function loadSuggestions(slot) {
+    setLoadingSuggestions(true);
+    setSuggestions([]);
+    try {
+      const data = await getReassignmentSuggestions({
+        branchId: branch.id,
+        serviceId: Number(serviceId),
+        fecha,
+        horaInicio: slot.hora,
+        horaFin: slot.horaFin,
+      });
+      setSuggestions(data);
+    } catch (error) {
+      setErrorMsg(error.message || "No se pudieron buscar alternativas.");
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }
   useEffect(() => {
     loadCatalogs();
   }, []);
@@ -1230,8 +1251,7 @@ function AppointmentFormModal({
                         <button
                           key={`${slot.hora}-${slot.horaFin}`}
                           type="button"
-                          disabled={!slot.available}
-                          onClick={() => setSelectedSlot(slot)}
+                          onClick={() => slot.available ? setSelectedSlot(slot) : loadSuggestions(slot)}
                           className={`rounded-2xl border px-3 py-3 text-left transition ${
                             selected
                               ? 'border-neutral-950 bg-neutral-950 text-white'
@@ -1254,6 +1274,19 @@ function AppointmentFormModal({
                   </div>
                 )}
               </div>
+              {(loadingSuggestions || suggestions.length > 0) && (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="text-sm font-black text-amber-900">Alternativas inteligentes</div>
+                  <div className="mt-3 grid gap-2">
+                    {loadingSuggestions ? <div className="text-sm font-bold text-amber-700">Buscando disponibilidad...</div> : suggestions.map((item) => (
+                      <button key={`${item.branchId}-${item.barberUserId}`} type="button" onClick={() => { if (item.sameBranch) { setBarberUserId(String(item.barberUserId)); setSelectedSlot({ hora: item.horaInicio, horaFin: item.horaFin, available: true }); setSuggestions([]); } }} className="rounded-xl border border-amber-200 bg-white px-4 py-3 text-left text-sm font-bold text-neutral-700">
+                        <span className="font-black text-neutral-950">{item.barberName}</span> · {item.branchName} · {item.appointmentsThatDay} citas ese día
+                        {!item.sameBranch && <span className="ml-2 text-xs text-amber-700">Cambia a esta sede para usarlo</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="rounded-[26px] border border-neutral-200 bg-white p-5">
@@ -1358,6 +1391,15 @@ export default function OwnerAgendaPage() {
   const [branches, setBranches] = useState([]);
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [selectedDate, setSelectedDate] = useState(toDateInputValue(new Date()));
+  const weekDates = useMemo(() => {
+    const base = new Date(`${selectedDate}T12:00:00`);
+    const mondayOffset = (base.getDay() + 6) % 7;
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(base);
+      date.setDate(base.getDate() - mondayOffset + index);
+      return { value: toDateInputValue(date), day: date.toLocaleDateString("es-PE", { weekday: "short" }), number: date.getDate() };
+    });
+  }, [selectedDate]);
 
   const [items, setItems] = useState([]);
   const [productOrders, setProductOrders] = useState([]);
@@ -1679,6 +1721,20 @@ export default function OwnerAgendaPage() {
               Nueva cita
             </button>
           </div>
+        </div>
+      </section>
+
+      <section className="premium-enter rounded-[30px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)]">
+        <div className="mb-3 flex items-center justify-between">
+          <div><div className="text-xs font-black uppercase tracking-[0.18em] text-amber-600">Calendario semanal</div><div className="mt-1 text-sm font-bold text-neutral-500">Selecciona un día para revisar la agenda</div></div>
+          <button type="button" onClick={() => setSelectedDate(toDateInputValue(new Date()))} className="rounded-xl border border-neutral-200 px-3 py-2 text-xs font-black">Hoy</button>
+        </div>
+        <div className="grid grid-cols-7 gap-2">
+          {weekDates.map((date) => { const active = date.value === selectedDate; return (
+            <button key={date.value} type="button" onClick={() => setSelectedDate(date.value)} className={`rounded-2xl border px-2 py-3 text-center transition ${active ? "border-neutral-950 bg-neutral-950 text-white" : "border-neutral-200 bg-neutral-50 text-neutral-700 hover:bg-amber-50"}`}>
+              <div className="text-[10px] font-black uppercase">{date.day}</div><div className="mt-1 text-lg font-black">{date.number}</div>
+            </button>
+          ); })}
         </div>
       </section>
 

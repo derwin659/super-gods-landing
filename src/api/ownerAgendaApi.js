@@ -433,6 +433,22 @@ export async function getAppointmentAvailability({
   };
 }
 
+export async function getReassignmentSuggestions({ branchId, serviceId, fecha, horaInicio, horaFin }) {
+  const data = await apiRequest(
+    `/api/owner/agenda/reassignment-suggestions${toQuery({ branchId, serviceId, fecha, horaInicio, horaFin })}`
+  );
+  return (Array.isArray(data) ? data : []).map((item) => ({
+    branchId: toNumber(item.branchId),
+    branchName: String(item.branchName || "Sede"),
+    barberUserId: toNumber(item.barberUserId),
+    barberName: String(item.barberName || "Profesional"),
+    sameBranch: item.sameBranch === true,
+    appointmentsThatDay: toNumber(item.appointmentsThatDay),
+    horaInicio: String(item.horaInicio || horaInicio),
+    horaFin: String(item.horaFin || horaFin),
+  }));
+}
+
 function appointmentPayload({
   customerId,
   serviceId,
