@@ -118,6 +118,7 @@ export const ADMIN_PERMISSION_GROUPS = [
       ['Cerrar caja', 'CASH_CLOSE'],
       ['Eliminar ventas', 'CASH_DELETE_SALES'],
       ['Eliminar pagos y movimientos', 'CASH_DELETE_MOVEMENTS'],
+      ['Editar ventas de cajas pasadas', 'CASH_EDIT_PAST_SALES'],
     ],
   },
   {
