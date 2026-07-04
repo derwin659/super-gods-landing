@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { PremiumEmptyState, PremiumErrorState } from '../../components/PremiumUi';
 import { Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -193,37 +194,16 @@ function StatBox({ label, value, tone = 'default' }) {
 }
 
 function ErrorBox({ message }) {
-  return (
-    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
-      {message}
-    </div>
-  );
+  return <PremiumErrorState message={message} />;
 }
-
 function EmptyCard({ onCreate }) {
-  return (
-    <div className="rounded-[30px] border border-dashed border-neutral-300 bg-white/70 p-10 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100 text-2xl">
-        📅
-      </div>
-      <div className="mt-4 text-xl font-black text-neutral-950">
-        No hay citas para esta fecha
-      </div>
-      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-neutral-500">
-        Cuando existan reservas, clientes en cola o pagos iniciales por validar,
-        aparecerán en este panel.
-      </p>
-      <button
-        type="button"
-        onClick={onCreate}
-        className="mt-5 rounded-2xl bg-neutral-950 px-5 py-4 text-sm font-black text-white transition hover:scale-[1.01]"
-      >
-        Crear primera cita
-      </button>
-    </div>
+  const action = (
+    <button type="button" onClick={onCreate} className="rounded-2xl bg-neutral-950 px-5 py-4 text-sm font-black text-white transition hover:-translate-y-0.5">
+      Crear primera cita
+    </button>
   );
+  return <PremiumEmptyState title="No hay citas para esta fecha" message="Cuando existan reservas, clientes en cola o pagos iniciales por validar, aparecerán en este panel." action={action} />;
 }
-
 function ProductOrdersBanner({ orders = [], onOpenCash }) {
   if (!orders.length) return null;
 

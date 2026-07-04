@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { PremiumEmptyState, PremiumErrorState } from '../../components/PremiumUi';
 import {
   Bar,
   BarChart,
@@ -178,15 +179,8 @@ function getBranchDisplayName(branch) {
 }
 
 function ErrorBox({ message }) {
-  if (!message) return null;
-
-  return (
-    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700">
-      {message}
-    </div>
-  );
+  return <PremiumErrorState message={message} />;
 }
-
 function LoadingBox() {
   return (
     <div className="rounded-[30px] border border-neutral-200 bg-white p-8 shadow-sm">

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { PremiumEmptyState, PremiumErrorState } from '../../components/PremiumUi';
 import {
   approveCashMovement,
   approveSalePayment,
@@ -844,19 +845,8 @@ function itemSubtotal(item) {
 }
 
 function EmptyCard({ title, text, action }) {
-    return (
-      <div className="rounded-[30px] border border-dashed border-neutral-300 bg-white/70 p-8 text-center">
-        <div className="text-xl font-black text-neutral-950">{title}</div>
-        <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-neutral-500">
-          {text}
-        </p>
-  
-        {action && <div className="mt-5">{action}</div>}
-      </div>
-    );
-  }
-
-
+  return <PremiumEmptyState title={title} message={text} action={action} />;
+}
 function CashNegativeAlert({ expected, cashSalesTotal, expense }) {
     if (Number(expected || 0) >= 0) return null;
   
@@ -4500,14 +4490,8 @@ function SelectField({ label, value, onChange, options }) {
 }
 
 function ErrorBox({ message }) {
-  return (
-    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
-      {message}
-    </div>
-  );
+  return <PremiumErrorState message={message} />;
 }
-
-
 function cashStatusLabel(status) {
   const code = String(status || '').toUpperCase();
 

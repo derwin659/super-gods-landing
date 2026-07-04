@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { PremiumEmptyState, PremiumErrorState } from '../../components/PremiumUi';
 import {
   adjustOwnerProductStock,
   createOwnerProduct,
@@ -39,15 +40,8 @@ function toDateInputValue(date = new Date()) {
 }
 
 function ErrorBox({ message }) {
-  if (!message) return null;
-
-  return (
-    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700">
-      {message}
-    </div>
-  );
+  return <PremiumErrorState message={message} />;
 }
-
 function ModalShell({ title, subtitle, children, onClose, maxWidth = 'max-w-4xl' }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/60 px-4 py-8 backdrop-blur-sm">
