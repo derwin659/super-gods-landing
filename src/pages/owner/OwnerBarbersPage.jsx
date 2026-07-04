@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { PremiumErrorState } from '../../components/PremiumUi';
+import { PremiumErrorState, premiumConfirm } from '../../components/PremiumUi';
 import {
   createOwnerBarber,
   deleteOwnerBarberPhoto,
@@ -1285,7 +1285,7 @@ export default function OwnerBarbersPage() {
   async function handleDeletePhoto(barber) {
     if (!barber?.photoUrl) return;
 
-    const ok = window.confirm(`¿Quieres quitar la foto de ${fullName(barber)}?`);
+    const ok = await premiumConfirm(`¿Quieres quitar la foto de ${fullName(barber)}?`);
     if (!ok) return;
 
     setErrorMsg('');

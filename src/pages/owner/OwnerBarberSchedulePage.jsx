@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { PremiumErrorState } from '../../components/PremiumUi';
+import { PremiumErrorState, premiumConfirm } from '../../components/PremiumUi';
 
 import { getOwnerBranches } from '../../api/ownerBranchesApi';
 import { getOwnerBarbers } from '../../api/ownerBarbersApi';
@@ -407,7 +407,7 @@ export default function OwnerBarberSchedulePage() {
   }
 
   async function handleDeleteBlock(blockId) {
-    const ok = window.confirm('¿Quieres eliminar este bloqueo?');
+    const ok = await premiumConfirm('¿Quieres eliminar este bloqueo?');
     if (!ok) return;
 
     setErrorMsg('');

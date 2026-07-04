@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { premiumConfirm } from '../../components/PremiumUi';
 import {
   ADMIN_PERMISSION_GROUPS,
   CONFIG_CHILD_PERMISSIONS,
@@ -715,7 +716,7 @@ export default function OwnerAdminsPage() {
 
   async function handleToggleStatus(admin) {
     const newStatus = !admin.activo;
-    const ok = window.confirm(
+    const ok = await premiumConfirm(
       newStatus
         ? `¿Deseas activar el acceso de ${admin.fullName}?`
         : `¿Deseas desactivar el acceso de ${admin.fullName}?`
@@ -740,7 +741,7 @@ export default function OwnerAdminsPage() {
       return;
     }
 
-    const ok = window.confirm(
+    const ok = await premiumConfirm(
       `¿Deseas quitar el acceso de administrador a ${admin.fullName} y dejarlo como barbero?`
     );
 

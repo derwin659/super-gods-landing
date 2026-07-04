@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { premiumConfirm } from '../../components/PremiumUi';
 
 import { getOwnerBranches } from '../../api/ownerBranchesApi';
 import {
@@ -319,7 +320,7 @@ function PromotionFormModal({ promotion, branches, onClose, onSaved }) {
     }
 
     const sendNotification = !isEdit
-      ? window.confirm(
+      ? await premiumConfirm(
           '¿Quieres enviar una notificación a tus clientes sobre esta nueva promoción?'
         )
       : false;
@@ -910,7 +911,7 @@ export default function OwnerPromotionsPage() {
   }
 
   async function handleDelete(promotion) {
-    const ok = window.confirm(`¿Seguro que deseas eliminar "${promotion.titulo}"?`);
+    const ok = await premiumConfirm(`¿Seguro que deseas eliminar "${promotion.titulo}"?`);
     if (!ok) return;
 
     setErrorMsg('');

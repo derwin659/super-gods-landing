@@ -1,4 +1,5 @@
-import { AlertTriangle, Sparkles } from 'lucide-react';
+import { AlertTriangle, Sparkles, X } from 'lucide-react';
+import { createRoot } from 'react-dom/client';
 
 export function humanizeError(error) {
   const raw = String(error?.message || error || '').replace(/^Error:\s*/i, '').trim();
@@ -62,4 +63,54 @@ export function PremiumField({ className = '', ...props }) {
 
 export function PremiumSelect({ className = '', children, ...props }) {
   return <select className={`${premiumFieldClass} appearance-none ${className}`} {...props}>{children}</select>;
+}
+export function PremiumModalShell({ title, subtitle, children, onClose, maxWidth = 'max-w-4xl' }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/60 px-4 py-8 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="premium-modal-title">
+      <div className={`premium-enter max-h-[92vh] w-full ${maxWidth} overflow-auto rounded-[34px] border border-white/10 bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.35)]`}>
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            {subtitle && <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">{subtitle}</div>}
+            <h2 id="premium-modal-title" className="mt-1 text-2xl font-black text-neutral-950">{title}</h2>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3 text-neutral-700 transition hover:bg-neutral-100"><X size={18} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function PremiumConfirmDialog({ message, title, confirmLabel, destructive, resolve }) {
+  return (
+    <PremiumModalShell title={title} subtitle="Confirmación segura" onClose={() => resolve(false)} maxWidth="max-w-lg">
+      <p className="text-sm font-semibold leading-7 text-neutral-600">{message}</p>
+      <div className="mt-6 flex justify-end gap-3">
+        <PremiumButton type="button" tone="secondary" onClick={() => resolve(false)}>Cancelar</PremiumButton>
+        <PremiumButton type="button" tone={destructive ? 'danger' : 'dark'} onClick={() => resolve(true)}>{confirmLabel}</PremiumButton>
+      </div>
+    </PremiumModalShell>
+  );
+}
+
+export function premiumConfirm(message, options = {}) {
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const root = createRoot(host);
+  return new Promise((finish) => {
+    const resolve = (value) => {
+      root.unmount();
+      host.remove();
+      finish(value);
+    };
+    root.render(
+      <PremiumConfirmDialog
+        message={message}
+        title={options.title || 'Confirmar acción'}
+        confirmLabel={options.confirmLabel || 'Confirmar'}
+        destructive={options.destructive !== false}
+        resolve={resolve}
+      />,
+    );
+  });
 }

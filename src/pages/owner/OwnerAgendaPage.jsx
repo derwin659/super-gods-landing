@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { PremiumButton, PremiumEmptyState, PremiumErrorState } from '../../components/PremiumUi';
+import { PremiumButton, PremiumEmptyState, PremiumErrorState, premiumConfirm } from '../../components/PremiumUi';
 import { Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -1443,7 +1443,7 @@ export default function OwnerAgendaPage() {
   }
 
   async function handleValidateDeposit(item, approved) {
-    const ok = window.confirm(
+    const ok = await premiumConfirm(
       approved
         ? `¿Confirmas que validaste el pago inicial de ${item.cliente}?`
         : `¿Deseas rechazar el pago inicial de ${item.cliente}?`
@@ -1517,7 +1517,7 @@ export default function OwnerAgendaPage() {
   }
 
   async function handleCancelAppointment(item) {
-    const ok = window.confirm(
+    const ok = await premiumConfirm(
       `¿Seguro que deseas cancelar la cita de ${item.cliente}?`
     );
 

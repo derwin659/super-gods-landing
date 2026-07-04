@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { PremiumEmptyState, PremiumErrorState } from '../../components/PremiumUi';
+import { PremiumEmptyState, PremiumErrorState, premiumConfirm } from '../../components/PremiumUi';
 import {
   approveCashMovement,
   approveSalePayment,
@@ -289,7 +289,7 @@ function normalizeWhatsappPhone(value) {
   return digits;
 }
 
-function offerCustomerWhatsappFollowUp(sale, { canOpenWhatsapp = false } = {}) {
+async function offerCustomerWhatsappFollowUp(sale, { canOpenWhatsapp = false } = {}) {
   if (!canOpenWhatsapp) return;
 
   const url = customerWhatsappUrlOf(sale);
@@ -303,7 +303,7 @@ function offerCustomerWhatsappFollowUp(sale, { canOpenWhatsapp = false } = {}) {
   ).trim();
   const message = customerWhatsappMessageOf(sale);
   const preview = message ? `\n\nMensaje:\n${message}` : '';
-  const shouldOpen = window.confirm(
+  const shouldOpen = await premiumConfirm(
     `Venta registrada. ¿Enviar WhatsApp a ${customer}?${preview}`
   );
 
@@ -4739,7 +4739,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
       setErrorMsg('El motivo de auditoria es obligatorio para eliminar una venta.');
       return;
     }
-    if (!window.confirm('Eliminar la venta #' + saleId + '? Esta accion no se puede deshacer.')) return;
+    if (!await premiumConfirm('Eliminar la venta #' + saleId + '? Esta accion no se puede deshacer.')) return;
 
     setDeletingSaleId(saleId);
     setErrorMsg('');
@@ -4764,7 +4764,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
       setErrorMsg('El motivo de auditoria es obligatorio para eliminar un movimiento.');
       return;
     }
-    if (!window.confirm('Eliminar el movimiento #' + movementId + '? Esta accion no se puede deshacer.')) return;
+    if (!await premiumConfirm('Eliminar el movimiento #' + movementId + '? Esta accion no se puede deshacer.')) return;
 
     setDeletingMovementId(movementId);
     setErrorMsg('');
@@ -5707,7 +5707,7 @@ export default function OwnerCashPage() {
       setErrorMsg('El motivo de auditoria es obligatorio para eliminar una venta.');
       return;
     }
-    const ok = window.confirm('¿Seguro que deseas eliminar esta venta? Esta acción no se puede deshacer.');
+    const ok = await premiumConfirm('¿Seguro que deseas eliminar esta venta? Esta acción no se puede deshacer.');
     if (!ok) return;
 
     setErrorMsg('');
@@ -5734,7 +5734,7 @@ export default function OwnerCashPage() {
       setErrorMsg('El motivo de auditoria es obligatorio para eliminar un movimiento.');
       return;
     }
-    const ok = window.confirm('¿Seguro que deseas eliminar este movimiento? Esta acción no se puede deshacer.');
+    const ok = await premiumConfirm('¿Seguro que deseas eliminar este movimiento? Esta acción no se puede deshacer.');
     if (!ok) return;
 
     setErrorMsg('');
@@ -5755,7 +5755,7 @@ export default function OwnerCashPage() {
   async function handleApproveMovement(movement) {
     if (!selectedBranch || !movement?.id) return;
 
-    const ok = window.confirm(
+    const ok = await premiumConfirm(
       `¿Aprobar el movimiento "${movement.concept || 'Movimiento'}" por ${formatMoney(movement.amount)}?`
     );
     if (!ok) return;
@@ -5781,7 +5781,7 @@ export default function OwnerCashPage() {
   async function handleRejectMovement(movement) {
     if (!selectedBranch || !movement?.id) return;
 
-    const ok = window.confirm(
+    const ok = await premiumConfirm(
       `¿Rechazar el movimiento "${movement.concept || 'Movimiento'}" por ${formatMoney(movement.amount)}?`
     );
     if (!ok) return;
@@ -5810,7 +5810,7 @@ export default function OwnerCashPage() {
     const saleId = saleIdOf(sale);
     if (!saleId) return;
 
-    const ok = window.confirm(
+    const ok = await premiumConfirm(
       `Aprobar la venta #${saleId} por ${formatMoney(sale.total)}?`
     );
     if (!ok) return;
@@ -5923,7 +5923,7 @@ export default function OwnerCashPage() {
       return;
     }
 
-    const ok = window.confirm(
+    const ok = await premiumConfirm(
       `Entregar ${order.quantity} x ${order.productName} por ${formatMoney(order.total)}?`
     );
     if (!ok) return;

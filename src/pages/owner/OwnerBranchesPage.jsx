@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { premiumConfirm } from '../../components/PremiumUi';
 import {
   createOwnerBranch,
   deleteOwnerBranchImage,
@@ -546,7 +547,7 @@ export default function OwnerBranchesPage() {
   async function handleDeleteImage(branch) {
     if (!branch?.imageUrl) return;
 
-    const ok = window.confirm(`¿Quieres quitar la imagen de ${branchName(branch)}?`);
+    const ok = await premiumConfirm(`¿Quieres quitar la imagen de ${branchName(branch)}?`);
     if (!ok) return;
 
     setErrorMsg('');

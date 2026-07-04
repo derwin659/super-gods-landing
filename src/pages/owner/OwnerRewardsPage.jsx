@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { premiumConfirm } from '../../components/PremiumUi';
 import {
   createOwnerReward,
   deleteOwnerReward,
@@ -185,7 +186,7 @@ function RewardFormModal({ reward, onClose, onSaved }) {
     }
 
     const sendNotification = !isEdit
-      ? window.confirm(
+      ? await premiumConfirm(
           '¿Quieres enviar una notificación a tus clientes sobre este nuevo premio?'
         )
       : false;
@@ -560,7 +561,7 @@ export default function OwnerRewardsPage() {
   }
 
   async function handleDelete(reward) {
-    const ok = window.confirm(`¿Seguro que deseas eliminar "${reward.titulo}"?`);
+    const ok = await premiumConfirm(`¿Seguro que deseas eliminar "${reward.titulo}"?`);
     if (!ok) return;
 
     setErrorMsg('');
