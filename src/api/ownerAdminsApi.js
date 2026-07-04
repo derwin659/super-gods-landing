@@ -104,6 +104,7 @@ export const ADMIN_PERMISSION_GROUPS = [
       ['Métodos de pago', 'CONFIG_PAYMENT_METHODS'],
       ['Recompensas', 'CONFIG_REWARDS'],
       ['Promociones', 'CONFIG_PROMOTIONS'],
+      ['Configurar horarios', 'CONFIG_SCHEDULES'],
     ],
   },
   {
@@ -111,9 +112,12 @@ export const ADMIN_PERMISSION_GROUPS = [
     subtitle: 'Define si puede operar caja y registrar movimientos.',
     permissions: [
       ['Ver / operar caja', 'CASH_ACCESS'],
+      ['Abrir caja', 'CASH_OPEN'],
       ['Registrar ingresos', 'CASH_REGISTER_INCOME'],
       ['Registrar gastos', 'CASH_REGISTER_EXPENSE'],
       ['Cerrar caja', 'CASH_CLOSE'],
+      ['Eliminar ventas', 'CASH_DELETE_SALES'],
+      ['Eliminar pagos y movimientos', 'CASH_DELETE_MOVEMENTS'],
     ],
   },
   {
@@ -143,6 +147,7 @@ export const CONFIG_CHILD_PERMISSIONS = new Set([
   'CONFIG_PAYMENT_METHODS',
   'CONFIG_REWARDS',
   'CONFIG_PROMOTIONS',
+  'CONFIG_SCHEDULES',
 ]);
 
 export async function getOwnerInternalUsers() {
