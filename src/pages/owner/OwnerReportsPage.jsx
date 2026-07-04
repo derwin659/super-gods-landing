@@ -42,6 +42,10 @@ function defaultFromDate() {
   return toDateInputValue(date);
 }
 
+function expenseTypeLabel(type) {
+  return { EXPENSE: "Gasto operativo", ADVANCE_BARBER: "Adelanto profesional", PAYMENT_BARBER: "Pago profesional" }[String(type || "").toUpperCase()] || "Otro movimiento";
+}
+
 function formatMoney(value) {
   return formatTenantMoney(value);
 }
@@ -1249,7 +1253,7 @@ export default function OwnerReportsPage() {
               <select value={expenseType} onChange={(event) => setExpenseType(event.target.value)} className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-black"><option value="">Todos</option><option value="EXPENSE">Operativos</option><option value="ADVANCE_BARBER">Adelantos</option><option value="PAYMENT_BARBER">Pagos profesionales</option></select></div>
             <div className="mt-4 grid gap-3 sm:grid-cols-4"><StatCard label="Total" value={formatMoney(expenseReport?.total)} tone="red" /><StatCard label="Movimientos" value={n(expenseReport?.count)} /><StatCard label="Operativos" value={formatMoney(expenseReport?.totalsByType?.EXPENSE)} /><StatCard label="Pagos + adelantos" value={formatMoney(n(expenseReport?.totalsByType?.ADVANCE_BARBER) + n(expenseReport?.totalsByType?.PAYMENT_BARBER))} /></div>
             <div className="mt-5 max-h-[360px] overflow-auto rounded-2xl border border-neutral-200"><table className="w-full min-w-[760px] text-left text-sm"><thead className="sticky top-0 bg-neutral-50 text-xs font-black uppercase text-neutral-400"><tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Concepto</th><th className="px-4 py-3">Sede / profesional</th><th className="px-4 py-3 text-right">Monto</th></tr></thead><tbody className="divide-y divide-neutral-100">
-              {(expenseReport?.items || []).map((item) => <tr key={item.id}><td className="px-4 py-3 font-bold">{String(item.date || "").slice(0, 10)}</td><td className="px-4 py-3 font-black text-amber-700">{item.type}</td><td className="px-4 py-3">{item.concept}</td><td className="px-4 py-3">{item.branchName}{item.professional ? ` · ${item.professional}` : ""}</td><td className="px-4 py-3 text-right font-black">{formatMoney(item.amount)}</td></tr>)}
+              {(expenseReport?.items || []).map((item) => <tr key={item.id}><td className="px-4 py-3 font-bold">{String(item.date || "").slice(0, 10)}</td><td className="px-4 py-3 font-black text-amber-700">{expenseTypeLabel(item.type)}</td><td className="px-4 py-3">{item.concept}</td><td className="px-4 py-3">{item.branchName}{item.professional ? ` · ${item.professional}` : ""}</td><td className="px-4 py-3 text-right font-black">{formatMoney(item.amount)}</td></tr>)}
               {(expenseReport?.items || []).length === 0 && <tr><td colSpan="5" className="px-4 py-8 text-center font-bold text-neutral-400">Sin gastos para estos filtros.</td></tr>}
             </tbody></table></div>
           </section>
