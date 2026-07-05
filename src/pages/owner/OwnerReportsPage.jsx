@@ -31,6 +31,7 @@ import {
   getTopServices,
 } from '../../api/ownerReportsApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
+import { exportOwnerReportsExcel, exportOwnerReportsPdf } from '../../utils/ownerReportsExport';
 
 function toDateInputValue(date = new Date()) {
   const yyyy = date.getFullYear();
@@ -886,6 +887,7 @@ export default function OwnerReportsPage() {
   const [expenseType, setExpenseType] = useState("");
 
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState("");
   const [branchesLoading, setBranchesLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -1166,6 +1168,12 @@ export default function OwnerReportsPage() {
   ];
 
   const totalIncome = n(profitability?.totalSales) + n(profitability?.additionalIncome);
+  async function exportReports(format) {
+    const payload = { from, to, branchName: branchOptions.find((option) => String(option.value) === String(branchId))?.label || "Todas las sedes", profitability, salesReport, barbers, productReport, expenseReport, professionalPaymentReport, periodComparison };
+    setExporting(format);
+    try { if (format === "pdf") await exportOwnerReportsPdf(payload); else exportOwnerReportsExcel(payload); }
+    finally { setExporting(""); }
+  }
   const totalExpenses =
     n(profitability?.operationalExpenses) +
     n(profitability?.barberCommissionsAccrued);
@@ -1191,15 +1199,7 @@ export default function OwnerReportsPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={loadReports}
-            disabled={loading}
-            className="rounded-2xl bg-amber-400 px-5 py-4 text-sm font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
-          >
-            {loading ? 'Actualizando...' : 'Actualizar reporte'}
-          </button>
-        </div>
+<div className="flex flex-wrap gap-2"><button type="button" onClick={() => exportReports("excel")} disabled={loading || Boolean(exporting)} className="rounded-2xl border border-emerald-300/40 bg-emerald-400/15 px-4 py-3 text-sm font-black text-emerald-200 disabled:opacity-50">{exporting === "excel" ? "Generando..." : "Excel"}</button><button type="button" onClick={() => exportReports("pdf")} disabled={loading || Boolean(exporting)} className="rounded-2xl border border-red-300/40 bg-red-400/15 px-4 py-3 text-sm font-black text-red-100 disabled:opacity-50">{exporting === "pdf" ? "Generando..." : "PDF"}</button><button type="button" onClick={loadReports} disabled={loading} className="rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-neutral-950 disabled:opacity-60">{loading ? "Actualizando..." : "Actualizar"}</button></div>       </div>
       </section>
 
       <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_35px_rgba(15,23,42,0.045)] sm:rounded-[30px] sm:p-5">
