@@ -856,6 +856,7 @@ function InactiveCustomersPanel({
             </p>
           </div>
 
+          
           <div className="flex flex-wrap gap-2">
             {dayOptions.map((option) => (
               <button
@@ -962,7 +963,7 @@ function InactiveCustomersPanel({
   );
 }
 
-function CustomerReportPanel({ report, loading, error, status, onStatusChange }) {
+function CustomerReportPanel({ report, loading, error, status, onStatusChange, from, to, onFromChange, onToChange }) {
   const summary = report?.summary;
   const statuses = [
     ['ALL', 'Todos'],
@@ -990,6 +991,27 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange })
             </p>
           </div>
 
+
+          <div className="grid gap-2 sm:grid-cols-2 xl:min-w-[330px]">
+            <label className="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
+              Desde
+              <input
+                type="date"
+                value={from}
+                onChange={(event) => onFromChange(event.target.value)}
+                className="mt-1 w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-black text-neutral-800 outline-none focus:border-amber-400"
+              />
+            </label>
+            <label className="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
+              Hasta
+              <input
+                type="date"
+                value={to}
+                onChange={(event) => onToChange(event.target.value)}
+                className="mt-1 w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-black text-neutral-800 outline-none focus:border-amber-400"
+              />
+            </label>
+          </div>
           <div className="flex flex-wrap gap-2">
             {statuses.map(([value, label]) => (
               <button
@@ -1080,6 +1102,8 @@ export default function OwnerCustomersPage() {
   const [customerReportLoading, setCustomerReportLoading] = useState(true);
   const [customerReportError, setCustomerReportError] = useState('');
   const [customerReportStatus, setCustomerReportStatus] = useState('ALL');
+  const [customerReportFrom, setCustomerReportFrom] = useState('');
+  const [customerReportTo, setCustomerReportTo] = useState('');
 
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -1142,7 +1166,7 @@ export default function OwnerCustomersPage() {
 
 
 
-  async function loadCustomerReport({ nextQuery = query, status = customerReportStatus } = {}) {
+  async function loadCustomerReport({ nextQuery = query, status = customerReportStatus, from = customerReportFrom, to = customerReportTo } = {}) {
     setCustomerReportLoading(true);
     setCustomerReportError('');
 
@@ -1297,6 +1321,10 @@ export default function OwnerCustomersPage() {
   }, [inactiveDays]);
 
   useEffect(() => {
+    loadCustomerReport({ status: customerReportStatus, from: customerReportFrom, to: customerReportTo });
+  }, [customerReportStatus, customerReportFrom, customerReportTo]);
+
+  useEffect(() => {
     const timer = window.setTimeout(() => {
       loadCustomers(query);
       loadCustomerReport({ nextQuery: query });
@@ -1380,6 +1408,10 @@ export default function OwnerCustomersPage() {
         error={customerReportError}
         status={customerReportStatus}
         onStatusChange={setCustomerReportStatus}
+        from={customerReportFrom}
+        to={customerReportTo}
+        onFromChange={setCustomerReportFrom}
+        onToChange={setCustomerReportTo}
       />
       <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
