@@ -12,6 +12,7 @@ import {
   getOwnerCustomers,
   getOwnerCustomersTotal,
   updateOwnerCustomer,
+  updateOwnerCustomerWhatsappConsent,
 } from '../../api/ownerCustomersApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
 
@@ -537,6 +538,11 @@ function CustomerDetailModal({
                   <StatCard label="No-show" value={loyalty?.noShows || 0} tone="default" />
                 </div>
 
+                <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+                  <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-black text-neutral-950">Preferencias WhatsApp</p><p className="mt-1 text-xs font-semibold text-neutral-500">Controla mensajes operativos y promociones.</p></div>{(detail?.whatsappOptedOutAt || customer?.whatsappOptedOutAt) && <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700">Baja total</span>}</div>
+                  <div className="mt-3 space-y-2">{[["Mensajes operativos","Recibos, citas y recordatorios","transactional",detail?.whatsappTransactionalEnabled ?? customer?.whatsappTransactionalEnabled],["Promociones","Campañas y ofertas comerciales","marketing",detail?.whatsappMarketingEnabled ?? customer?.whatsappMarketingEnabled]].map(([title,helper,key,enabled]) => <button key={key} type="button" disabled={consentSaving} onClick={() => onWhatsappConsent(key, !enabled)} className="flex w-full items-center gap-3 rounded-xl border border-white bg-white p-3 text-left disabled:opacity-60"><span className={`h-6 w-11 rounded-full p-1 transition ${enabled ? "bg-emerald-500" : "bg-neutral-300"}`}><span className={`block h-4 w-4 rounded-full bg-white transition ${enabled ? "translate-x-5" : ""}`} /></span><span className="flex-1"><span className="block text-sm font-black text-neutral-900">{title}</span><span className="block text-xs font-semibold text-neutral-500">{helper}</span></span></button>)}</div>
+                  <button type="button" disabled={consentSaving} onClick={() => onWhatsappConsent("optout", !(detail?.whatsappOptedOutAt || customer?.whatsappOptedOutAt))} className="mt-3 w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700 disabled:opacity-60">{(detail?.whatsappOptedOutAt || customer?.whatsappOptedOutAt) ? "Reactivar WhatsApp" : "Dar de baja todo WhatsApp"}</button>
+                </div>
                 <div className="mt-5 grid gap-3">
                   <button
                     type="button"
@@ -977,6 +983,7 @@ export default function OwnerCustomersPage() {
   const [customerCutHistory, setCustomerCutHistory] = useState([]);
   const [customerLoyalty, setCustomerLoyalty] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [consentSaving, setConsentSaving] = useState(false);
 
   const [inactiveDays, setInactiveDays] = useState(30);
   const [inactiveCustomers, setInactiveCustomers] = useState([]);
@@ -1072,6 +1079,23 @@ export default function OwnerCustomersPage() {
     }
   }
 
+  async function updateWhatsappConsent(kind, enabled) {
+    if (!selectedCustomer) return;
+    const current = customerDetail || selectedCustomer;
+    setConsentSaving(true);
+    try {
+      const saved = await updateOwnerCustomerWhatsappConsent({
+        customerId: selectedCustomer.id,
+        transactionalEnabled: kind === "transactional" ? enabled : current.whatsappTransactionalEnabled,
+        marketingEnabled: kind === "marketing" ? enabled : current.whatsappMarketingEnabled,
+        optedOut: kind === "optout" ? enabled : false,
+      });
+      setSelectedCustomer((previous) => ({ ...previous, ...saved }));
+      setCustomerDetail((previous) => ({ ...previous, ...saved }));
+      setCustomers((items) => items.map((item) => item.id === saved.id ? { ...item, ...saved } : item));
+    } catch (error) { setErrorMsg(error.message || "No se pudo actualizar WhatsApp."); }
+    finally { setConsentSaving(false); }
+  }
   async function exportCustomers() {
     setExporting(true);
     setErrorMsg('');
@@ -1456,6 +1480,8 @@ export default function OwnerCustomersPage() {
           }}
           onWhatsapp={openCustomerWhatsapp}
           onCreateAppointment={createAppointmentForCustomer}
+          onWhatsappConsent={updateWhatsappConsent}
+          consentSaving={consentSaving}
         />
       )}
     </div>

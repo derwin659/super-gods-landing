@@ -60,6 +60,9 @@ function normalizeCustomer(raw = {}) {
     nombreCompleto: text(name, 'Cliente').trim() || 'Cliente',
     telefono: text(raw.telefono ?? raw.phone ?? raw.phoneNumber ?? ''),
     email: text(raw.email ?? raw.correo ?? ''),
+    whatsappTransactionalEnabled: raw.whatsappTransactionalEnabled !== false,
+    whatsappMarketingEnabled: raw.whatsappMarketingEnabled === true,
+    whatsappOptedOutAt: text(raw.whatsappOptedOutAt ?? ''),
     puntosDisponibles: toNumber(
       raw.puntosDisponibles ??
         raw.pointsAvailable ??
@@ -293,6 +296,13 @@ export async function updateOwnerCustomer({
   throw first.__error || second.__error || new Error('No se pudo actualizar el cliente.');
 }
 
+export async function updateOwnerCustomerWhatsappConsent({ customerId, transactionalEnabled, marketingEnabled, optedOut = false }) {
+  const data = await apiRequest(`/api/owner/customers/${customerId}/whatsapp-consent`, {
+    method: 'PATCH',
+    body: JSON.stringify({ transactionalEnabled, marketingEnabled, optedOut }),
+  });
+  return normalizeCustomer(data);
+}
 export async function getOwnerCustomerDetail(customerId) {
   const first = await tryRequest(`/api/owner/customers/${customerId}`);
 
