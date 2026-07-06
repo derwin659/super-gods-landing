@@ -10,6 +10,7 @@ import {
   getOwnerCustomerHistory,
   getOwnerCustomerLoyalty,
   getOwnerCustomers,
+  getOwnerCustomersReport,
   getOwnerCustomersTotal,
   updateOwnerCustomer,
   updateOwnerCustomerWhatsappConsent,
@@ -961,6 +962,108 @@ function InactiveCustomersPanel({
   );
 }
 
+function CustomerReportPanel({ report, loading, error, status, onStatusChange }) {
+  const summary = report?.summary;
+  const statuses = [
+    ['ALL', 'Todos'],
+    ['NEW', 'Nuevos'],
+    ['FREQUENT', 'Frecuentes'],
+    ['VIP', 'VIP'],
+    ['INACTIVE', 'Inactivos'],
+  ];
+  const variation = Number(summary?.registeredVariationPercent || 0);
+  const variationLabel = `${variation > 0 ? '+' : ''}${variation.toFixed(1)}%`;
+
+  return (
+    <section className="overflow-hidden rounded-[30px] border border-amber-200/70 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+      <div className="bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_46%,#ecfeff_100%)] p-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <div className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">
+              Segmentacion
+            </div>
+            <h3 className="mt-3 text-2xl font-black text-neutral-950">
+              Reporte inteligente de clientes
+            </h3>
+            <p className="mt-1 text-sm font-bold text-neutral-500">
+              Nuevos registros, valor, segmentos y permiso WhatsApp para campanas.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {statuses.map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => onStatusChange(value)}
+                className={`rounded-2xl px-4 py-2 text-xs font-black transition ${
+                  status === value
+                    ? 'bg-neutral-950 text-white shadow-[0_10px_22px_rgba(15,23,42,0.20)]'
+                    : 'border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error ? (
+          <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700">
+            {error}
+          </div>
+        ) : loading && !summary ? (
+          <div className="mt-5 rounded-2xl border border-neutral-200 bg-white px-4 py-5 text-sm font-black text-neutral-500">
+            Cargando reporte de clientes...
+          </div>
+        ) : summary ? (
+          <>
+            <div className="mt-5 grid gap-3 md:grid-cols-4">
+              <ReportMetric label="Nuevos" value={summary.totalRegistered} helper={`Anterior ${summary.previousRegistered}`} tone="blue" />
+              <ReportMetric label="Variacion" value={variationLabel} helper={`${report.from} - ${report.to}`} tone={variation >= 0 ? 'green' : 'red'} />
+              <ReportMetric label="Valor total" value={formatMoney(summary.totalSpent)} helper={`Ticket ${formatMoney(summary.averageSpent)}`} tone="amber" />
+              <ReportMetric label="WhatsApp MKT" value={summary.withMarketingWhatsapp} helper={`Bajas ${summary.optedOutWhatsapp}`} tone="teal" />
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <SegmentPill label="VIP" value={summary.vipCustomers} />
+              <SegmentPill label="Frecuentes" value={summary.frequentCustomers} />
+              <SegmentPill label="Nuevos" value={summary.newCustomers} />
+              <SegmentPill label="Inactivos" value={summary.inactiveCustomers} />
+              <SegmentPill label="Filtrados" value={summary.totalFiltered} />
+            </div>
+          </>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function ReportMetric({ label, value, helper, tone = 'blue' }) {
+  const tones = {
+    blue: 'bg-blue-50 text-blue-700 border-blue-100',
+    green: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    red: 'bg-red-50 text-red-700 border-red-100',
+    amber: 'bg-amber-50 text-amber-800 border-amber-100',
+    teal: 'bg-teal-50 text-teal-700 border-teal-100',
+  };
+
+  return (
+    <div className={`rounded-2xl border p-4 ${tones[tone] || tones.blue}`}>
+      <div className="text-[11px] font-black uppercase tracking-[0.14em] opacity-80">{label}</div>
+      <div className="mt-2 text-2xl font-black text-neutral-950">{value}</div>
+      <div className="mt-1 truncate text-xs font-bold opacity-75">{helper}</div>
+    </div>
+  );
+}
+
+function SegmentPill({ label, value }) {
+  return (
+    <span className="rounded-full border border-neutral-200 bg-white px-3 py-2 text-xs font-black text-neutral-700 shadow-sm">
+      {label}: {value}
+    </span>
+  );
+}
 export default function OwnerCustomersPage() {
   const navigate = useNavigate();
   const customersRequestId = useRef(0);
@@ -973,6 +1076,10 @@ export default function OwnerCustomersPage() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [customerReport, setCustomerReport] = useState(null);
+  const [customerReportLoading, setCustomerReportLoading] = useState(true);
+  const [customerReportError, setCustomerReportError] = useState('');
+  const [customerReportStatus, setCustomerReportStatus] = useState('ALL');
 
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -1034,6 +1141,25 @@ export default function OwnerCustomersPage() {
   }
 
 
+
+  async function loadCustomerReport({ nextQuery = query, status = customerReportStatus } = {}) {
+    setCustomerReportLoading(true);
+    setCustomerReportError('');
+
+    try {
+      const data = await getOwnerCustomersReport({
+        query: nextQuery,
+        status,
+        limit: 250,
+      });
+      setCustomerReport(data);
+    } catch (error) {
+      setCustomerReport(null);
+      setCustomerReportError(error.message || 'No se pudo cargar el reporte de clientes.');
+    } finally {
+      setCustomerReportLoading(false);
+    }
+  }
   async function loadInactiveCustomers(days = inactiveDays) {
     setInactiveLoading(true);
     setInactiveErrorMsg('');
@@ -1173,6 +1299,7 @@ export default function OwnerCustomersPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       loadCustomers(query);
+      loadCustomerReport({ nextQuery: query });
     }, 450);
 
     return () => window.clearTimeout(timer);
@@ -1246,6 +1373,14 @@ export default function OwnerCustomersPage() {
         <StatCard label="Puntos visibles" value={totalPoints} tone="gold" />
       </section>
 
+
+      <CustomerReportPanel
+        report={customerReport}
+        loading={customerReportLoading}
+        error={customerReportError}
+        status={customerReportStatus}
+        onStatusChange={setCustomerReportStatus}
+      />
       <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>

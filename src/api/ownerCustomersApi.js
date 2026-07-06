@@ -233,6 +233,75 @@ export async function getOwnerCustomers({ query = '', limit = 50 } = {}) {
   return [];
 }
 
+
+function normalizeCustomerReport(raw = {}) {
+  const summary = raw.summary || {};
+  const items = Array.isArray(raw.items) ? raw.items : [];
+
+  return {
+    from: text(raw.from),
+    to: text(raw.to),
+    previousFrom: text(raw.previousFrom),
+    previousTo: text(raw.previousTo),
+    summary: {
+      totalRegistered: toNumber(summary.totalRegistered),
+      previousRegistered: toNumber(summary.previousRegistered),
+      registeredVariationPercent: toNumber(summary.registeredVariationPercent),
+      totalFiltered: toNumber(summary.totalFiltered),
+      activeCustomers: toNumber(summary.activeCustomers),
+      inactiveCustomers: toNumber(summary.inactiveCustomers),
+      vipCustomers: toNumber(summary.vipCustomers),
+      frequentCustomers: toNumber(summary.frequentCustomers),
+      newCustomers: toNumber(summary.newCustomers),
+      withMarketingWhatsapp: toNumber(summary.withMarketingWhatsapp),
+      optedOutWhatsapp: toNumber(summary.optedOutWhatsapp),
+      totalSpent: toNumber(summary.totalSpent),
+      averageSpent: toNumber(summary.averageSpent),
+    },
+    items: items.map((item) => ({
+      customerId: toNumber(item.customerId ?? item.id),
+      fullName: text(item.fullName ?? item.nombreCompleto ?? item.name, 'Cliente'),
+      phone: text(item.phone ?? item.telefono),
+      registeredAt: text(item.registeredAt ?? item.fechaRegistro),
+      lastVisit: text(item.lastVisit ?? item.ultimaVisita),
+      branchId: item.branchId ?? null,
+      branchName: text(item.branchName ?? item.sede),
+      visits: toNumber(item.visits ?? item.visitas),
+      totalSpent: toNumber(item.totalSpent),
+      points: toNumber(item.points ?? item.puntos),
+      status: text(item.status, 'NEW').toUpperCase(),
+      whatsappMarketingEnabled: item.whatsappMarketingEnabled === true,
+      whatsappOptedOut: item.whatsappOptedOut === true,
+      raw: item,
+    })),
+  };
+}
+
+export async function getOwnerCustomersReport({
+  query = '',
+  from = '',
+  to = '',
+  branchId = '',
+  status = 'ALL',
+  lastVisitFrom = '',
+  lastVisitTo = '',
+  limit = 200,
+} = {}) {
+  const data = await apiRequest(
+    `/api/owner/customers/report${toQuery({
+      q: String(query || '').trim(),
+      from,
+      to,
+      branchId,
+      status: status && status !== 'ALL' ? status : '',
+      lastVisitFrom,
+      lastVisitTo,
+      limit,
+    })}`
+  );
+
+  return normalizeCustomerReport(data);
+}
 export async function searchOwnerCustomers(query) {
   return getOwnerCustomers({ query, limit: 20 });
 }
