@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import OwnerCampaignOperationsPanel from './OwnerCampaignOperationsPanel';
 import {
   BellRing,
   CalendarCheck,
@@ -424,6 +425,7 @@ export default function OwnerWhatsappSettingsPage() {
           </div>
         )}
       </form>
+      <OwnerCampaignOperationsPanel />
     </div>
   );
 }
