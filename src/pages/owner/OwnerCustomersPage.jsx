@@ -15,6 +15,7 @@ import {
   updateOwnerCustomer,
   updateOwnerCustomerWhatsappConsent,
 } from '../../api/ownerCustomersApi';
+import { getOwnerBranches } from '../../api/ownerBranchesApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
 
 function formatMoney(value) {
@@ -963,7 +964,7 @@ function InactiveCustomersPanel({
   );
 }
 
-function CustomerReportPanel({ report, loading, error, status, onStatusChange, from, to, onFromChange, onToChange }) {
+function CustomerReportPanel({ report, loading, error, status, onStatusChange, from, to, onFromChange, onToChange, branchId, onBranchChange, branches, lastVisitFrom, lastVisitTo, onLastVisitFromChange, onLastVisitToChange }) {
   const summary = report?.summary;
   const statuses = [
     ['ALL', 'Todos'],
@@ -1008,6 +1009,42 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
                 type="date"
                 value={to}
                 onChange={(event) => onToChange(event.target.value)}
+                className="mt-1 w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-black text-neutral-800 outline-none focus:border-amber-400"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[520px]">
+            <label className="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
+              Sede
+              <select
+                value={branchId}
+                onChange={(event) => onBranchChange(event.target.value)}
+                className="mt-1 w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-black text-neutral-800 outline-none focus:border-amber-400"
+              >
+                <option value="">Todas</option>
+                {branches.map((branch) => (
+                  <option key={branch.id ?? branch.branchId} value={branch.id ?? branch.branchId}>
+                    {branch.nombre ?? branch.name ?? branch.label ?? 'Sede'}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
+              Ult. visita desde
+              <input
+                type="date"
+                value={lastVisitFrom}
+                onChange={(event) => onLastVisitFromChange(event.target.value)}
+                className="mt-1 w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-black text-neutral-800 outline-none focus:border-amber-400"
+              />
+            </label>
+            <label className="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
+              Ult. visita hasta
+              <input
+                type="date"
+                value={lastVisitTo}
+                onChange={(event) => onLastVisitToChange(event.target.value)}
                 className="mt-1 w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-black text-neutral-800 outline-none focus:border-amber-400"
               />
             </label>
@@ -1104,6 +1141,10 @@ export default function OwnerCustomersPage() {
   const [customerReportStatus, setCustomerReportStatus] = useState('ALL');
   const [customerReportFrom, setCustomerReportFrom] = useState('');
   const [customerReportTo, setCustomerReportTo] = useState('');
+  const [customerReportBranchId, setCustomerReportBranchId] = useState('');
+  const [customerReportLastVisitFrom, setCustomerReportLastVisitFrom] = useState('');
+  const [customerReportLastVisitTo, setCustomerReportLastVisitTo] = useState('');
+  const [branches, setBranches] = useState([]);
 
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -1166,7 +1207,7 @@ export default function OwnerCustomersPage() {
 
 
 
-  async function loadCustomerReport({ nextQuery = query, status = customerReportStatus, from = customerReportFrom, to = customerReportTo } = {}) {
+  async function loadCustomerReport({ nextQuery = query, status = customerReportStatus, from = customerReportFrom, to = customerReportTo, branchId = customerReportBranchId, lastVisitFrom = customerReportLastVisitFrom, lastVisitTo = customerReportLastVisitTo } = {}) {
     setCustomerReportLoading(true);
     setCustomerReportError('');
 
@@ -1321,8 +1362,14 @@ export default function OwnerCustomersPage() {
   }, [inactiveDays]);
 
   useEffect(() => {
-    loadCustomerReport({ status: customerReportStatus, from: customerReportFrom, to: customerReportTo });
-  }, [customerReportStatus, customerReportFrom, customerReportTo]);
+    getOwnerBranches({ onlyActive: true })
+      .then((data) => setBranches(Array.isArray(data) ? data : []))
+      .catch(() => setBranches([]));
+  }, []);
+
+  useEffect(() => {
+    loadCustomerReport({ status: customerReportStatus, from: customerReportFrom, to: customerReportTo, branchId: customerReportBranchId, lastVisitFrom: customerReportLastVisitFrom, lastVisitTo: customerReportLastVisitTo });
+  }, [customerReportStatus, customerReportFrom, customerReportTo, customerReportBranchId, customerReportLastVisitFrom, customerReportLastVisitTo]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -1412,6 +1459,13 @@ export default function OwnerCustomersPage() {
         to={customerReportTo}
         onFromChange={setCustomerReportFrom}
         onToChange={setCustomerReportTo}
+        branchId={customerReportBranchId}
+        onBranchChange={setCustomerReportBranchId}
+        branches={branches}
+        lastVisitFrom={customerReportLastVisitFrom}
+        lastVisitTo={customerReportLastVisitTo}
+        onLastVisitFromChange={setCustomerReportLastVisitFrom}
+        onLastVisitToChange={setCustomerReportLastVisitTo}
       />
       <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.04)]">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
