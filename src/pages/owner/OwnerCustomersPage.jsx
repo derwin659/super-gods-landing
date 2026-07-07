@@ -966,62 +966,50 @@ function InactiveCustomersPanel({
 
 function CustomerReportPanel({ report, loading, error, status, onStatusChange, from, to, onFromChange, onToChange, branchId, onBranchChange, branches, lastVisitFrom, lastVisitTo, onLastVisitFromChange, onLastVisitToChange }) {
   const summary = report?.summary;
+  const items = Array.isArray(report?.items) ? report.items : [];
   const statuses = [
-    ['ALL', 'Todos'],
-    ['NEW', 'Nuevos'],
-    ['FREQUENT', 'Frecuentes'],
-    ['VIP', 'VIP'],
-    ['INACTIVE', 'Inactivos'],
+    ['ALL', 'Todos', 'Base completa con los filtros activos', summary?.totalFiltered],
+    ['NEW', 'Nuevos', 'Clientes recientes o con pocas visitas', summary?.newCustomers],
+    ['FREQUENT', 'Frecuentes', '3+ visitas y buen retorno', summary?.frequentCustomers],
+    ['VIP', 'VIP', '10+ visitas o 500+ puntos', summary?.vipCustomers],
+    ['INACTIVE', 'Inactivos +60d', 'Ultima visita hace mas de 60 dias', summary?.inactiveCustomers],
   ];
   const variation = Number(summary?.registeredVariationPercent || 0);
   const variationLabel = `${variation > 0 ? '+' : ''}${variation.toFixed(1)}%`;
+  const fieldClass = 'mt-1 h-12 w-full min-w-0 rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-[13px] font-black text-neutral-950 outline-none transition [color-scheme:light] placeholder:text-neutral-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100';
 
   return (
-    <section className="overflow-hidden rounded-[30px] border border-amber-200/70 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
-      <div className="bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_46%,#ecfeff_100%)] p-5">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div>
-            <div className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">
-              Segmentacion
-            </div>
-            <h3 className="mt-3 text-2xl font-black text-neutral-950">
-              Reporte inteligente de clientes
-            </h3>
-            <p className="mt-1 text-sm font-bold text-neutral-500">
-              Nuevos registros, valor, segmentos y permiso WhatsApp para campanas.
-            </p>
+    <section className="overflow-hidden rounded-[34px] border border-amber-200/80 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+      <div className="grid gap-5 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#ecfeff_100%)] p-5 lg:grid-cols-[280px_1fr] xl:grid-cols-[320px_1fr]">
+        <div className="rounded-[28px] bg-neutral-950 p-5 text-white shadow-[0_18px_44px_rgba(15,23,42,0.22)]">
+          <div className="inline-flex rounded-full bg-amber-300 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-950">
+            Segmentacion
           </div>
-
-
-          <div className="grid gap-2 sm:grid-cols-2 xl:min-w-[330px]">
-            <label className="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
-              Desde
-              <input
-                type="date"
-                value={from}
-                onChange={(event) => onFromChange(event.target.value)}
-                className="mt-1 w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-black text-neutral-800 outline-none focus:border-amber-400"
-              />
-            </label>
-            <label className="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
-              Hasta
-              <input
-                type="date"
-                value={to}
-                onChange={(event) => onToChange(event.target.value)}
-                className="mt-1 w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-black text-neutral-800 outline-none focus:border-amber-400"
-              />
-            </label>
+          <h3 className="mt-4 text-3xl font-black leading-tight">
+            Reporte inteligente de clientes
+          </h3>
+          <p className="mt-3 text-sm font-semibold leading-6 text-white/65">
+            Filtra por registro, sede, ultima visita y segmento. Los resultados muestran clientes reales para campañas o seguimiento.
+          </p>
+          <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/45">Regla de segmentos</p>
+            <p className="mt-2 text-xs font-bold leading-5 text-white/70">VIP: 10+ visitas o 500+ puntos. Frecuente: 3+ visitas. Inactivo: ultima visita mayor a 60 dias.</p>
           </div>
+        </div>
 
-          <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[520px]">
-            <label className="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
+        <div className="min-w-0 space-y-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+            <label className="min-w-0 text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
+              Reg. desde
+              <input type="date" value={from} onChange={(event) => onFromChange(event.target.value)} className={fieldClass} />
+            </label>
+            <label className="min-w-0 text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
+              Reg. hasta
+              <input type="date" value={to} onChange={(event) => onToChange(event.target.value)} className={fieldClass} />
+            </label>
+            <label className="min-w-0 text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
               Sede
-              <select
-                value={branchId}
-                onChange={(event) => onBranchChange(event.target.value)}
-                className="mt-1 w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-black text-neutral-800 outline-none focus:border-amber-400"
-              >
+              <select value={branchId} onChange={(event) => onBranchChange(event.target.value)} className={fieldClass}>
                 <option value="">Todas</option>
                 {branches.map((branch) => (
                   <option key={branch.id ?? branch.branchId} value={branch.id ?? branch.branchId}>
@@ -1030,74 +1018,110 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
                 ))}
               </select>
             </label>
-            <label className="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
-              Ult. visita desde
-              <input
-                type="date"
-                value={lastVisitFrom}
-                onChange={(event) => onLastVisitFromChange(event.target.value)}
-                className="mt-1 w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-black text-neutral-800 outline-none focus:border-amber-400"
-              />
+            <label className="min-w-0 text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
+              Visita desde
+              <input type="date" value={lastVisitFrom} onChange={(event) => onLastVisitFromChange(event.target.value)} className={fieldClass} />
             </label>
-            <label className="text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
-              Ult. visita hasta
-              <input
-                type="date"
-                value={lastVisitTo}
-                onChange={(event) => onLastVisitToChange(event.target.value)}
-                className="mt-1 w-full rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-sm font-black text-neutral-800 outline-none focus:border-amber-400"
-              />
+            <label className="min-w-0 text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
+              Visita hasta
+              <input type="date" value={lastVisitTo} onChange={(event) => onLastVisitToChange(event.target.value)} className={fieldClass} />
             </label>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {statuses.map(([value, label]) => (
+
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+            {statuses.map(([value, label, description, count]) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => onStatusChange(value)}
-                className={`rounded-2xl px-4 py-2 text-xs font-black transition ${
+                className={`min-w-0 rounded-2xl border px-3 py-3 text-left transition ${
                   status === value
-                    ? 'bg-neutral-950 text-white shadow-[0_10px_22px_rgba(15,23,42,0.20)]'
-                    : 'border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50'
+                    ? 'border-neutral-950 bg-neutral-950 text-white shadow-[0_14px_28px_rgba(15,23,42,0.22)]'
+                    : 'border-neutral-200 bg-white text-neutral-800 hover:border-amber-300 hover:bg-amber-50'
                 }`}
               >
-                {label}
+                <span className="block text-sm font-black leading-5">{label}</span>
+                <span className={`mt-1 block text-[10.5px] font-bold leading-4 ${status === value ? 'text-white/65' : 'text-neutral-500'}`}>{description}</span>
+                {summary ? <span className={`mt-2 inline-flex rounded-full px-2 py-1 text-[11px] font-black ${status === value ? 'bg-white/15 text-white' : 'bg-neutral-100 text-neutral-700'}`}>{Number(count || 0)}</span> : null}
               </button>
             ))}
           </div>
+
+          {error ? (
+            <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700">{error}</div>
+          ) : loading && !summary ? (
+            <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-5 text-sm font-black text-neutral-500">Cargando reporte de clientes...</div>
+          ) : summary ? (
+            <>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <ReportMetric label="Nuevos" value={summary.totalRegistered} helper={`Anterior ${summary.previousRegistered}`} tone="blue" />
+                <ReportMetric label="Variacion" value={variationLabel} helper={`${report.from} - ${report.to}`} tone={variation >= 0 ? 'green' : 'red'} />
+                <ReportMetric label="Valor total" value={formatMoney(summary.totalSpent)} helper={`Ticket ${formatMoney(summary.averageSpent)}`} tone="amber" />
+                <ReportMetric label="WhatsApp MKT" value={summary.withMarketingWhatsapp} helper={`Bajas ${summary.optedOutWhatsapp}`} tone="teal" />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <SegmentPill label="VIP" value={summary.vipCustomers} />
+                <SegmentPill label="Frecuentes" value={summary.frequentCustomers} />
+                <SegmentPill label="Nuevos" value={summary.newCustomers} />
+                <SegmentPill label="Inactivos" value={summary.inactiveCustomers} />
+                <SegmentPill label="Filtrados" value={summary.totalFiltered} />
+              </div>
+
+              <CustomerReportResults items={items} activeStatus={status} loading={loading} />
+            </>
+          ) : null}
         </div>
-
-        {error ? (
-          <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700">
-            {error}
-          </div>
-        ) : loading && !summary ? (
-          <div className="mt-5 rounded-2xl border border-neutral-200 bg-white px-4 py-5 text-sm font-black text-neutral-500">
-            Cargando reporte de clientes...
-          </div>
-        ) : summary ? (
-          <>
-            <div className="mt-5 grid gap-3 md:grid-cols-4">
-              <ReportMetric label="Nuevos" value={summary.totalRegistered} helper={`Anterior ${summary.previousRegistered}`} tone="blue" />
-              <ReportMetric label="Variacion" value={variationLabel} helper={`${report.from} - ${report.to}`} tone={variation >= 0 ? 'green' : 'red'} />
-              <ReportMetric label="Valor total" value={formatMoney(summary.totalSpent)} helper={`Ticket ${formatMoney(summary.averageSpent)}`} tone="amber" />
-              <ReportMetric label="WhatsApp MKT" value={summary.withMarketingWhatsapp} helper={`Bajas ${summary.optedOutWhatsapp}`} tone="teal" />
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <SegmentPill label="VIP" value={summary.vipCustomers} />
-              <SegmentPill label="Frecuentes" value={summary.frequentCustomers} />
-              <SegmentPill label="Nuevos" value={summary.newCustomers} />
-              <SegmentPill label="Inactivos" value={summary.inactiveCustomers} />
-              <SegmentPill label="Filtrados" value={summary.totalFiltered} />
-            </div>
-          </>
-        ) : null}
       </div>
     </section>
   );
 }
 
+function CustomerReportResults({ items, activeStatus, loading }) {
+  const visible = items.slice(0, 8);
+  const activeLabel = customerStatusMeta(activeStatus).label;
+
+  return (
+    <div className="rounded-[26px] border border-neutral-200 bg-white/85 p-4 shadow-sm">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-neutral-400">Clientes encontrados</p>
+          <h4 className="text-lg font-black text-neutral-950">{activeStatus === 'ALL' ? 'Resultado del filtro' : `Segmento ${activeLabel}`}</h4>
+        </div>
+        <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-black text-neutral-700">{items.length} visibles</span>
+      </div>
+
+      {loading ? (
+        <div className="mt-4 rounded-2xl bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">Actualizando clientes...</div>
+      ) : visible.length === 0 ? (
+        <div className="mt-4 rounded-2xl bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">No hay clientes para estos filtros.</div>
+      ) : (
+        <div className="mt-4 grid gap-2">
+          {visible.map((item) => {
+            const meta = customerStatusMeta(item.status);
+            return (
+              <div key={`${item.customerId}-${item.status}`} className="grid gap-3 rounded-2xl border border-neutral-100 bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-sm font-black text-neutral-950">{item.fullName}</p>
+                    <span className={`rounded-full border px-2 py-1 text-[10px] font-black ${meta.className}`}>{meta.label}</span>
+                  </div>
+                  <p className="mt-1 truncate text-xs font-bold text-neutral-500">
+                    {item.branchName || 'Sin sede'} · {item.visits} visitas · Ult. visita {item.lastVisit ? item.lastVisit.slice(0, 10) : 'sin venta'}
+                  </p>
+                </div>
+                <div className="text-left sm:text-right">
+                  <p className="text-sm font-black text-neutral-950">{formatMoney(item.totalSpent)}</p>
+                  <p className="text-xs font-bold text-neutral-500">{item.points} puntos</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 function ReportMetric({ label, value, helper, tone = 'blue' }) {
   const tones = {
     blue: 'bg-blue-50 text-blue-700 border-blue-100',
@@ -1214,7 +1238,12 @@ export default function OwnerCustomersPage() {
     try {
       const data = await getOwnerCustomersReport({
         query: nextQuery,
+        from,
+        to,
+        branchId,
         status,
+        lastVisitFrom,
+        lastVisitTo,
         limit: 250,
       });
       setCustomerReport(data);
