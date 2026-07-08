@@ -387,7 +387,6 @@ export async function getOwnerCustomerDetail(customerId) {
 export async function getOwnerCustomerHistory(customerId) {
   const endpoints = [
     `/api/owner/customers/${customerId}/history${toQuery({ limit: 10 })}`,
-    `/api/owner/customers/${customerId}/cuts`,
     `/api/owner/customer-cut-history${toQuery({ customerId })}`,
     `/api/customer-cut-history${toQuery({ customerId })}`,
     `/api/owner/cash-sales/customer/${customerId}`,
@@ -411,7 +410,6 @@ export async function getOwnerCustomerHistory(customerId) {
 export async function getOwnerCustomerCutHistory(customerId) {
   const endpoints = [
     `/api/owner/customers/${customerId}/cut-history${toQuery({ limit: 20 })}`,
-    `/api/owner/customers/${customerId}/cuts`,
     `/api/owner/customer-cut-history${toQuery({ customerId })}`,
     `/api/customer-cut-history${toQuery({ customerId })}`,
   ];

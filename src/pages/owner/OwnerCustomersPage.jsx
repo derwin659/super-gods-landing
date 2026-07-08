@@ -508,6 +508,8 @@ function CustomerDetailModal({
   onEdit,
   onWhatsapp,
   onCreateAppointment,
+  onWhatsappConsent,
+  consentSaving = false,
 }) {
   const pointsAvailable =
     loyalty?.puntosDisponibles ?? detail?.puntosDisponibles ?? customer?.puntosDisponibles ?? 0;
