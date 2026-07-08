@@ -25,6 +25,14 @@ function initials(name) {
     .toUpperCase();
 }
 
+function isProfessionalUser(item) {
+  const role = String(item?.rol || '').toUpperCase();
+  return Boolean(
+    item?.activo &&
+      (role === 'BARBER' || item?.professionalProfileEnabled === true)
+  );
+}
+
 function ErrorBox({ message }) {
   if (!message) return null;
 
@@ -214,7 +222,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
     }
 
     if (usingBarber && !selectedBarberId) {
-      setErrorMsg('Selecciona un barbero para convertirlo en administrador.');
+      setErrorMsg('Selecciona un barbero para darle acceso administrativo.');
       return;
     }
 
@@ -240,6 +248,9 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           phone: cleanPhone,
           branchId: branchIds[0],
           rol: role,
+          preserveProfessionalProfile: true,
+          professionalBranchIds: branchIds.map(Number),
+          canSell: true,
         });
       } else {
         saved = await createOwnerAdmin({
@@ -325,7 +336,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
               ]}
             />
             <p className="mt-3 text-xs font-bold leading-5 text-amber-800">
-              Esta opción convierte el profesional al tipo de acceso seleccionado. Luego podrás cambiar nuevamente su rol.
+              Esta opción le da acceso administrativo sin quitar su perfil profesional. Seguirá apareciendo en ventas, agenda y pagos si su perfil está activo.
             </p>
           </div>
         )}
@@ -662,7 +673,7 @@ export default function OwnerAdminsPage() {
 
   const barbers = useMemo(() => {
     return users
-      .filter((item) => String(item.rol || '').toUpperCase() === 'BARBER' && item.activo)
+      .filter(isProfessionalUser)
       .sort((a, b) => a.fullName.localeCompare(b.fullName));
   }, [users]);
 

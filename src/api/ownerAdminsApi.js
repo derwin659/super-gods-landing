@@ -40,6 +40,14 @@ function normalizeUser(raw = {}) {
     phone: text(raw.phone ?? raw.telefono ?? ''),
     rol: text(raw.rol ?? raw.role ?? '').toUpperCase(),
     activo: raw.activo !== false && raw.enabled !== false,
+    canSell: raw.canSell !== false && raw.can_sell !== false,
+    professionalProfileEnabled:
+      raw.professionalProfileEnabled === true ||
+      raw.professional_profile_enabled === true ||
+      raw.barberProfileEnabled === true ||
+      raw.barber_profile_enabled === true ||
+      raw.isProfessional === true ||
+      raw.isBarber === true,
     branchId:
       raw.branchId === null || raw.branchId === undefined
         ? null
@@ -169,6 +177,9 @@ export async function createOwnerAdmin({
   password,
   branchId,
   rol = 'ADMIN',
+  preserveProfessionalProfile = false,
+  professionalBranchIds = [],
+  canSell,
 }) {
   const data = await apiRequest('/api/internal/users', {
     method: 'POST',
@@ -180,6 +191,14 @@ export async function createOwnerAdmin({
       password: String(password || '').trim(),
       branchId: Number(branchId),
       rol: String(rol || 'ADMIN').trim().toUpperCase(),
+      ...(preserveProfessionalProfile
+        ? {
+            preserveProfessionalProfile: true,
+            professionalProfileEnabled: true,
+            professionalBranchIds: professionalBranchIds.map(Number),
+            canSell: canSell === undefined ? true : Boolean(canSell),
+          }
+        : {}),
     }),
   });
 
@@ -193,6 +212,9 @@ export async function updateOwnerAdmin({
   phone = '',
   branchId,
   rol = 'ADMIN',
+  preserveProfessionalProfile = false,
+  professionalBranchIds = [],
+  canSell,
 }) {
   const data = await apiRequest(`/api/internal/users/${userId}`, {
     method: 'PUT',
@@ -202,6 +224,14 @@ export async function updateOwnerAdmin({
       phone: String(phone || '').trim(),
       branchId: Number(branchId),
       rol: String(rol || 'ADMIN').trim().toUpperCase(),
+      ...(preserveProfessionalProfile
+        ? {
+            preserveProfessionalProfile: true,
+            professionalProfileEnabled: true,
+            professionalBranchIds: professionalBranchIds.map(Number),
+            canSell: canSell === undefined ? true : Boolean(canSell),
+          }
+        : {}),
     }),
   });
 
