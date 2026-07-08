@@ -1061,6 +1061,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
   const variationLabel = `${variation > 0 ? '+' : ''}${variation.toFixed(1)}%`;
   const fieldClass = 'mt-1 h-12 w-full min-w-0 rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-[13px] font-black text-neutral-950 outline-none transition [color-scheme:light] placeholder:text-neutral-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100';
   const [exportingReport, setExportingReport] = useState('');
+  const [creatingCampaignDraft, setCreatingCampaignDraft] = useState(false);
   const navigate = useNavigate();
   const selectedBranch = branches.find((branch) => String(branch.id ?? branch.branchId) === String(branchId));
   const activeStatusLabel = status === 'ALL' ? 'Todos' : customerStatusMeta(status).label;
@@ -1069,7 +1070,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
   const campaignNeedsConsent = Math.max(campaignPhoneItems.length - campaignMarketingReadyItems.length, 0);
   const campaignExcluded = Math.max(items.length - campaignPhoneItems.length, 0);
   const canExportReport = Boolean(summary) && items.length > 0 && !loading;
-  const canCreateCampaign = canExportReport && campaignPhoneItems.length > 0;
+  const canCreateCampaign = canExportReport && !creatingCampaignDraft;
 
   async function exportSegmentedReport(format) {
     if (!canExportReport || exportingReport) return;
@@ -1093,44 +1094,74 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
     }
   }
 
-  function createCampaignDraft() {
+  async function createCampaignDraft() {
     if (!canCreateCampaign) return;
 
-    const payload = {
-      createdAt: new Date().toISOString(),
-      source: 'customer-report',
-      status: activeStatusLabel,
-      filters: {
+    setCreatingCampaignDraft(true);
+    try {
+      const audienceReport = await getOwnerCustomersReport({
         from,
         to,
-        branchName: selectedBranch?.nombre ?? selectedBranch?.name ?? selectedBranch?.label ?? 'Todas las sedes',
+        branchId,
+        status,
         lastVisitFrom,
         lastVisitTo,
-      },
-      counts: {
-        filtered: items.length,
-        eligible: campaignPhoneItems.length,
-        marketingReady: campaignMarketingReadyItems.length,
-        needsConsent: campaignNeedsConsent,
-        excluded: campaignExcluded,
-      },
-      customers: campaignPhoneItems.map((item) => ({
-        id: item.customerId,
-        name: item.fullName,
-        phone: item.phone,
-        status: customerStatusMeta(item.status).label,
-        branchName: item.branchName,
-        visits: item.visits,
-        points: item.points,
-        totalSpent: item.totalSpent,
-        lastVisit: item.lastVisit,
-      })),
-    };
+        limit: 500,
+      });
+      const audienceItems = Array.isArray(audienceReport?.items) ? audienceReport.items : [];
+      const phoneItems = audienceItems.filter((item) => String(item.phone || '').trim() && !item.whatsappOptedOut);
+      const marketingReadyItems = phoneItems.filter((item) => item.whatsappMarketingEnabled);
+      const needsConsent = Math.max(phoneItems.length - marketingReadyItems.length, 0);
+      const excluded = Math.max(audienceItems.length - phoneItems.length, 0);
 
-    window.sessionStorage.setItem('ownerCustomerCampaignDraft', JSON.stringify(payload));
-    navigate('/owner/whatsapp-mensajes');
+      if (phoneItems.length === 0) {
+        window.alert('No hay clientes con telefono en esta audiencia. Ajusta los filtros o revisa los datos de clientes.');
+        return;
+      }
+
+      const payload = {
+        createdAt: new Date().toISOString(),
+        source: 'customer-report',
+        status: activeStatusLabel,
+        filters: {
+          from,
+          to,
+          branchName: selectedBranch?.nombre ?? selectedBranch?.name ?? selectedBranch?.label ?? 'Todas las sedes',
+          lastVisitFrom,
+          lastVisitTo,
+          limit: 500,
+        },
+        counts: {
+          filtered: audienceItems.length,
+          eligible: phoneItems.length,
+          marketingReady: marketingReadyItems.length,
+          needsConsent,
+          excluded,
+          capped: audienceItems.length >= 500,
+        },
+        customers: phoneItems.map((item) => ({
+          id: item.customerId,
+          name: item.fullName,
+          phone: item.phone,
+          status: customerStatusMeta(item.status).label,
+          branchName: item.branchName,
+          visits: item.visits,
+          points: item.points,
+          totalSpent: item.totalSpent,
+          lastVisit: item.lastVisit,
+          whatsappMarketingEnabled: item.whatsappMarketingEnabled,
+          needsConsent: !item.whatsappMarketingEnabled,
+        })),
+      };
+
+      window.sessionStorage.setItem('ownerCustomerCampaignDraft', JSON.stringify(payload));
+      navigate('/owner/whatsapp-mensajes');
+    } catch (error) {
+      window.alert(error?.message || 'No se pudo preparar la audiencia completa.');
+    } finally {
+      setCreatingCampaignDraft(false);
+    }
   }
-
   return (
     <section className="overflow-hidden rounded-[34px] border border-amber-200/80 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
       <div className="grid gap-5 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#ecfeff_100%)] p-5 lg:grid-cols-[280px_1fr] xl:grid-cols-[320px_1fr]">
@@ -1249,13 +1280,13 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
                     title={`${items.length} filtrados · ${campaignPhoneItems.length} con telefono · ${campaignNeedsConsent} requieren permiso`}
                     className="rounded-2xl border border-amber-200 bg-amber-100 px-4 py-3 text-xs font-black text-amber-900 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    Crear campaña
+                    {creatingCampaignDraft ? 'Preparando...' : 'Crear campaña'}
                   </button>
                 </div>
               </div>
               {canExportReport ? (
                 <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-black text-amber-900">
-                  Borrador seguro: {items.length} filtrados · {campaignPhoneItems.length} con telefono · {campaignMarketingReadyItems.length} con permiso marketing · {campaignNeedsConsent} requieren revisar permiso · {campaignExcluded} excluidos por baja o sin telefono.
+                  Vista previa en pantalla: {items.length} cargados · {campaignPhoneItems.length} con telefono. Al crear campaña se cargara la audiencia completa filtrada hasta 500 clientes.
                 </div>
               ) : null}
 
