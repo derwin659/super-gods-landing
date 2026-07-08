@@ -161,6 +161,21 @@ function InputField({ label, value, onChange, placeholder, type = 'text' }) {
   );
 }
 
+function TextAreaField({ label, value, onChange, placeholder, rows = 3 }) {
+  return (
+    <label className="block">
+      <span className="text-sm font-black text-neutral-700">{label}</span>
+      <textarea
+        value={value}
+        rows={rows}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 w-full resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-400"
+      />
+    </label>
+  );
+}
+
 function CustomerFormModal({ customer, onClose, onSaved }) {
   const isEdit = Boolean(customer?.id);
 
@@ -168,6 +183,11 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
   const [apellidos, setApellidos] = useState(customer?.apellidos || '');
   const [telefono, setTelefono] = useState(customer?.telefono || '');
   const [email, setEmail] = useState(customer?.email || '');
+  const [customerNotes, setCustomerNotes] = useState(customer?.customerNotes || '');
+  const [preferredServices, setPreferredServices] = useState(customer?.preferredServices || '');
+  const [customerRestrictions, setCustomerRestrictions] = useState(customer?.customerRestrictions || '');
+  const [preferredContactChannel, setPreferredContactChannel] = useState(customer?.preferredContactChannel || '');
+  const [favoriteBarberName, setFavoriteBarberName] = useState(customer?.favoriteBarberName || '');
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -198,12 +218,22 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
             apellidos,
             telefono: cleanPhone,
             email,
+            customerNotes,
+            preferredServices,
+            customerRestrictions,
+            preferredContactChannel,
+            favoriteBarberName,
           })
         : await createOwnerCustomer({
             nombres,
             apellidos,
             telefono: cleanPhone,
             email,
+            customerNotes,
+            preferredServices,
+            customerRestrictions,
+            preferredContactChannel,
+            favoriteBarberName,
           });
 
       onSaved(saved);
@@ -254,6 +284,30 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
           placeholder="Opcional"
           type="email"
         />
+
+        {isEdit && (
+          <div className="space-y-4 rounded-2xl border border-amber-100 bg-amber-50/40 p-4">
+            <div>
+              <div className="text-sm font-black text-neutral-950">Preferencias del cliente</div>
+              <div className="mt-1 text-xs font-bold text-neutral-500">Datos internos para personalizar la atencion.</div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <InputField label="Barbero favorito" value={favoriteBarberName} onChange={setFavoriteBarberName} placeholder="Ej. Luis" />
+              <label className="block">
+                <span className="text-sm font-black text-neutral-700">Canal favorito</span>
+                <select value={preferredContactChannel} onChange={(event) => setPreferredContactChannel(event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition focus:border-amber-400">
+                  <option value="">Sin definir</option>
+                  <option value="WHATSAPP">WhatsApp</option>
+                  <option value="PHONE">Llamada</option>
+                  <option value="EMAIL">Correo</option>
+                </select>
+              </label>
+            </div>
+            <TextAreaField label="Servicios preferidos" value={preferredServices} onChange={setPreferredServices} placeholder="Ej. Fade bajo, barba con panos calientes" />
+            <TextAreaField label="Restricciones o cuidados" value={customerRestrictions} onChange={setCustomerRestrictions} placeholder="Ej. alergias, piel sensible, no usar navaja" />
+            <TextAreaField label="Notas internas" value={customerNotes} onChange={setCustomerNotes} placeholder="Notas visibles solo para el negocio" />
+          </div>
+        )}
 
         <button
           disabled={saving}
@@ -464,6 +518,8 @@ function mostCommonValue(values, fallback = '-') {
 
 function buildCustomerProfileInsights({ history = [], cutHistory = [], detail, customer, loyalty }) {
   const favoriteBarber = mostCommonValue([
+    detail?.favoriteBarberName,
+    customer?.favoriteBarberName,
     ...history.map((item) => item.barbero),
     ...cutHistory.map((item) => item.barbero),
     detail?.ultimoBarbero,
@@ -471,6 +527,8 @@ function buildCustomerProfileInsights({ history = [], cutHistory = [], detail, c
   ]);
 
   const preferredService = mostCommonValue([
+    detail?.preferredServices,
+    customer?.preferredServices,
     ...history.map((item) => item.servicio),
     ...cutHistory.map((item) => item.nombre),
     detail?.ultimoServicio,
@@ -614,6 +672,14 @@ function CustomerDetailModal({
                     <InsightTile label="Ticket promedio" value={formatMoney(profileInsights.averageTicket)} />
                   </div>
                 </div>
+                <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
+                  <p className="text-sm font-black text-neutral-950">Preferencias registradas</p>
+                  <div className="mt-3 grid gap-3">
+                    <InsightTile label="Canal favorito" value={detail?.preferredContactChannel || customer?.preferredContactChannel || '-'} />
+                    <InsightTile label="Cuidados" value={detail?.customerRestrictions || customer?.customerRestrictions || '-'} />
+                    <InsightTile label="Notas" value={detail?.customerNotes || customer?.customerNotes || '-'} />
+                  </div>
+                </div>
 
                 <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
                   <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-black text-neutral-950">Preferencias WhatsApp</p><p className="mt-1 text-xs font-semibold text-neutral-500">Controla mensajes operativos y promociones.</p></div>{(detail?.whatsappOptedOutAt || customer?.whatsappOptedOutAt) && <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700">Baja total</span>}</div>
@@ -639,7 +705,7 @@ function CustomerDetailModal({
 
                   <button
                     type="button"
-                    onClick={() => onEdit(customer)}
+                    onClick={() => onEdit({ ...customer, ...detail })}
                     className="rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4 text-sm font-black text-neutral-700 hover:bg-neutral-100"
                   >
                     Editar datos del cliente
@@ -1585,6 +1651,7 @@ export default function OwnerCustomersPage() {
 
     if (selectedCustomer?.id === saved.id) {
       setSelectedCustomer((prev) => ({ ...prev, ...saved }));
+      setCustomerDetail((prev) => (prev ? { ...prev, ...saved } : prev));
     }
   }
 

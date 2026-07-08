@@ -63,6 +63,11 @@ function normalizeCustomer(raw = {}) {
     whatsappTransactionalEnabled: raw.whatsappTransactionalEnabled !== false,
     whatsappMarketingEnabled: raw.whatsappMarketingEnabled === true,
     whatsappOptedOutAt: text(raw.whatsappOptedOutAt ?? ''),
+    customerNotes: text(raw.customerNotes ?? raw.notes ?? raw.notas ?? ''),
+    preferredServices: text(raw.preferredServices ?? raw.serviciosPreferidos ?? ''),
+    customerRestrictions: text(raw.customerRestrictions ?? raw.restrictions ?? raw.restricciones ?? ''),
+    preferredContactChannel: text(raw.preferredContactChannel ?? raw.contactChannel ?? raw.canalContacto ?? ''),
+    favoriteBarberName: text(raw.favoriteBarberName ?? raw.favoriteBarber ?? raw.barberoFavorito ?? ''),
     puntosDisponibles: toNumber(
       raw.puntosDisponibles ??
         raw.pointsAvailable ??
@@ -337,6 +342,11 @@ export async function updateOwnerCustomer({
   apellidos = null,
   telefono = null,
   email = null,
+  customerNotes = null,
+  preferredServices = null,
+  customerRestrictions = null,
+  preferredContactChannel = null,
+  favoriteBarberName = null,
 }) {
   const payload = {
     nombres,
@@ -346,6 +356,11 @@ export async function updateOwnerCustomer({
         ? String(telefono).replace(/[^0-9]/g, '')
         : null,
     email,
+    customerNotes,
+    preferredServices,
+    customerRestrictions,
+    preferredContactChannel,
+    favoriteBarberName,
   };
 
   const first = await tryRequest(`/api/owner/customers/${customerId}`, {
