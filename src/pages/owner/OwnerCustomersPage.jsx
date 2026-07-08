@@ -442,6 +442,61 @@ function customerStatusMeta(status) {
   return values[code] || values.NEW;
 }
 
+function mostCommonValue(values, fallback = '-') {
+  const counts = new Map();
+  values
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .filter((value) => !['Sin asignar', 'Sin barbero', 'Sin sede', 'Servicio'].includes(value))
+    .forEach((value) => counts.set(value, (counts.get(value) || 0) + 1));
+
+  let best = fallback;
+  let bestCount = 0;
+  counts.forEach((count, value) => {
+    if (count > bestCount) {
+      best = value;
+      bestCount = count;
+    }
+  });
+  return best;
+}
+
+function buildCustomerProfileInsights({ history = [], cutHistory = [], detail, customer, loyalty }) {
+  const favoriteBarber = mostCommonValue([
+    ...history.map((item) => item.barbero),
+    ...cutHistory.map((item) => item.barbero),
+    detail?.ultimoBarbero,
+    customer?.ultimoBarbero,
+  ]);
+
+  const preferredService = mostCommonValue([
+    ...history.map((item) => item.servicio),
+    ...cutHistory.map((item) => item.nombre),
+    detail?.ultimoServicio,
+    customer?.ultimoServicio,
+  ]);
+
+  const usualBranch = mostCommonValue([
+    ...history.map((item) => item.sede),
+    ...cutHistory.map((item) => item.sede),
+    detail?.sede,
+    customer?.sede,
+  ]);
+
+  const totalSpent = history.reduce((acc, item) => acc + Number(item.monto || 0), 0);
+  const visits = Number(loyalty?.completedVisits || history.length || 0);
+  const averageTicket = visits > 0 ? totalSpent / visits : 0;
+  const lastVisit = detail?.ultimaVisita || customer?.ultimaVisita || loyalty?.lastVisit || history?.[0]?.fecha || '';
+
+  return {
+    favoriteBarber,
+    preferredService,
+    usualBranch,
+    totalSpent,
+    averageTicket,
+    lastVisit,
+  };
+}
 function CustomerDetailModal({
   customer,
   detail,
@@ -460,6 +515,7 @@ function CustomerDetailModal({
   const pointsAccumulated =
     loyalty?.puntosAcumulados ?? detail?.puntosAcumulados ?? customer?.puntosAcumulados ?? 0;
   const statusMeta = customerStatusMeta(loyalty?.customerStatus);
+  const profileInsights = buildCustomerProfileInsights({ history, cutHistory, detail, customer, loyalty });
 
   const totalSpent = history.reduce(
     (acc, item) => acc + Number(item.monto || 0),
@@ -538,6 +594,22 @@ function CustomerDetailModal({
                   <StatCard label="Puntos acumulados" value={pointsAccumulated} tone="green" />
                   <StatCard label="Visitas completadas" value={loyalty?.completedVisits || 0} tone="default" />
                   <StatCard label="No-show" value={loyalty?.noShows || 0} tone="default" />
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-neutral-950">Perfil inteligente</p>
+                      <p className="mt-1 text-xs font-semibold text-neutral-500">Preferencias derivadas del historial del cliente.</p>
+                    </div>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-amber-700">Premium</span>
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <InsightTile label="Barbero favorito" value={profileInsights.favoriteBarber} />
+                    <InsightTile label="Servicio preferido" value={profileInsights.preferredService} />
+                    <InsightTile label="Sede habitual" value={profileInsights.usualBranch} />
+                    <InsightTile label="Ticket promedio" value={formatMoney(profileInsights.averageTicket)} />
+                  </div>
                 </div>
 
                 <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
@@ -692,6 +764,14 @@ function CustomerDetailModal({
   );
 }
 
+function InsightTile({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-white bg-white/80 p-3">
+      <div className="text-[11px] font-black uppercase tracking-[0.12em] text-neutral-400">{label}</div>
+      <div className="mt-1 truncate text-sm font-black text-neutral-950">{value || '-'}</div>
+    </div>
+  );
+}
 function CustomerCard({ customer, onOpen, onWhatsapp }) {
   return (
     <article
