@@ -2027,6 +2027,11 @@ export default function OwnerCustomersPage() {
           }}
           onEdit={(customer) => {
             setEditingCustomer(customer);
+            setSelectedCustomer(null);
+            setCustomerDetail(null);
+            setCustomerHistory([]);
+            setCustomerCutHistory([]);
+            setCustomerLoyalty(null);
             setShowForm(true);
           }}
           onWhatsapp={openCustomerWhatsapp}
