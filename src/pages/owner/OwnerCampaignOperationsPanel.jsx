@@ -95,7 +95,9 @@ export default function OwnerCampaignOperationsPanel() {
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs font-black">
                   <span className="rounded-full bg-white px-3 py-2 text-neutral-800">{importedDraft.counts?.filtered || 0} filtrados</span>
-                  <span className="rounded-full bg-emerald-100 px-3 py-2 text-emerald-800">{importedDraft.counts?.eligible || 0} aptos WhatsApp</span>
+                  <span className="rounded-full bg-emerald-100 px-3 py-2 text-emerald-800">{importedDraft.counts?.eligible || 0} con telefono</span>
+                  <span className="rounded-full bg-blue-100 px-3 py-2 text-blue-800">{importedDraft.counts?.marketingReady || 0} con permiso marketing</span>
+                  <span className="rounded-full bg-yellow-100 px-3 py-2 text-yellow-800">{importedDraft.counts?.needsConsent || 0} requieren revisar permiso</span>
                   <span className="rounded-full bg-red-100 px-3 py-2 text-red-700">{importedDraft.counts?.excluded || 0} excluidos</span>
                   <span className="rounded-full bg-white px-3 py-2 text-neutral-800">Segmento: {importedDraft.status || 'Todos'}</span>
                 </div>

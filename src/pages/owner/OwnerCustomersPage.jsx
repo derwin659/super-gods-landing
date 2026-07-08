@@ -1064,10 +1064,12 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
   const navigate = useNavigate();
   const selectedBranch = branches.find((branch) => String(branch.id ?? branch.branchId) === String(branchId));
   const activeStatusLabel = status === 'ALL' ? 'Todos' : customerStatusMeta(status).label;
-  const campaignEligibleItems = items.filter((item) => String(item.phone || '').trim() && item.whatsappMarketingEnabled && !item.whatsappOptedOut);
-  const campaignExcluded = Math.max(items.length - campaignEligibleItems.length, 0);
+  const campaignPhoneItems = items.filter((item) => String(item.phone || '').trim() && !item.whatsappOptedOut);
+  const campaignMarketingReadyItems = campaignPhoneItems.filter((item) => item.whatsappMarketingEnabled);
+  const campaignNeedsConsent = Math.max(campaignPhoneItems.length - campaignMarketingReadyItems.length, 0);
+  const campaignExcluded = Math.max(items.length - campaignPhoneItems.length, 0);
   const canExportReport = Boolean(summary) && items.length > 0 && !loading;
-  const canCreateCampaign = canExportReport && campaignEligibleItems.length > 0;
+  const canCreateCampaign = canExportReport && campaignPhoneItems.length > 0;
 
   async function exportSegmentedReport(format) {
     if (!canExportReport || exportingReport) return;
@@ -1107,10 +1109,12 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
       },
       counts: {
         filtered: items.length,
-        eligible: campaignEligibleItems.length,
+        eligible: campaignPhoneItems.length,
+        marketingReady: campaignMarketingReadyItems.length,
+        needsConsent: campaignNeedsConsent,
         excluded: campaignExcluded,
       },
-      customers: campaignEligibleItems.map((item) => ({
+      customers: campaignPhoneItems.map((item) => ({
         id: item.customerId,
         name: item.fullName,
         phone: item.phone,
@@ -1242,7 +1246,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
                     type="button"
                     onClick={createCampaignDraft}
                     disabled={!canCreateCampaign}
-                    title={`${items.length} filtrados · ${campaignEligibleItems.length} aptos WhatsApp · ${campaignExcluded} excluidos`}
+                    title={`${items.length} filtrados · ${campaignPhoneItems.length} con telefono · ${campaignNeedsConsent} requieren permiso`}
                     className="rounded-2xl border border-amber-200 bg-amber-100 px-4 py-3 text-xs font-black text-amber-900 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     Crear campaña
@@ -1251,7 +1255,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
               </div>
               {canExportReport ? (
                 <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-black text-amber-900">
-                  Campaña segura: {items.length} filtrados · {campaignEligibleItems.length} aptos WhatsApp · {campaignExcluded} excluidos por permiso, baja o teléfono.
+                  Borrador seguro: {items.length} filtrados · {campaignPhoneItems.length} con telefono · {campaignMarketingReadyItems.length} con permiso marketing · {campaignNeedsConsent} requieren revisar permiso · {campaignExcluded} excluidos por baja o sin telefono.
                 </div>
               ) : null}
 
