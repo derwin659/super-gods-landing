@@ -17,6 +17,7 @@ import {
 } from '../../api/ownerCustomersApi';
 import { getOwnerBranches } from '../../api/ownerBranchesApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
+import { exportCustomerReportExcel, exportCustomerReportPdf } from '../../utils/customerReportExport';
 
 function formatMoney(value) {
   return formatTenantMoney(value);
@@ -1059,6 +1060,32 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
   const variation = Number(summary?.registeredVariationPercent || 0);
   const variationLabel = `${variation > 0 ? '+' : ''}${variation.toFixed(1)}%`;
   const fieldClass = 'mt-1 h-12 w-full min-w-0 rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-[13px] font-black text-neutral-950 outline-none transition [color-scheme:light] placeholder:text-neutral-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100';
+  const [exportingReport, setExportingReport] = useState('');
+  const selectedBranch = branches.find((branch) => String(branch.id ?? branch.branchId) === String(branchId));
+  const activeStatusLabel = status === 'ALL' ? 'Todos' : customerStatusMeta(status).label;
+  const canExportReport = Boolean(summary) && items.length > 0 && !loading;
+
+  async function exportSegmentedReport(format) {
+    if (!canExportReport || exportingReport) return;
+
+    const payload = {
+      report,
+      from,
+      to,
+      branchName: selectedBranch?.nombre ?? selectedBranch?.name ?? selectedBranch?.label ?? 'Todas las sedes',
+      statusLabel: activeStatusLabel,
+      lastVisitFrom,
+      lastVisitTo,
+    };
+
+    setExportingReport(format);
+    try {
+      if (format === 'pdf') await exportCustomerReportPdf(payload);
+      else exportCustomerReportExcel(payload);
+    } finally {
+      setExportingReport('');
+    }
+  }
 
   return (
     <section className="overflow-hidden rounded-[34px] border border-amber-200/80 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
@@ -1146,12 +1173,32 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
                 <ReportMetric label="WhatsApp MKT" value={summary.withMarketingWhatsapp} helper={`Bajas ${summary.optedOutWhatsapp}`} tone="teal" />
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <SegmentPill label="VIP" value={summary.vipCustomers} />
-                <SegmentPill label="Frecuentes" value={summary.frequentCustomers} />
-                <SegmentPill label="Nuevos" value={summary.newCustomers} />
-                <SegmentPill label="Inactivos" value={summary.inactiveCustomers} />
-                <SegmentPill label="Filtrados" value={summary.totalFiltered} />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  <SegmentPill label="VIP" value={summary.vipCustomers} />
+                  <SegmentPill label="Frecuentes" value={summary.frequentCustomers} />
+                  <SegmentPill label="Nuevos" value={summary.newCustomers} />
+                  <SegmentPill label="Inactivos" value={summary.inactiveCustomers} />
+                  <SegmentPill label="Filtrados" value={summary.totalFiltered} />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => exportSegmentedReport('excel')}
+                    disabled={!canExportReport || Boolean(exportingReport)}
+                    className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-black text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {exportingReport === 'excel' ? 'Generando...' : 'Excel'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => exportSegmentedReport('pdf')}
+                    disabled={!canExportReport || Boolean(exportingReport)}
+                    className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {exportingReport === 'pdf' ? 'Generando...' : 'PDF'}
+                  </button>
+                </div>
               </div>
 
               <CustomerReportResults items={items} activeStatus={status} loading={loading} />
