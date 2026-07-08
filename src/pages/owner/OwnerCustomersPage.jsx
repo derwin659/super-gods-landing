@@ -1061,9 +1061,13 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
   const variationLabel = `${variation > 0 ? '+' : ''}${variation.toFixed(1)}%`;
   const fieldClass = 'mt-1 h-12 w-full min-w-0 rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-[13px] font-black text-neutral-950 outline-none transition [color-scheme:light] placeholder:text-neutral-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100';
   const [exportingReport, setExportingReport] = useState('');
+  const navigate = useNavigate();
   const selectedBranch = branches.find((branch) => String(branch.id ?? branch.branchId) === String(branchId));
   const activeStatusLabel = status === 'ALL' ? 'Todos' : customerStatusMeta(status).label;
+  const campaignEligibleItems = items.filter((item) => String(item.phone || '').trim() && item.whatsappMarketingEnabled && !item.whatsappOptedOut);
+  const campaignExcluded = Math.max(items.length - campaignEligibleItems.length, 0);
   const canExportReport = Boolean(summary) && items.length > 0 && !loading;
+  const canCreateCampaign = canExportReport && campaignEligibleItems.length > 0;
 
   async function exportSegmentedReport(format) {
     if (!canExportReport || exportingReport) return;
@@ -1085,6 +1089,42 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
     } finally {
       setExportingReport('');
     }
+  }
+
+  function createCampaignDraft() {
+    if (!canCreateCampaign) return;
+
+    const payload = {
+      createdAt: new Date().toISOString(),
+      source: 'customer-report',
+      status: activeStatusLabel,
+      filters: {
+        from,
+        to,
+        branchName: selectedBranch?.nombre ?? selectedBranch?.name ?? selectedBranch?.label ?? 'Todas las sedes',
+        lastVisitFrom,
+        lastVisitTo,
+      },
+      counts: {
+        filtered: items.length,
+        eligible: campaignEligibleItems.length,
+        excluded: campaignExcluded,
+      },
+      customers: campaignEligibleItems.map((item) => ({
+        id: item.customerId,
+        name: item.fullName,
+        phone: item.phone,
+        status: customerStatusMeta(item.status).label,
+        branchName: item.branchName,
+        visits: item.visits,
+        points: item.points,
+        totalSpent: item.totalSpent,
+        lastVisit: item.lastVisit,
+      })),
+    };
+
+    window.sessionStorage.setItem('ownerCustomerCampaignDraft', JSON.stringify(payload));
+    navigate('/owner/whatsapp-mensajes');
   }
 
   return (
@@ -1198,8 +1238,22 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
                   >
                     {exportingReport === 'pdf' ? 'Generando...' : 'PDF'}
                   </button>
+                  <button
+                    type="button"
+                    onClick={createCampaignDraft}
+                    disabled={!canCreateCampaign}
+                    title={`${items.length} filtrados · ${campaignEligibleItems.length} aptos WhatsApp · ${campaignExcluded} excluidos`}
+                    className="rounded-2xl border border-amber-200 bg-amber-100 px-4 py-3 text-xs font-black text-amber-900 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    Crear campaña
+                  </button>
                 </div>
               </div>
+              {canExportReport ? (
+                <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-black text-amber-900">
+                  Campaña segura: {items.length} filtrados · {campaignEligibleItems.length} aptos WhatsApp · {campaignExcluded} excluidos por permiso, baja o teléfono.
+                </div>
+              ) : null}
 
               <CustomerReportResults items={items} activeStatus={status} loading={loading} />
             </>
