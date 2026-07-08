@@ -1286,23 +1286,36 @@ export default function OwnerCustomersPage() {
   const cleanQuery = query.trim();
   const isSearching = cleanQuery.length > 0;
 
-  async function loadCustomers(nextQuery = query) {
+  async function loadCustomers(nextQuery = query, { refreshTotal = false } = {}) {
     const requestId = customersRequestId.current + 1;
     customersRequestId.current = requestId;
+    const normalizedQuery = String(nextQuery || '').trim();
+
+    if (normalizedQuery.length === 1) {
+      setCustomers([]);
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setErrorMsg('');
 
     try {
-      const [data, total] = await Promise.all([
-        getOwnerCustomers({ query: nextQuery, limit: 80 }),
-        getOwnerCustomersTotal(),
-      ]);
-      setTotalCustomers(total);
+      const data = await getOwnerCustomers({
+        query: normalizedQuery,
+        limit: normalizedQuery ? 20 : 80,
+      });
 
       if (requestId !== customersRequestId.current) return;
 
       setCustomers(Array.isArray(data) ? data : []);
+
+      if (refreshTotal || !normalizedQuery) {
+        const total = await getOwnerCustomersTotal();
+        if (requestId === customersRequestId.current) {
+          setTotalCustomers(total);
+        }
+      }
     } catch (error) {
       if (requestId !== customersRequestId.current) return;
 
@@ -1469,7 +1482,7 @@ export default function OwnerCustomersPage() {
   }
 
   useEffect(() => {
-    loadCustomers('');
+    loadCustomers('', { refreshTotal: true });
   }, []);
 
   useEffect(() => {
@@ -1489,8 +1502,7 @@ export default function OwnerCustomersPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       loadCustomers(query);
-      loadCustomerReport({ nextQuery: query });
-    }, 450);
+    }, 300);
 
     return () => window.clearTimeout(timer);
   }, [query]);
@@ -1540,7 +1552,7 @@ export default function OwnerCustomersPage() {
 
             <button
               type="button"
-              onClick={() => loadCustomers(query)}
+              onClick={() => loadCustomers(query, { refreshTotal: !query.trim() })}
               className="rounded-2xl border border-white/10 bg-white/10 px-6 py-4 text-sm font-black text-white transition hover:bg-white/15"
             >
               Actualizar
