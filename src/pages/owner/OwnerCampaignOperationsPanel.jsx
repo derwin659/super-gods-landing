@@ -11,6 +11,7 @@ export default function OwnerCampaignOperationsPanel() {
   const [importedDraft, setImportedDraft] = useState(null);
   const [segmentTitle, setSegmentTitle] = useState('Tenemos algo especial para ti');
   const [segmentMessage, setSegmentMessage] = useState('Hola, tenemos una campana especial para ti. Responde este mensaje para coordinar tu visita.');
+  const [consentMessage, setConsentMessage] = useState('Hola, queremos enviarte promociones y beneficios por WhatsApp. Responde AUTORIZO si aceptas recibir campanas y ofertas de nuestro negocio.');
   const [sendingSegment, setSendingSegment] = useState(false);
 
   const load = async () => {
@@ -55,6 +56,26 @@ export default function OwnerCampaignOperationsPanel() {
       window.alert('Telefonos copiados. Revisa el mensaje antes de enviarlo.');
     } catch {
       window.alert(phones);
+    }
+  };
+
+  const copyConsentPermissionRequest = async () => {
+    const pending = (importedDraft?.customers || [])
+      .filter((item) => item.needsConsent)
+      .map((item) => `${item.phone} - ${item.name || 'Cliente'}`)
+      .filter(Boolean);
+
+    if (!pending.length) {
+      window.alert('No hay clientes pendientes de permiso marketing en esta audiencia.');
+      return;
+    }
+
+    const text = `${consentMessage.trim()}\n\nClientes pendientes:\n${pending.join('\n')}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      window.alert('Solicitud de permiso copiada. Cuando el cliente autorice, activalo en su ficha de cliente.');
+    } catch {
+      window.alert(text);
     }
   };
 
@@ -153,6 +174,16 @@ export default function OwnerCampaignOperationsPanel() {
                 <button type="button" onClick={copyImportedPhones} className="inline-flex items-center gap-2 rounded-2xl bg-neutral-950 px-4 py-3 text-sm font-black text-white"><ClipboardCopy size={16}/>Copiar telefonos</button>
                 <button type="button" onClick={clearImportedDraft} className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm font-black text-neutral-700"><Trash2 size={16}/>Limpiar</button>
               </div>
+            </div>
+            <div className="border-t border-amber-200 bg-yellow-50/70 px-5 py-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-3xl">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-yellow-700">Solicitud de permiso marketing</p>
+                  <p className="mt-1 text-sm font-bold text-neutral-600">Usa este mensaje para pedir autorizacion antes de enviar promociones. No se activa automaticamente; cuando el cliente acepte, marca Promociones en su ficha.</p>
+                </div>
+                <button type="button" onClick={copyConsentPermissionRequest} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-yellow-400 px-4 py-3 text-sm font-black text-neutral-950"><ClipboardCopy size={16}/>Copiar solicitud</button>
+              </div>
+              <textarea value={consentMessage} onChange={(event) => setConsentMessage(event.target.value)} maxLength={500} rows={3} className="mt-3 w-full rounded-2xl border border-yellow-200 bg-white px-4 py-3 text-sm font-bold text-neutral-900 outline-none focus:border-yellow-500" placeholder="Mensaje para solicitar consentimiento" />
             </div>
             <div className="border-t border-amber-200 bg-white/80 px-5 py-4">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-neutral-400">Plantilla de mensaje</p>
