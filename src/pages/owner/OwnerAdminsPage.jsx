@@ -169,11 +169,13 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState(String(admin?.rol || 'ADMIN').toUpperCase());
   const [branchIds, setBranchIds] = useState(() => { const initial = admin?.branchIds?.length ? admin.branchIds : admin?.branchId ? [admin.branchId] : branches[0]?.id ? [branches[0].id] : []; return initial.map(String); });
+  const [professionalProfileEnabled, setProfessionalProfileEnabled] = useState(admin?.professionalProfileEnabled === true);
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const usingBarber = !editing && mode === 'barber';
+  const profileEnabled = usingBarber || professionalProfileEnabled;
 
   function handleSelectBarber(nextId) {
     setSelectedBarberId(nextId);
@@ -187,6 +189,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
     setPhone(barber.phone || '');
     const nextBranches = barber.branchIds?.length ? barber.branchIds : barber.branchId ? [barber.branchId] : [];
     if (nextBranches.length) setBranchIds(nextBranches.map(String));
+    setProfessionalProfileEnabled(true);
   }
 
   async function handleSubmit(event) {
@@ -226,6 +229,8 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
       return;
     }
 
+    const professionalBranchIds = branchIds.map(Number);
+
     setSaving(true);
 
     try {
@@ -239,6 +244,10 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           phone: cleanPhone,
           branchId: branchIds[0],
           rol: role,
+          professionalProfileEnabled: profileEnabled,
+          preserveProfessionalProfile: profileEnabled,
+          professionalBranchIds,
+          canSell: profileEnabled,
         });
       } else if (usingBarber) {
         saved = await updateOwnerAdmin({
@@ -248,8 +257,9 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           phone: cleanPhone,
           branchId: branchIds[0],
           rol: role,
+          professionalProfileEnabled: true,
           preserveProfessionalProfile: true,
-          professionalBranchIds: branchIds.map(Number),
+          professionalBranchIds,
           canSell: true,
         });
       } else {
@@ -261,6 +271,10 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           password: cleanPassword,
           branchId: branchIds[0],
           rol: role,
+          professionalProfileEnabled: profileEnabled,
+          preserveProfessionalProfile: profileEnabled,
+          professionalBranchIds,
+          canSell: profileEnabled,
         });
       }
 
@@ -297,7 +311,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           <div className="grid gap-2 rounded-[22px] bg-neutral-100 p-2 sm:grid-cols-2">
             <button
               type="button"
-              onClick={() => setMode('new')}
+              onClick={() => { setMode('new'); setProfessionalProfileEnabled(false); }}
               className={`rounded-2xl px-4 py-3 text-sm font-black transition ${
                 mode === 'new'
                   ? 'bg-white text-neutral-950 shadow-sm'
@@ -309,7 +323,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
 
             <button
               type="button"
-              onClick={() => setMode('barber')}
+              onClick={() => { setMode('barber'); setProfessionalProfileEnabled(true); }}
               className={`rounded-2xl px-4 py-3 text-sm font-black transition ${
                 mode === 'barber'
                   ? 'bg-white text-neutral-950 shadow-sm'
@@ -369,6 +383,23 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           </div>
         </div>
 
+        <div className="rounded-[24px] border border-neutral-200 bg-white p-4">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={profileEnabled}
+              disabled={usingBarber}
+              onChange={(event) => setProfessionalProfileEnabled(event.target.checked)}
+              className="mt-1 h-4 w-4 accent-amber-500 disabled:cursor-not-allowed"
+            />
+            <span>
+              <span className="block text-sm font-black text-neutral-900">Tambien atiende/vende con esta misma cuenta</span>
+              <span className="mt-1 block text-xs font-semibold leading-5 text-neutral-500">
+                Aparecera como profesional en ventas, agenda y pagos sin crear otra cuenta de barbero.
+              </span>
+            </span>
+          </label>
+        </div>
         <StickyFormActions errorMsg={errorMsg} saving={saving} editing={editing} />
       </form>
     </ModalShell>

@@ -80,6 +80,29 @@ function normalizeBranch(raw = {}) {
   };
 }
 
+function professionalProfilePayload({
+  professionalProfileEnabled,
+  preserveProfessionalProfile = false,
+  professionalBranchIds = [],
+  canSell,
+}) {
+  const enabled =
+    professionalProfileEnabled === undefined
+      ? preserveProfessionalProfile
+        ? true
+        : undefined
+      : Boolean(professionalProfileEnabled);
+
+  if (enabled === undefined) return {};
+
+  return {
+    preserveProfessionalProfile: enabled,
+    professionalProfileEnabled: enabled,
+    professionalBranchIds: enabled ? professionalBranchIds.map(Number) : [],
+    canSell: canSell === undefined ? enabled : Boolean(canSell),
+  };
+}
+
 function normalizePermissions(raw = {}) {
   return {
     tenantId:
@@ -178,6 +201,7 @@ export async function createOwnerAdmin({
   branchId,
   rol = 'ADMIN',
   preserveProfessionalProfile = false,
+  professionalProfileEnabled,
   professionalBranchIds = [],
   canSell,
 }) {
@@ -191,14 +215,12 @@ export async function createOwnerAdmin({
       password: String(password || '').trim(),
       branchId: Number(branchId),
       rol: String(rol || 'ADMIN').trim().toUpperCase(),
-      ...(preserveProfessionalProfile
-        ? {
-            preserveProfessionalProfile: true,
-            professionalProfileEnabled: true,
-            professionalBranchIds: professionalBranchIds.map(Number),
-            canSell: canSell === undefined ? true : Boolean(canSell),
-          }
-        : {}),
+      ...professionalProfilePayload({
+        professionalProfileEnabled,
+        preserveProfessionalProfile,
+        professionalBranchIds,
+        canSell,
+      }),
     }),
   });
 
@@ -213,6 +235,7 @@ export async function updateOwnerAdmin({
   branchId,
   rol = 'ADMIN',
   preserveProfessionalProfile = false,
+  professionalProfileEnabled,
   professionalBranchIds = [],
   canSell,
 }) {
@@ -224,14 +247,12 @@ export async function updateOwnerAdmin({
       phone: String(phone || '').trim(),
       branchId: Number(branchId),
       rol: String(rol || 'ADMIN').trim().toUpperCase(),
-      ...(preserveProfessionalProfile
-        ? {
-            preserveProfessionalProfile: true,
-            professionalProfileEnabled: true,
-            professionalBranchIds: professionalBranchIds.map(Number),
-            canSell: canSell === undefined ? true : Boolean(canSell),
-          }
-        : {}),
+      ...professionalProfilePayload({
+        professionalProfileEnabled,
+        preserveProfessionalProfile,
+        professionalBranchIds,
+        canSell,
+      }),
     }),
   });
 
