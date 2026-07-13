@@ -387,6 +387,32 @@ export async function updateOwnerCustomerWhatsappConsent({ customerId, transacti
   });
   return normalizeCustomer(data);
 }
+export async function getOwnerCustomerFollowUps(customerId) {
+  const data = await apiRequest(`/api/owner/customers/${customerId}/follow-ups`);
+  return extractList(data).map(normalizeCustomerFollowUp);
+}
+
+export async function createOwnerCustomerFollowUp({
+  customerId,
+  title = 'Seguimiento de cliente',
+  message,
+  channel = 'WHATSAPP',
+  scheduledAt = null,
+}) {
+  const data = await apiRequest(`/api/owner/customers/${customerId}/follow-ups`, {
+    method: 'POST',
+    body: JSON.stringify({ title, message, channel, scheduledAt }),
+  });
+  return normalizeCustomerFollowUp(data);
+}
+
+export async function updateOwnerCustomerFollowUpStatus({ customerId, followUpId, status }) {
+  const data = await apiRequest(`/api/owner/customers/${customerId}/follow-ups/${followUpId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+  return normalizeCustomerFollowUp(data);
+}
 export async function getOwnerCustomerDetail(customerId) {
   const first = await tryRequest(`/api/owner/customers/${customerId}`);
 
@@ -480,6 +506,20 @@ export async function getOwnerCustomerLoyalty(customerId) {
   return null;
 }
 
+function normalizeCustomerFollowUp(raw = {}) {
+  return {
+    id: toNumber(raw.id ?? raw.followUpId ?? raw.customerFollowUpId),
+    title: text(raw.title ?? raw.titulo ?? 'Seguimiento de cliente'),
+    message: text(raw.message ?? raw.mensaje ?? ''),
+    channel: text(raw.channel ?? raw.canal ?? 'WHATSAPP', 'WHATSAPP').toUpperCase(),
+    status: text(raw.status ?? raw.estado ?? 'PENDING', 'PENDING').toUpperCase(),
+    scheduledAt: text(raw.scheduledAt ?? raw.fechaProgramada ?? ''),
+    completedAt: text(raw.completedAt ?? raw.fechaCompletado ?? ''),
+    createdAt: text(raw.createdAt ?? raw.fechaCreacion ?? ''),
+    actorUserName: text(raw.actorUserName ?? raw.actorName ?? raw.usuario ?? ''),
+    raw,
+  };
+}
 function normalizeInactiveCustomer(raw = {}) {
     return {
       id: toNumber(raw.customerId ?? raw.id),

@@ -3,16 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import {
   buildCustomerWhatsappUrl,
   createOwnerCustomer,
+  createOwnerCustomerFollowUp,
   downloadOwnerCustomersExcel,
   getInactiveOwnerCustomers,
   getOwnerCustomerCutHistory,
   getOwnerCustomerDetail,
+  getOwnerCustomerFollowUps,
   getOwnerCustomerHistory,
   getOwnerCustomerLoyalty,
   getOwnerCustomers,
   getOwnerCustomersReport,
   getOwnerCustomersTotal,
   updateOwnerCustomer,
+  updateOwnerCustomerFollowUpStatus,
   updateOwnerCustomerWhatsappConsent,
 } from '../../api/ownerCustomersApi';
 import { getOwnerBranches } from '../../api/ownerBranchesApi';
@@ -568,6 +571,10 @@ function CustomerDetailModal({
   onWhatsapp,
   onCreateAppointment,
   onWhatsappConsent,
+  onCreateFollowUp,
+  onUpdateFollowUpStatus,
+  followUps = [],
+  followUpSaving = false,
   consentSaving = false,
 }) {
   const pointsAvailable =
@@ -602,6 +609,39 @@ function CustomerDetailModal({
           sede: '',
         }));
 
+  async function prepareCustomerFollowUp() {
+    const firstName = String(customer?.nombres || customer?.nombreCompleto || 'Cliente').trim().split(/\s+/)[0] || 'Cliente';
+    const service = String(profileInsights.preferredService || '').trim() || 'tu proxima atencion';
+    const suggested = `Hola ${firstName}, te escribimos para recordarte que puedes agendar ${service}. Si deseas, respondeme este mensaje y coordinamos tu visita.`;
+    const message = window.prompt('Mensaje de seguimiento para WhatsApp', suggested);
+    if (!message || !message.trim()) return;
+
+    try {
+      if (onCreateFollowUp) {
+        await onCreateFollowUp({
+          title: `Seguimiento de ${firstName}`,
+          message: message.trim(),
+          channel: 'WHATSAPP',
+        });
+      }
+    } catch (error) {
+      window.alert(error.message || 'No se pudo guardar el seguimiento.');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(message.trim());
+    } catch {}
+
+    const whatsappUrl = buildCustomerWhatsappUrl({
+      telefono: customer?.telefono,
+      nombre: customer?.nombreCompleto,
+      message: message.trim(),
+    });
+
+    if (whatsappUrl) window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    else window.alert('Seguimiento copiado. Este cliente no tiene telefono para abrir WhatsApp.');
+  }
   return (
     <ModalShell
       title={customer?.nombreCompleto || 'Cliente'}
@@ -705,12 +745,57 @@ function CustomerDetailModal({
 
                   <button
                     type="button"
+                    disabled={followUpSaving}
+                    onClick={prepareCustomerFollowUp}
+                    className="rounded-2xl bg-violet-600 px-5 py-4 text-sm font-black text-white shadow-[0_16px_35px_rgba(124,58,237,0.18)] transition hover:scale-[1.01] hover:bg-violet-700 disabled:opacity-60"
+                  >
+                    {followUpSaving ? 'Guardando seguimiento...' : 'Preparar seguimiento'}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => onEdit({ ...customer, ...detail })}
                     className="rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4 text-sm font-black text-neutral-700 hover:bg-neutral-100"
                   >
                     Editar datos del cliente
                   </button>
                 </div>
+                {followUps.length > 0 && (
+                  <div className="mt-5 rounded-2xl border border-violet-100 bg-violet-50/50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black text-neutral-950">Seguimientos</p>
+                        <p className="mt-1 text-xs font-semibold text-neutral-500">Recordatorios guardados para este cliente.</p>
+                      </div>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-violet-700">{followUps.length}</span>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {followUps.slice(0, 5).map((item) => {
+                        const done = item.status === 'DONE' || item.status === 'SENT';
+                        return (
+                          <div key={item.id || `${item.createdAt}-${item.title}`} className="rounded-xl border border-white bg-white p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-black text-neutral-950">{item.title}</p>
+                                <p className="mt-1 line-clamp-2 text-xs font-semibold text-neutral-500">{item.message}</p>
+                                <p className="mt-2 text-[11px] font-black uppercase tracking-[0.16em] text-violet-500">{done ? 'Completado' : 'Pendiente'}{item.createdAt ? ` · ${prettyDate(item.createdAt)}` : ''}</p>
+                              </div>
+                              {onUpdateFollowUpStatus && item.id && (
+                                <button
+                                  type="button"
+                                  disabled={followUpSaving}
+                                  onClick={() => onUpdateFollowUpStatus(item, done ? 'PENDING' : 'DONE')}
+                                  className="shrink-0 rounded-full border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-black text-violet-700 disabled:opacity-60"
+                                >
+                                  {done ? 'Reabrir' : 'Hecho'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1466,8 +1551,10 @@ export default function OwnerCustomersPage() {
   const [customerHistory, setCustomerHistory] = useState([]);
   const [customerCutHistory, setCustomerCutHistory] = useState([]);
   const [customerLoyalty, setCustomerLoyalty] = useState(null);
+  const [customerFollowUps, setCustomerFollowUps] = useState([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [consentSaving, setConsentSaving] = useState(false);
+  const [followUpSaving, setFollowUpSaving] = useState(false);
 
   const [inactiveDays, setInactiveDays] = useState(30);
   const [inactiveCustomers, setInactiveCustomers] = useState([]);
@@ -1576,25 +1663,29 @@ export default function OwnerCustomersPage() {
     setCustomerHistory([]);
     setCustomerCutHistory([]);
     setCustomerLoyalty(null);
+    setCustomerFollowUps([]);
     setLoadingDetail(true);
 
     try {
-      const [detail, history, cutHistory, loyalty] = await Promise.all([
+      const [detail, history, cutHistory, loyalty, followUps] = await Promise.all([
         getOwnerCustomerDetail(customer.id),
         getOwnerCustomerHistory(customer.id),
         getOwnerCustomerCutHistory(customer.id),
         getOwnerCustomerLoyalty(customer.id),
+        getOwnerCustomerFollowUps(customer.id),
       ]);
 
       setCustomerDetail(detail);
       setCustomerHistory(history);
       setCustomerCutHistory(cutHistory);
       setCustomerLoyalty(loyalty);
+      setCustomerFollowUps(Array.isArray(followUps) ? followUps : []);
     } catch {
       setCustomerDetail(null);
       setCustomerHistory([]);
       setCustomerCutHistory([]);
       setCustomerLoyalty(null);
+      setCustomerFollowUps([]);
     } finally {
       setLoadingDetail(false);
     }
@@ -1616,6 +1707,41 @@ export default function OwnerCustomersPage() {
       setCustomers((items) => items.map((item) => item.id === saved.id ? { ...item, ...saved } : item));
     } catch (error) { setErrorMsg(error.message || "No se pudo actualizar WhatsApp."); }
     finally { setConsentSaving(false); }
+  }
+
+  async function createCustomerFollowUp(payload) {
+    if (!selectedCustomer) return null;
+    setFollowUpSaving(true);
+    try {
+      const saved = await createOwnerCustomerFollowUp({
+        customerId: selectedCustomer.id,
+        ...payload,
+      });
+      setCustomerFollowUps((items) => [saved, ...items.filter((item) => item.id !== saved.id)]);
+      return saved;
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo guardar el seguimiento.');
+      throw error;
+    } finally {
+      setFollowUpSaving(false);
+    }
+  }
+
+  async function updateCustomerFollowUpStatus(item, status) {
+    if (!selectedCustomer || !item?.id) return;
+    setFollowUpSaving(true);
+    try {
+      const saved = await updateOwnerCustomerFollowUpStatus({
+        customerId: selectedCustomer.id,
+        followUpId: item.id,
+        status,
+      });
+      setCustomerFollowUps((items) => items.map((current) => current.id === saved.id ? saved : current));
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo actualizar el seguimiento.');
+    } finally {
+      setFollowUpSaving(false);
+    }
   }
   async function exportCustomers() {
     setExporting(true);
@@ -2018,12 +2144,14 @@ export default function OwnerCustomersPage() {
           history={customerHistory}
           cutHistory={customerCutHistory}
           loyalty={customerLoyalty}
+          followUps={customerFollowUps}
           loading={loadingDetail}
           onClose={() => {
             setSelectedCustomer(null);
             setCustomerDetail(null);
             setCustomerHistory([]);
             setCustomerLoyalty(null);
+            setCustomerFollowUps([]);
           }}
           onEdit={(customer) => {
             setEditingCustomer(customer);
@@ -2032,11 +2160,15 @@ export default function OwnerCustomersPage() {
             setCustomerHistory([]);
             setCustomerCutHistory([]);
             setCustomerLoyalty(null);
+            setCustomerFollowUps([]);
             setShowForm(true);
           }}
           onWhatsapp={openCustomerWhatsapp}
           onCreateAppointment={createAppointmentForCustomer}
           onWhatsappConsent={updateWhatsappConsent}
+          onCreateFollowUp={createCustomerFollowUp}
+          onUpdateFollowUpStatus={updateCustomerFollowUpStatus}
+          followUpSaving={followUpSaving}
           consentSaving={consentSaving}
         />
       )}
