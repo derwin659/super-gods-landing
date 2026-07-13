@@ -177,6 +177,7 @@ import {
           userId: basic.userId,
           tenantId: selectedTenant.tenantId,
           branchId: selectedTenant.branchId,
+          role: selectedTenant.role,
           mode: 'TENANT',
         });
       }

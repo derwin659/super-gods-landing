@@ -10,7 +10,7 @@ export async function loginBasic(email, password) {
   });
 }
 
-export async function loginFinal({ userId, tenantId, branchId, mode }) {
+export async function loginFinal({ userId, tenantId, branchId, role, mode }) {
   const payload = {
     userId,
     mode,
@@ -22,6 +22,10 @@ export async function loginFinal({ userId, tenantId, branchId, mode }) {
 
   if (branchId !== null && branchId !== undefined) {
     payload.branchId = branchId;
+  }
+
+  if (role !== null && role !== undefined && String(role).trim()) {
+    payload.role = String(role).trim().toUpperCase();
   }
 
   return apiRequest('/api/auth/login-final', {

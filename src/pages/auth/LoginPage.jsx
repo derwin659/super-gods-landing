@@ -259,8 +259,9 @@ export default function LoginPage() {
                   <input
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    type="email"
+                    type="text"
                     placeholder="correo@negocio.com"
+                    inputMode="email"
                     autoComplete="email"
                     className="w-full rounded-2xl bg-transparent px-1 py-4 pr-4 text-slate-950 outline-none placeholder:text-slate-400"
                   />
@@ -571,8 +572,9 @@ function RecoverPasswordModal({ initialEmail = '', onClose, onPasswordChanged })
               label="Correo electrónico"
               value={email}
               onChange={setEmail}
-              type="email"
+              type="text"
               placeholder="correo@negocio.com"
+              inputMode="email"
               autoComplete="email"
               icon={Mail}
             />
@@ -603,8 +605,9 @@ function RecoverPasswordModal({ initialEmail = '', onClose, onPasswordChanged })
               label="Correo electrónico"
               value={email}
               onChange={setEmail}
-              type="email"
+              type="text"
               placeholder="correo@negocio.com"
+              inputMode="email"
               autoComplete="email"
               icon={Mail}
             />
