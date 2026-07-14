@@ -616,16 +616,28 @@ function CustomerDetailModal({
     const message = window.prompt('Mensaje de seguimiento para WhatsApp', suggested);
     if (!message || !message.trim()) return;
 
+    const scheduleInput = window.prompt('Fecha/hora programada opcional (YYYY-MM-DD HH:mm). Dejalo vacio para envio manual.', '');
+    if (scheduleInput === null) return;
+    const scheduledAt = scheduleInput.trim()
+      ? scheduleInput.trim().replace(' ', 'T').slice(0, 16)
+      : null;
+
     try {
       if (onCreateFollowUp) {
         await onCreateFollowUp({
           title: `Seguimiento de ${firstName}`,
           message: message.trim(),
           channel: 'WHATSAPP',
+          scheduledAt,
         });
       }
     } catch (error) {
       window.alert(error.message || 'No se pudo guardar el seguimiento.');
+      return;
+    }
+
+    if (scheduledAt) {
+      window.alert('Seguimiento programado. El backend intentara enviarlo automaticamente cuando llegue la fecha.');
       return;
     }
 
