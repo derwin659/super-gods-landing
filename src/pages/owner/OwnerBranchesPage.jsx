@@ -284,7 +284,7 @@ function BranchFormModal({ branch, onClose, onSaved }) {
                 placeholder="Ej. 987654321"
               />
 
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
+              <div data-build-marker="p13-affiliated-directory" className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
                 <div className="mb-4">
                   <div className="text-sm font-black text-neutral-950">Directorio afiliado</div>
                   <div className="mt-1 text-xs font-bold leading-5 text-neutral-500">Activa esto solo si el dueño acepta que esta sede aparezca en Cerca de ti.</div>
