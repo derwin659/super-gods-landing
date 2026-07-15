@@ -139,6 +139,7 @@ function BranchFormModal({ branch, onClose, onSaved }) {
   const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
 
   const [saving, setSaving] = useState(false);
+  const [locatingBranch, setLocatingBranch] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const previewUrl = imageFile
@@ -147,6 +148,34 @@ function BranchFormModal({ branch, onClose, onSaved }) {
       ? ''
       : String(branch?.imageUrl || '').trim();
 
+  async function handleUseCurrentLocation() {
+    setErrorMsg('');
+
+    if (!('geolocation' in navigator)) {
+      setErrorMsg('Este navegador no permite detectar ubicacion.');
+      return;
+    }
+
+    setLocatingBranch(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLatitude(position.coords.latitude.toFixed(6));
+        setLongitude(position.coords.longitude.toFixed(6));
+        setLocatingBranch(false);
+      },
+      (error) => {
+        const denied = error?.code === error?.PERMISSION_DENIED;
+        setErrorMsg(denied ? 'Permite el acceso a ubicacion para completar latitud y longitud.' : 'No se pudo detectar la ubicacion actual.');
+        setLocatingBranch(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 60000,
+      }
+    );
+  }
   async function handleSubmit(event) {
     event.preventDefault();
     setErrorMsg('');
@@ -288,6 +317,19 @@ function BranchFormModal({ branch, onClose, onSaved }) {
                 <div className="mb-4">
                   <div className="text-sm font-black text-neutral-950">Directorio afiliado</div>
                   <div className="mt-1 text-xs font-bold leading-5 text-neutral-500">Activa esto solo si el dueño acepta que esta sede aparezca en Cerca de ti.</div>
+                </div>
+                <div className="mb-4">
+                  <button
+                    type="button"
+                    onClick={handleUseCurrentLocation}
+                    disabled={locatingBranch || saving}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  >
+                    {locatingBranch ? 'Detectando ubicacion...' : 'Usar ubicacion actual'}
+                  </button>
+                  <p className="mt-2 text-xs font-bold leading-5 text-blue-700">
+                    Abre esta pantalla desde el celular estando en la sede para completar latitud y longitud con GPS.
+                  </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <InputField label="Ciudad" value={ciudad} onChange={setCiudad} placeholder="Ej. Lima" />
