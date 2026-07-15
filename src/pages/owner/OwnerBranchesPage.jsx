@@ -127,6 +127,12 @@ function BranchFormModal({ branch, onClose, onSaved }) {
   const [nombre, setNombre] = useState(branchName(branch) === 'Sede' ? '' : branchName(branch));
   const [direccion, setDireccion] = useState(branch?.direccion || branch?.address || '');
   const [telefono, setTelefono] = useState(branch?.telefono || branch?.phone || '');
+  const [ciudad, setCiudad] = useState(branch?.ciudad || branch?.city || '');
+  const [latitude, setLatitude] = useState(branch?.latitude ?? '');
+  const [longitude, setLongitude] = useState(branch?.longitude ?? '');
+  const [publicDescription, setPublicDescription] = useState(branch?.publicDescription || '');
+  const [publicVisible, setPublicVisible] = useState(branch?.publicVisible === true);
+  const [directoryEnabled, setDirectoryEnabled] = useState(branch?.directoryEnabled === true);
   const [activo, setActivo] = useState(branch?.activo !== false);
 
   const [imageFile, setImageFile] = useState(null);
@@ -158,6 +164,12 @@ function BranchFormModal({ branch, onClose, onSaved }) {
         direccion: direccion.trim() || null,
         telefono: telefono.trim() || null,
         activo,
+        ciudad: ciudad.trim() || null,
+        latitude: latitude === '' ? null : Number(latitude),
+        longitude: longitude === '' ? null : Number(longitude),
+        publicVisible,
+        directoryEnabled,
+        publicDescription: publicDescription.trim() || null,
       };
 
       let saved = isEdit
@@ -271,6 +283,27 @@ function BranchFormModal({ branch, onClose, onSaved }) {
                 onChange={setTelefono}
                 placeholder="Ej. 987654321"
               />
+
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
+                <div className="mb-4">
+                  <div className="text-sm font-black text-neutral-950">Directorio afiliado</div>
+                  <div className="mt-1 text-xs font-bold leading-5 text-neutral-500">Activa esto solo si el dueño acepta que esta sede aparezca en Cerca de ti.</div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <InputField label="Ciudad" value={ciudad} onChange={setCiudad} placeholder="Ej. Lima" />
+                  <InputField label="Latitud" value={latitude} onChange={setLatitude} placeholder="Ej. -12.0464" type="number" />
+                  <InputField label="Longitud" value={longitude} onChange={setLongitude} placeholder="Ej. -77.0428" type="number" />
+                  <InputField label="Descripcion publica" value={publicDescription} onChange={setPublicDescription} placeholder="Ej. Barberia premium cerca al parque" />
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <button type="button" onClick={() => setPublicVisible((prev) => !prev)} className={`rounded-2xl px-4 py-3 text-sm font-black ${publicVisible ? 'bg-emerald-500 text-white' : 'bg-white text-neutral-700 border border-neutral-200'}`}>
+                    {publicVisible ? 'Visible al publico' : 'Oculto al publico'}
+                  </button>
+                  <button type="button" onClick={() => setDirectoryEnabled((prev) => !prev)} className={`rounded-2xl px-4 py-3 text-sm font-black ${directoryEnabled ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-700 border border-neutral-200'}`}>
+                    {directoryEnabled ? 'Aparece en directorio' : 'No publicar en directorio'}
+                  </button>
+                </div>
+              </div>
 
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                 <div className="flex items-center justify-between gap-4">
@@ -409,6 +442,17 @@ function BranchCard({ branch, onEdit, onToggle, onDeleteImage }) {
         </h3>
 
         <div className="mt-4 grid gap-3">
+          <div className="rounded-2xl bg-blue-50 px-4 py-3">
+            <div className="text-xs font-black uppercase tracking-[0.14em] text-blue-500">Directorio</div>
+            <div className="mt-1 text-sm font-black text-blue-900">
+              {branch.publicVisible && branch.directoryEnabled ? 'Publicado' : 'No publicado'}
+            </div>
+            <div className="mt-1 text-xs font-bold text-blue-700">
+              {branch.ciudad || branch.city || 'Sin ciudad'}
+              {branch.latitude && branch.longitude ? ' · ' + branch.latitude + ', ' + branch.longitude : ''}
+            </div>
+          </div>
+
           <div className="rounded-2xl bg-neutral-50 px-4 py-3">
             <div className="text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
               Dirección
