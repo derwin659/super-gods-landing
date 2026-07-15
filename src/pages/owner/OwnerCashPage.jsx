@@ -1092,6 +1092,7 @@ function PendingSaleValidationsSection({
 
 function OpenCashModal({ branch, onClose, onSaved }) {
   const [openingAmount, setOpeningAmount] = useState('0');
+  const [fundWithdrawalAmount, setFundWithdrawalAmount] = useState('0');
   const [openingNote, setOpeningNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -1101,9 +1102,15 @@ function OpenCashModal({ branch, onClose, onSaved }) {
     setErrorMsg('');
 
     const amount = Number(String(openingAmount).replace(',', '.'));
+    const fundWithdrawal = Number(String(fundWithdrawalAmount).replace(',', '.')) || 0;
 
     if (Number.isNaN(amount) || amount < 0) {
       setErrorMsg('Ingresa un monto válido.');
+      return;
+    }
+
+    if (Number.isNaN(fundWithdrawal) || fundWithdrawal < 0) {
+      setErrorMsg('Ingresa un monto valido para tomar del fondo.');
       return;
     }
 
@@ -1113,6 +1120,7 @@ function OpenCashModal({ branch, onClose, onSaved }) {
       await openCashRegister({
         branchId: branch.id,
         openingAmount: amount,
+        fundWithdrawalAmount: fundWithdrawal,
         openingNote: openingNote.trim() || null,
       });
 
@@ -1135,6 +1143,19 @@ function OpenCashModal({ branch, onClose, onSaved }) {
           step="0.01"
           prefix={getTenantCurrencySymbol()}
         />
+
+        <InputField
+          label="Tomar del fondo acumulado"
+          value={fundWithdrawalAmount}
+          onChange={setFundWithdrawalAmount}
+          type="number"
+          step="0.01"
+          prefix={getTenantCurrencySymbol()}
+        />
+
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-5 text-amber-800">
+          Opcional: pasa dinero guardado al efectivo inicial de esta caja.
+        </p>
 
         <TextAreaField
           label="Nota de apertura"
@@ -1160,11 +1181,13 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
   const expected = Number(cashRegister?.closingAmountExpected || 0);
 
   const [counted, setCounted] = useState(String(expected.toFixed(2)));
+  const [fundDepositAmount, setFundDepositAmount] = useState('0');
   const [closingNote, setClosingNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const countedNumber = Number(String(counted).replace(',', '.')) || 0;
+  const fundDepositNumber = Number(String(fundDepositAmount).replace(',', '.')) || 0;
   const difference = countedNumber - expected;
 
   async function handleSubmit(e) {
@@ -1176,6 +1199,16 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
       return;
     }
 
+    if (Number.isNaN(fundDepositNumber) || fundDepositNumber < 0) {
+      setErrorMsg('Ingresa un monto valido para enviar al fondo.');
+      return;
+    }
+
+    if (fundDepositNumber > countedNumber) {
+      setErrorMsg('No puedes enviar al fondo mas de lo contado.');
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -1183,6 +1216,7 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
         branchId: branch.id,
         cashRegisterId: cashRegister.id,
         closingAmountCounted: countedNumber,
+        fundDepositAmount: fundDepositNumber,
         closingNote: closingNote.trim() || null,
       });
 
@@ -1215,6 +1249,19 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
           step="0.01"
           prefix={getTenantCurrencySymbol()}
         />
+
+        <InputField
+          label="Enviar al fondo acumulado"
+          value={fundDepositAmount}
+          onChange={setFundDepositAmount}
+          type="number"
+          step="0.01"
+          prefix={getTenantCurrencySymbol()}
+        />
+
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-5 text-amber-800">
+          Este monto queda como colchon acumulado para gastos grandes futuros.
+        </p>
 
         <TextAreaField
           label="Observación de cierre"
@@ -5966,6 +6013,7 @@ export default function OwnerCashPage() {
     .reduce((sum, item) => sum + Number(item.salesAmount || 0), 0);
 
   const expected = Number(cashRegister?.closingAmountExpected || 0);
+  const accumulatedFundBalance = Number(cashRegister?.accumulatedFundBalance || cashRegister?.fundBalance || 0);
   const openingAmount = Number(cashRegister?.openingAmount || 0);
   const salesTotal = Number(cashRegister?.salesTotal || 0);
   const cashSalesTotal = Number(cashRow?.salesAmount ?? cashRegister?.cashSalesTotal ?? 0);
@@ -6192,7 +6240,8 @@ export default function OwnerCashPage() {
         </>
       ) : (
         <>
-          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-6">
+            <StatCard title="Fondo acumulado" value={formatMoney(accumulatedFundBalance)} helper="Colchon para gastos grandes" tone="gold" />
             <StatCard title="Apertura" value={formatMoney(openingAmount)} helper="Fondo inicial de efectivo" />
             <StatCard title="Ventas total" value={formatMoney(salesTotal)} helper="Todos los métodos" tone="gold" />
             <StatCard title="Efectivo físico" value={formatMoney(cashBalance)} helper="Saldo esperado en caja" tone={balanceTone(cashBalance)} />

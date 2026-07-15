@@ -94,6 +94,7 @@ export async function openCashRegister({
   branchId,
   assignedUserId = null,
   openingAmount = 0,
+  fundWithdrawalAmount = 0,
   openingNote = null,
 }) {
   return apiRequest(
@@ -103,6 +104,7 @@ export async function openCashRegister({
       body: JSON.stringify({
         assignedUserId,
         openingAmount: Number(openingAmount || 0),
+        fundWithdrawalAmount: Number(fundWithdrawalAmount || 0),
         openingNote,
       }),
     }
@@ -113,6 +115,7 @@ export async function closeCashRegister({
   branchId,
   cashRegisterId,
   closingAmountCounted = 0,
+  fundDepositAmount = 0,
   closingNote = null,
 }) {
   return apiRequest(
@@ -123,6 +126,7 @@ export async function closeCashRegister({
       method: 'POST',
       body: JSON.stringify({
         closingAmountCounted: Number(closingAmountCounted || 0),
+        fundDepositAmount: Number(fundDepositAmount || 0),
         closingNote,
       }),
     }

@@ -627,7 +627,7 @@ function CustomerDetailModal({
         await onCreateFollowUp({
           title: `Seguimiento de ${firstName}`,
           message: message.trim(),
-          channel: 'WHATSAPP',
+          channel: scheduledAt ? 'BOTH' : 'WHATSAPP',
           scheduledAt,
         });
       }
@@ -637,7 +637,7 @@ function CustomerDetailModal({
     }
 
     if (scheduledAt) {
-      window.alert('Seguimiento programado. El backend intentara enviarlo automaticamente cuando llegue la fecha.');
+      window.alert('Seguimiento programado. El backend intentara enviarlo por WhatsApp y push cuando llegue la fecha.');
       return;
     }
 
