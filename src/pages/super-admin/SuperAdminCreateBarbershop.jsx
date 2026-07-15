@@ -14,7 +14,6 @@ const BUSINESS_TYPE_OPTIONS = [
 
 const PLAN_OPTIONS = [
   { value: "FREE", label: "Free" },
-  { value: "BASIC", label: "Basic" },
   { value: "STARTER", label: "Starter" },
   { value: "GROWTH", label: "Growth" },
   { value: "PRO", label: "Pro" },

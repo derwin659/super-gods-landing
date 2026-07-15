@@ -1208,7 +1208,7 @@ export default function PublicBookingPage() {
                               </div>
 
                               <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">
-                                {product.description || 'Separa este producto y recÃ³gelo en el local.'}
+                                {product.description || 'Separa este producto y recógelo en el local.'}
                               </p>
 
                               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -1250,7 +1250,7 @@ export default function PublicBookingPage() {
                       Productos seleccionados: {selectedProductLines.length} · Total {money(selectedProductsTotal)}
                     </p>
                     <p className="mt-1 text-xs font-bold leading-5 text-emerald-800">
-                      El negocio validarÃ¡ el pedido desde caja y lo entregarÃ¡ descontando stock.
+                      El negocio validará el pedido desde caja y lo entregará descontando stock.
                     </p>
                   </div>
                 ) : null}

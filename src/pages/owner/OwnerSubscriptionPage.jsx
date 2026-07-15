@@ -34,20 +34,9 @@ import { openPaddleCheckout } from '../../utils/paddleCheckout';
 
 const PLAN_OPTIONS = [
   {
-    id: 'BASIC',
-    name: 'Basic',
-    price: 39.90,
-    badge: 'Starter compacto',
-    description: 'Para negocios pequeños que quieren toda la operación Starter con un equipo compacto.',
-    limits: '1 sede · 2 profesionales · 1 admin',
-    features: ['Reservas online', 'Caja básica', 'Clientes e historial', 'Puntos, premios y promociones básicas'],
-    icon: UsersRound,
-    tone: 'blue',
-  },
-  {
     id: 'STARTER',
     name: 'Starter',
-    price: 79.90,
+    price: 49.90,
     badge: '1 sede',
     description: 'Para barberias pequenas que quieren ordenar reservas, caja, clientes y equipo.',
     limits: '1 sede · 5 profesionales · 1 admin',
@@ -58,9 +47,9 @@ const PLAN_OPTIONS = [
   {
     id: 'GROWTH',
     name: 'Growth',
-    price: 139.90,
-    badge: 'Mas recomendado',
-    description: 'Para negocios con dos sedes o equipos que necesitan promociones, reportes y mas control.',
+    price: 99.90,
+    badge: 'Más recomendado',
+    description: 'Para negocios con dos sedes o equipos que necesitan promociones, reportes y más control.',
     limits: '2 sedes · 10 profesionales · 3 admins',
     features: ['Todo Starter', 'Promociones', 'Reportes por sede', 'Gods AI Pro incluido'],
     icon: Building2,
@@ -69,9 +58,9 @@ const PLAN_OPTIONS = [
   {
     id: 'PRO',
     name: 'Pro',
-    price: 229.90,
+    price: 149.90,
     badge: 'Multi sede',
-    description: 'Para marcas con tres sedes, operacion mas grande y seguimiento avanzado del equipo.',
+    description: 'Para marcas con tres sedes, operacion más grande y seguimiento avanzado del equipo.',
     limits: '3 sedes · 18 profesionales · 6 admins',
     features: ['Todo Growth', 'Caja avanzada', 'Inventario por sede', 'Reportes avanzados'],
     icon: Crown,
@@ -80,9 +69,9 @@ const PLAN_OPTIONS = [
   {
     id: 'ENTERPRISE',
     name: 'Enterprise',
-    price: 399.90,
+    price: 299.90,
     badge: 'A medida',
-    description: 'Para cadenas con mas de tres sedes, expansion o necesidades operativas especiales.',
+    description: 'Para cadenas con más de tres sedes, expansión o necesidades operativas especiales.',
     limits: 'Sedes ilimitadas · equipo ilimitado · soporte directo',
     features: ['Todo Pro', 'Onboarding guiado', 'Prioridad de soporte', 'Condiciones comerciales a medida'],
     icon: Bot,
@@ -306,7 +295,7 @@ export default function OwnerSubscriptionPage() {
 
   const currentActive = isSubscriptionActive(subscription);
   const normalizedCurrency = String(activeCurrency || '').toUpperCase();
-  const isPeruManualPayment = normalizedCurrency === 'PEN';
+  const isPerúManualPayment = normalizedCurrency === 'PEN';
   const supportsLocalManualPayment = ['PEN', 'VES', 'USD'].includes(normalizedCurrency);
   const manualPaymentMethod = normalizedCurrency === 'PEN'
     ? 'YAPE'
@@ -319,12 +308,12 @@ export default function OwnerSubscriptionPage() {
       ? 'Pago local en Venezuela'
       : 'Pago manual internacional';
   const manualPaymentHelper = normalizedCurrency === 'PEN'
-    ? 'EnvÃ­a el monto y reporta tu nÃºmero de operaciÃ³n.'
+    ? 'Envía el monto y reporta tu número de operación.'
     : normalizedCurrency === 'VES'
-      ? 'Puedes reportar Pago MÃ³vil, transferencia, Zelle, Binance o USDT.'
+      ? 'Puedes reportar Pago Móvil, transferencia, Zelle, Binance o USDT.'
       : 'Puedes reportar Zelle, Binance, USDT o transferencia acordada con soporte.';
   const manualPaymentReferenceLabel = normalizedCurrency === 'PEN'
-    ? 'NÃºmero Yape'
+    ? 'Número Yape'
     : normalizedCurrency === 'VES'
       ? 'Datos de pago'
       : 'Referencia de pago';
@@ -347,7 +336,7 @@ export default function OwnerSubscriptionPage() {
     } catch (error) {
       setMessage({
         type: 'error',
-        text: error?.message || 'No se pudo cargar la suscripciÃ³n.',
+        text: error?.message || 'No se pudo cargar la suscripción.',
       });
     } finally {
       setLoading(false);
@@ -371,7 +360,7 @@ export default function OwnerSubscriptionPage() {
     if (!operationNumber.trim()) {
       setMessage({
         type: 'error',
-        text: 'Ingresa el nÃºmero de operaciÃ³n del pago.',
+        text: 'Ingresa el número de operación del pago.',
       });
       return;
     }
@@ -397,7 +386,7 @@ export default function OwnerSubscriptionPage() {
 
       setMessage({
         type: 'success',
-        text: 'Pago reportado correctamente. Queda pendiente de revisiÃ³n.',
+        text: 'Pago reportado correctamente. Queda pendiente de revisión.',
       });
 
       await load();
@@ -471,15 +460,15 @@ export default function OwnerSubscriptionPage() {
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-amber-300">
-              SuscripciÃ³n y pagos
+              Suscripción y pagos
             </div>
 
             <h2 className="mt-5 text-4xl font-black tracking-tight">
-              Plan actual y renovaciÃ³n
+              Plan actual y renovación
             </h2>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">
-              Revisa tu plan, lÃ­mites de uso, ciclo de facturaciÃ³n y reporta pagos por Yape para renovar tu cuenta.
+              Revisa tu plan, límites de uso, ciclo de facturación y reporta pagos por Yape para renovar tu cuenta.
             </p>
           </div>
 
@@ -509,7 +498,7 @@ export default function OwnerSubscriptionPage() {
 
       {loading ? (
         <div className="rounded-[30px] border border-neutral-200 bg-white p-6 font-black text-neutral-500 shadow-sm">
-          Cargando suscripciÃ³n...
+          Cargando suscripción...
         </div>
       ) : (
         <>
@@ -518,7 +507,7 @@ export default function OwnerSubscriptionPage() {
               icon={ShieldCheck}
               label="Estado"
               value={subscription ? statusLabel(subscription.estado) : '-'}
-              helper={currentActive ? 'Cuenta operativa' : 'Requiere revisiÃ³n'}
+              helper={currentActive ? 'Cuenta operativa' : 'Requiere revisión'}
               tone={currentActive ? 'green' : 'red'}
             />
             <StatCard
@@ -530,7 +519,7 @@ export default function OwnerSubscriptionPage() {
             />
             <StatCard
               icon={Clock3}
-              label="RenovaciÃ³n"
+              label="Renovación"
               value={formatDate(subscription?.fechaRenovacion)}
               helper={`Fin: ${formatDate(subscription?.fechaFin)}`}
               tone="blue"
@@ -539,7 +528,7 @@ export default function OwnerSubscriptionPage() {
               icon={Building2}
               label="Uso"
               value={`${subscription?.usedBranches ?? 0}/${subscription?.maxBranches ?? 0} sedes`}
-              helper={`${subscription?.usedBarbers ?? 0}/${subscription?.maxBarbers ?? 0} barberos Â· ${subscription?.usedAdmins ?? 0}/${subscription?.maxAdmins ?? 0} admins`}
+              helper={`${subscription?.usedBarbers ?? 0}/${subscription?.maxBarbers ?? 0} barberos · ${subscription?.usedAdmins ?? 0}/${subscription?.maxAdmins ?? 0} admins`}
               tone="neutral"
             />
           </section>
@@ -575,7 +564,7 @@ export default function OwnerSubscriptionPage() {
 
               <section className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">
-                  Ciclo de facturaciÃ³n
+                  Ciclo de facturación
                 </div>
 
                 <h3 className="mt-2 text-2xl font-black text-neutral-950">
@@ -609,11 +598,11 @@ export default function OwnerSubscriptionPage() {
 
                     <div>
                       <h3 className="text-2xl font-black text-amber-900">
-                        Gods AI Â· uso justo
+                        Gods AI · uso justo
                       </h3>
 
                       <p className="mt-2 text-sm font-bold leading-6 text-amber-800">
-                        Incluye una referencia comercial de hasta 50 generaciones por mes. Si mÃ¡s adelante excedes el uso, puedes ampliar con paquetes adicionales.
+                        Incluye una referencia comercial de hasta 50 generaciones por mes. Si más adelante excedes el uso, puedes ampliar con paquetes adicionales.
                       </p>
                     </div>
                   </div>
@@ -628,7 +617,7 @@ export default function OwnerSubscriptionPage() {
                 </div>
 
                 <h3 className="mt-2 text-2xl font-black text-neutral-950">
-                  {planLabel(selectedPlan)} Â· {billingLabel(selectedBilling)}
+                  {planLabel(selectedPlan)} · {billingLabel(selectedBilling)}
                 </h3>
 
                 <div className="mt-5 rounded-[26px] border border-violet-100 bg-violet-50 p-5">
@@ -707,7 +696,7 @@ export default function OwnerSubscriptionPage() {
                       className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <CreditCard size={17} strokeWidth={2.5} />
-                      {openingCheckout ? 'Abriendo checkout...' : `Pagar con tarjeta Â· ${currency(amount, activeCurrency)}`}
+                      {openingCheckout ? 'Abriendo checkout...' : `Pagar con tarjeta · ${currency(amount, activeCurrency)}`}
                     </button>
                   ) : (
                     <div className="mt-4 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-xs font-black leading-5 text-emerald-800">
@@ -724,7 +713,7 @@ export default function OwnerSubscriptionPage() {
                 className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.055)]"
               >
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">
-                  Ya paguÃ©
+                  Ya pagué
                 </div>
 
                 <h3 className="mt-2 text-2xl font-black text-neutral-950">
@@ -735,7 +724,7 @@ export default function OwnerSubscriptionPage() {
                   <input
                     value={operationNumber}
                     onChange={(event) => setOperationNumber(event.target.value)}
-                    placeholder="NÃºmero de operaciÃ³n"
+                    placeholder="Número de operación"
                     className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-bold text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                   />
 
@@ -772,7 +761,7 @@ export default function OwnerSubscriptionPage() {
                   ) : (
                     <>
                       <Send size={17} strokeWidth={2.5} />
-                      Reportar pago Â· {currency(amount, activeCurrency)}
+                      Reportar pago · {currency(amount, activeCurrency)}
                     </>
                   )}
                 </button>
@@ -780,20 +769,20 @@ export default function OwnerSubscriptionPage() {
                 {!currentActive && (
                   <div className="mt-4 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
                     <AlertTriangle size={20} strokeWidth={2.5} />
-                    Tu cuenta puede requerir revisiÃ³n para seguir operando.
+                    Tu cuenta puede requerir revisión para seguir operando.
                   </div>
                 )}
               </form>
               ) : (
               <section className="rounded-[34px] border border-neutral-200 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.055)]">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-neutral-500">
-                  RenovaciÃ³n automÃ¡tica
+                  Renovación automática
                 </div>
                 <h3 className="mt-2 text-2xl font-black text-neutral-950">
                   Sin reportar pagos manuales
                 </h3>
                 <p className="mt-3 text-sm font-bold leading-6 text-neutral-500">
-                  Para cuentas fuera de PerÃº, el pago se valida desde el proveedor internacional. Al aprobarse el cargo, la suscripciÃ³n se renueva automÃ¡ticamente.
+                  Para cuentas fuera de Perú, el pago se valida desde el proveedor internacional. Al aprobarse el cargo, la suscripción se renueva automáticamente.
                 </p>
               </section>
               )}

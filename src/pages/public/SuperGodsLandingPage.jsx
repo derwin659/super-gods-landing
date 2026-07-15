@@ -15,21 +15,21 @@ function SupportPage() {
       <div className="mx-auto max-w-4xl rounded-[28px] border border-white/10 bg-white/5 p-8">
         <h1 className="text-4xl font-black text-amber-400">Soporte Super Gods App</h1>
         <p className="mt-4 text-white/70">
-          Si necesitas ayuda con tu cuenta, suscripciÃ³n, reservas, caja o cualquier funciÃ³n
-          de la app, contÃ¡ctanos por estos medios.
+          Si necesitas ayuda con tu cuenta, suscripción, reservas, caja o cualquier función
+          de la app, contáctanos por estos medios.
         </p>
 
         <div className="mt-8 space-y-4 text-white/80">
           <p><strong>WhatsApp:</strong> +51 958 062 847</p>
           <p><strong>Correo:</strong> derwinnieves659@gmail.com</p>
-          <p><strong>Horario:</strong> Lunes a sÃ¡bado de 9:00 a. m. a 6:00 p. m.</p>
+          <p><strong>Horario:</strong> Lunes a sábado de 9:00 a. m. a 6:00 p. m.</p>
         </div>
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-neutral-900 p-5">
           <h2 className="text-xl font-bold">Formulario de contacto</h2>
           <p className="mt-2 text-white/65">
             Por ahora puedes contactarnos directamente por WhatsApp o correo indicando:
-            nombre, barberÃ­a, telÃ©fono y el detalle de tu solicitud.
+            nombre, barbería, teléfono y el detalle de tu solicitud.
           </p>
         </div>
 
@@ -48,39 +48,39 @@ function PrivacyPage() {
   return (
     <div className="min-h-screen bg-neutral-950 px-6 py-16 text-white">
       <div className="mx-auto max-w-4xl rounded-[28px] border border-white/10 bg-white/5 p-8">
-        <h1 className="text-4xl font-black text-amber-400">PolÃ­tica de Privacidad</h1>
-        <p className="mt-4 text-white/70"><strong>Ãšltima actualizaciÃ³n:</strong> 2026</p>
+        <h1 className="text-4xl font-black text-amber-400">Política de Privacidad</h1>
+        <p className="mt-4 text-white/70"><strong>Última actualización:</strong> 2026</p>
 
         <div className="mt-8 space-y-6 text-white/75 leading-8">
           <div>
-            <h2 className="text-xl font-bold text-white">1. InformaciÃ³n que recopilamos</h2>
+            <h2 className="text-xl font-bold text-white">1. Información que recopilamos</h2>
             <p>
-              Podemos recopilar nombre, telÃ©fono, correo electrÃ³nico, datos de barberÃ­a,
-              reservas, historial de servicios, informaciÃ³n operativa y otros datos necesarios
+              Podemos recopilar nombre, teléfono, correo electrónico, datos de barbería,
+              reservas, historial de servicios, información operativa y otros datos necesarios
               para brindar el servicio.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold text-white">2. CÃ³mo usamos la informaciÃ³n</h2>
+            <h2 className="text-xl font-bold text-white">2. Cómo usamos la información</h2>
             <p>
-              Usamos la informaciÃ³n para operar la plataforma, gestionar reservas, caja,
-              clientes, soporte tÃ©cnico, mejoras del servicio y cumplimiento legal.
+              Usamos la información para operar la plataforma, gestionar reservas, caja,
+              clientes, soporte técnico, mejoras del servicio y cumplimiento legal.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold text-white">3. ComparticiÃ³n de datos</h2>
+            <h2 className="text-xl font-bold text-white">3. Compartición de datos</h2>
             <p>
-              No vendemos datos personales. Podemos compartir informaciÃ³n con proveedores
-              tecnolÃ³gicos que nos ayudan a operar la plataforma bajo medidas razonables de seguridad.
+              No vendemos datos personales. Podemos compartir información con proveedores
+              tecnológicos que nos ayudan a operar la plataforma bajo medidas razonables de seguridad.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold text-white">4. ConservaciÃ³n y seguridad</h2>
+            <h2 className="text-xl font-bold text-white">4. Conservación y seguridad</h2>
             <p>
-              Aplicamos medidas razonables para proteger la informaciÃ³n y conservarla durante
+              Aplicamos medidas razonables para proteger la información y conservarla durante
               el tiempo necesario para prestar el servicio y cumplir obligaciones legales.
             </p>
           </div>
@@ -88,7 +88,7 @@ function PrivacyPage() {
           <div>
             <h2 className="text-xl font-bold text-white">5. Derechos del usuario</h2>
             <p>
-              Puedes solicitar acceso, correcciÃ³n o eliminaciÃ³n de tus datos escribiÃ©ndonos a
+              Puedes solicitar acceso, corrección o eliminación de tus datos escribiéndonos a
               derwinnieves659@gmail.com.
             </p>
           </div>
@@ -96,7 +96,7 @@ function PrivacyPage() {
           <div>
             <h2 className="text-xl font-bold text-white">6. Contacto</h2>
             <p>
-              Para cualquier consulta sobre privacidad, escrÃ­benos a derwinnieves659@gmail.com.
+              Para cualquier consulta sobre privacidad, escríbenos a derwinnieves659@gmail.com.
             </p>
           </div>
         </div>
@@ -118,7 +118,7 @@ function DataChoicesPage() {
       <div className="mx-auto max-w-4xl rounded-[28px] border border-white/10 bg-white/5 p-8">
         <h1 className="text-4xl font-black text-amber-400">Opciones de Privacidad y Datos</h1>
         <p className="mt-4 text-white/70">
-          Desde esta pÃ¡gina puedes solicitar acciones relacionadas con tus datos personales
+          Desde esta página puedes solicitar acciones relacionadas con tus datos personales
           en Super Gods App.
         </p>
 
@@ -126,17 +126,17 @@ function DataChoicesPage() {
           <h2 className="text-xl font-bold">Solicitudes disponibles</h2>
           <ul className="mt-4 list-inside list-disc space-y-2 text-white/75">
             <li>Solicitar acceso a tus datos</li>
-            <li>Solicitar correcciÃ³n de datos</li>
-            <li>Solicitar eliminaciÃ³n de cuenta</li>
-            <li>Solicitar eliminaciÃ³n de datos personales</li>
+            <li>Solicitar corrección de datos</li>
+            <li>Solicitar eliminación de cuenta</li>
+            <li>Solicitar eliminación de datos personales</li>
           </ul>
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-neutral-900 p-6">
-          <h2 className="text-xl font-bold">CÃ³mo solicitarlo</h2>
+          <h2 className="text-xl font-bold">Cómo solicitarlo</h2>
           <p className="mt-3 text-white/70">
-            EscrÃ­benos a <strong>derwinnieves659@gmail.com</strong> o por WhatsApp al +51958062847, indicando
-            tu solicitud y los datos de tu cuenta. Por seguridad, podremos pedir validaciÃ³n
+            Escríbenos a <strong>derwinnieves659@gmail.com</strong> o por WhatsApp al +51958062847, indicando
+            tu solicitud y los datos de tu cuenta. Por seguridad, podremos pedir validación
             de identidad antes de procesarla.
           </p>
         </div>
@@ -179,21 +179,11 @@ function SuperGodsLandingPage() {
 
   const plans = [
     {
-      name: 'Basic',
-      price: formatSubscriptionPrice(getPlanPriceFromMap('BASIC', pricingCountry, publicPriceMap)),
-      period: '/mes',
-      launchNote: 'Starter compacto',
-      description: 'La operación Starter para equipos pequeños.',
-      features: ['1 sede', '2 profesionales', '1 admin', 'Caja y puntos'],
-      highlight: false,
-      cta: 'Empezar Basic',
-    },
-    {
       name: 'Starter',
       price: formatSubscriptionPrice(getPlanPriceFromMap('STARTER', pricingCountry, publicPriceMap)),
       period: '/mes',
       launchNote: '1 sede',
-      description: 'Para una sede que necesita agenda, caja y fidelizacion.',
+      description: 'Para una sede que necesita agenda, caja y fidelización.',
       features: ['1 sede', '5 profesionales', '1 admin', 'Caja y puntos'],
       highlight: false,
       cta: 'Elegir Starter',
@@ -213,7 +203,7 @@ function SuperGodsLandingPage() {
       price: formatSubscriptionPrice(getPlanPriceFromMap('PRO', pricingCountry, publicPriceMap)),
       period: '/mes',
       launchNote: 'Multi sede',
-      description: 'Para marcas con mas control operativo y equipo grande.',
+      description: 'Para marcas con más control operativo y equipo grande.',
       features: ['3 sedes', '18 profesionales', '6 admins', 'Reportes avanzados'],
       highlight: false,
       cta: 'Elegir Pro',
@@ -223,7 +213,7 @@ function SuperGodsLandingPage() {
       price: formatSubscriptionPrice(getPlanPriceFromMap('ENTERPRISE', pricingCountry, publicPriceMap)),
       period: '/mes',
       launchNote: 'Desde',
-      description: 'Para cadenas, expansion y acuerdos comerciales a medida.',
+      description: 'Para cadenas, expansión y acuerdos comerciales a medida.',
       features: ['Sedes ilimitadas', 'Equipo ilimitado', 'Onboarding', 'Soporte prioritario'],
       highlight: false,
       cta: 'Hablar con ventas',
@@ -231,12 +221,12 @@ function SuperGodsLandingPage() {
   ];
   const benefits = [
     {
-      title: 'MÃ¡s reservas, menos desorden',
-      text: 'Tus clientes reservan mÃ¡s fÃ¡cil y tu equipo trabaja con una agenda clara y mejor organizada.',
+      title: 'Más reservas, menos desorden',
+      text: 'Tus clientes reservan más fácil y tu equipo trabaja con una agenda clara y mejor organizada.',
     },
     {
-      title: 'Caja clara todos los dÃ­as',
-      text: 'Controla ingresos, mÃ©todos de pago y cierres sin depender de papel, cuadernos o memoria.',
+      title: 'Caja clara todos los días',
+      text: 'Controla ingresos, métodos de pago y cierres sin depender de papel, cuadernos o memoria.',
     },
     {
       title: 'Fideliza y haz que regresen',
@@ -244,7 +234,7 @@ function SuperGodsLandingPage() {
     },
     {
       title: 'Haz crecer tu marca',
-      text: 'Administra una o varias sucursales con una sola plataforma y mÃ¡s control del negocio.',
+      text: 'Administra una o varias sucursales con una sola plataforma y más control del negocio.',
     },
   ];
 
@@ -254,25 +244,25 @@ function SuperGodsLandingPage() {
     'Promociones para clientes frecuentes',
     'Programa de referidos',
     'Historial completo del cliente',
-    'MÃ¡s recompra y mÃ¡s retorno',
+    'Más recompra y más retorno',
   ];
 
   const faqs = [
     {
-      q: 'Â¿Necesito conocimientos tÃ©cnicos?',
-      a: 'No. Super Gods estÃ¡ pensado para dueÃ±os y equipos de barberÃ­a. Te ayudamos a configurarlo y empezar.',
+      q: '¿Necesito conocimientos técnicos?',
+      a: 'No. Super Gods está pensado para dueños y equipos de barbería. Te ayudamos a configurarlo y empezar.',
     },
     {
-      q: 'Â¿Puedo probar antes de pagar?',
-      a: 'SÃ­. Puedes empezar con una prueba gratis de 7 dÃ­as para validar cÃ³mo funciona en tu negocio.',
+      q: '¿Puedo probar antes de pagar?',
+      a: 'Sí. Puedes empezar con una prueba gratis de 7 días para validar cómo funciona en tu negocio.',
     },
     {
-      q: 'Â¿Funciona para varias sucursales?',
-      a: 'SÃ­. Puedes controlar sucursales, barberos, ventas y mÃ©tricas desde un solo sistema.',
+      q: '¿Funciona para varias sucursales?',
+      a: 'Sí. Puedes controlar sucursales, barberos, ventas y métricas desde un solo sistema.',
     },
     {
-      q: 'Â¿La app sirve solo para barberÃ­as grandes?',
-      a: 'No. Funciona tanto para barberÃ­as pequeÃ±as como para negocios que ya estÃ¡n creciendo.',
+      q: '¿La app sirve solo para barberías grandes?',
+      a: 'No. Funciona tanto para barberías pequeñas como para negocios que ya están creciendo.',
     },
   ];
 
@@ -294,7 +284,7 @@ function SuperGodsLandingPage() {
                   SUPER GODS APP
                 </div>
                 <div className="text-sm text-white/60">
-                  Sistema premium para barberÃ­as
+                  Sistema premium para barberías
                 </div>
               </div>
             </div>
@@ -312,11 +302,11 @@ function SuperGodsLandingPage() {
           <div className="grid gap-12 py-20 lg:grid-cols-2 lg:items-center">
             <div>
               <div className="mb-4 inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm text-amber-300">
-                Prueba gratis por 7 dÃ­as
+                Prueba gratis por 7 días
               </div>
 
               <h1 className="max-w-2xl text-5xl font-black leading-tight md:text-6xl">
-                La app que ayuda a tu barberÃ­a a vender mÃ¡s y verse mÃ¡s pro.
+                La app que ayuda a tu barbería a vender más y verse más pro.
               </h1>
 
               <p className="mt-6 max-w-xl text-lg leading-8 text-white/70">
@@ -356,7 +346,7 @@ function SuperGodsLandingPage() {
                   href={appStoreUrl}
                   className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/10"
                 >
-                  App Store prÃ³ximamente
+                  App Store próximamente
                 </a>
               </div>
 
@@ -395,9 +385,9 @@ function SuperGodsLandingPage() {
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <div className="text-sm text-white/50">
-                      Hoy en tu barberÃ­a
+                      Hoy en tu barbería
                     </div>
-                    <div className="text-xl font-bold">Panel del dueÃ±o</div>
+                    <div className="text-xl font-bold">Panel del dueño</div>
                   </div>
 
                   <div className="rounded-xl bg-emerald-400/15 px-3 py-2 text-sm font-semibold text-emerald-300">
@@ -407,7 +397,7 @@ function SuperGodsLandingPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-2xl bg-neutral-900 p-4">
-                    <div className="text-sm text-white/50">Ventas del dÃ­a</div>
+                    <div className="text-sm text-white/50">Ventas del día</div>
                     <div className="mt-2 text-3xl font-black">S/ 1,840</div>
                   </div>
 
@@ -434,7 +424,7 @@ function SuperGodsLandingPage() {
 
               <div className="rounded-[28px] border border-amber-400/20 bg-gradient-to-br from-amber-400/10 to-white/5 p-6">
                 <div className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">
-                  MÃ³dulo premium
+                  Módulo premium
                 </div>
                 <div className="mt-2 text-2xl font-black">
                   Asesor de cortes con IA
@@ -453,7 +443,7 @@ function SuperGodsLandingPage() {
       <section className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
         <div className="max-w-2xl">
           <div className="text-sm font-bold uppercase tracking-[0.2em] text-amber-400">
-            Por quÃ© elegir Super Gods
+            Por qué elegir Super Gods
           </div>
           <h2 className="mt-4 text-4xl font-black">
             No es solo una app. Es una herramienta para crecer.
@@ -480,7 +470,7 @@ function SuperGodsLandingPage() {
               Planes simples
             </div>
             <h2 className="mt-4 text-4xl font-black">
-              Elige el plan ideal para tu barberÃ­a
+              Elige el plan ideal para tu barbería
             </h2>
             <p className="mt-4 text-white/65">
               Empieza con prueba gratis y aprovecha nuestros precios de
@@ -515,7 +505,7 @@ function SuperGodsLandingPage() {
               >
                 {plan.highlight && (
                   <div className="mb-4 inline-flex rounded-full bg-amber-400 px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-neutral-950">
-                    MÃ¡s elegido
+                    Más elegido
                   </div>
                 )}
 
@@ -568,7 +558,7 @@ function SuperGodsLandingPage() {
           </div>
 
           <p className="mx-auto mt-6 max-w-3xl text-center text-xs font-semibold leading-6 text-white/45">
-            En Peru el pago se gestiona de forma local. Para otros paises, el cobro internacional se procesa con Paddle y el monto final puede variar levemente por conversion de moneda, impuestos o comisiones del medio de pago.
+            En Perú el pago se gestiona de forma local. Para otros países, el cobro internacional se procesa con Paddle y el monto final puede variar levemente por conversión de moneda, impuestos o comisiones del medio de pago.
           </p>
         </div>
       </section>
@@ -577,15 +567,15 @@ function SuperGodsLandingPage() {
         <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
           <div>
             <div className="text-sm font-bold uppercase tracking-[0.2em] text-amber-400">
-              FidelizaciÃ³n real
+              Fidelización real
             </div>
             <h2 className="mt-4 text-4xl font-black">
-              Haz que tus clientes vuelvan mÃ¡s seguido.
+              Haz que tus clientes vuelvan más seguido.
             </h2>
             <p className="mt-5 text-lg text-white/70">
-              Super Gods no solo ordena tu barberÃ­a. TambiÃ©n te ayuda a crear
-              relaciones mÃ¡s fuertes con tus clientes para aumentar frecuencia
-              de visita, recompra y recomendaciÃ³n.
+              Super Gods no solo ordena tu barbería. También te ayuda a crear
+              relaciones más fuertes con tus clientes para aumentar frecuencia
+              de visita, recompra y recomendación.
             </p>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -602,14 +592,14 @@ function SuperGodsLandingPage() {
 
           <div className="rounded-[32px] border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-8 shadow-2xl">
             <div className="text-sm font-semibold text-white/50">
-              Disponible en mÃ³vil
+              Disponible en móvil
             </div>
             <div className="mt-3 text-4xl font-black">
-              Tu barberÃ­a mÃ¡s profesional, tambiÃ©n desde el celular.
+              Tu barbería más profesional, también desde el celular.
             </div>
             <p className="mt-4 text-white/70">
               Tus clientes pueden reservar, acumular beneficios y vivir una
-              experiencia mÃ¡s moderna. Tu equipo controla caja, ventas,
+              experiencia más moderna. Tu equipo controla caja, ventas,
               clientes e indicadores desde una sola plataforma.
             </p>
 
@@ -647,7 +637,7 @@ function SuperGodsLandingPage() {
               Preguntas frecuentes
             </div>
             <h2 className="mt-4 text-4xl font-black">
-              Resolvamos lo mÃ¡s importante
+              Resolvamos lo más importante
             </h2>
           </div>
 
@@ -680,12 +670,12 @@ function SuperGodsLandingPage() {
           </div>
 
           <h2 className="mt-4 text-4xl font-black">
-            Haz que tu barberÃ­a se vea mÃ¡s premium y venda mÃ¡s.
+            Haz que tu barbería se vea más premium y venda más.
           </h2>
 
           <p className="mx-auto mt-4 max-w-2xl text-white/70">
             Empieza con una demo, activa tu prueba gratis y aprovecha nuestros
-            precios de lanzamiento para convertir tu barberÃ­a en un negocio mÃ¡s
+            precios de lanzamiento para convertir tu barbería en un negocio más
             ordenado, moderno y rentable.
           </p>
 

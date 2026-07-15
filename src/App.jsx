@@ -120,7 +120,7 @@ function PublicHomePage() {
   const rubros = [
     { icon: Scissors, title: 'Barberias', text: 'Reservas, caja, barberos, puntos, promociones, pagos y reportes.' },
     { icon: Sparkles, title: 'Peluquerias', text: 'Agenda, servicios, profesionales, clientes frecuentes y control de ingresos.' },
-    { icon: Hand, title: 'Estudios de unas', text: 'Citas, paquetes, clientas frecuentes, historial, pagos y fidelizacion.' },
+    { icon: Hand, title: 'Estudios de unas', text: 'Citas, paquetes, clientas frecuentes, historial, pagos y fidelización.' },
     { icon: Eye, title: 'Cejas y pestanas', text: 'Reservas ordenadas, especialistas, servicios recurrentes y promociones.' },
     { icon: PenTool, title: 'Tattoo studios', text: 'Citas, artistas, clientes, pagos, seguimiento y organizacion del estudio.' },
     { icon: Leaf, title: 'Spas y estetica', text: 'Servicios, reservas, paquetes, clientes, sedes, caja y reportes.' },
@@ -130,7 +130,7 @@ function PublicHomePage() {
     {
       icon: Blocks,
       title: 'Desarrollo de software para negocios',
-      text: 'Creamos plataformas digitales para ordenar operaciones, atenciÃ³n, ventas y administraciÃ³n.',
+      text: 'Creamos plataformás digitales para ordenar operaciones, atención, ventas y administración.',
     },
     {
       icon: CalendarDays,
@@ -150,7 +150,7 @@ function PublicHomePage() {
     {
       icon: Gift,
       title: 'Fidelizacion, puntos y promociones',
-      text: 'Crea premios, campanas y beneficios para que los clientes regresen con mas frecuencia.',
+      text: 'Crea premios, campanas y beneficios para que los clientes regresen con más frecuencia.',
     },
     {
       icon: ChartNoAxesCombined,
@@ -160,7 +160,7 @@ function PublicHomePage() {
     {
       icon: ShieldCheck,
       title: 'Roles y permisos',
-      text: 'Controla el acceso de dueÃ±os, administradores, profesionales y equipo interno.',
+      text: 'Controla el acceso de dueños, administradores, profesionales y equipo interno.',
     },
     {
       icon: Bot,
@@ -178,11 +178,11 @@ function PublicHomePage() {
     {
       icon: Banknote,
       title: 'Control de caja',
-      text: 'Apertura, cierre, ingresos, gastos, ventas, mÃ©todos de pago y movimientos del dÃ­a.',
+      text: 'Apertura, cierre, ingresos, gastos, ventas, métodos de pago y movimientos del día.',
     },
     {
       icon: CreditCard,
-      title: 'Pagos por mÃ©todo',
+      title: 'Pagos por método',
       text: 'Controla efectivo, Yape, Plin, tarjeta y pagos mixtos para cuadrar mejor el negocio.',
     },
     {
@@ -193,7 +193,7 @@ function PublicHomePage() {
     {
       icon: Star,
       title: 'Puntos de fidelidad',
-      text: 'Premia automÃ¡ticamente a clientes frecuentes y motiva nuevas visitas.',
+      text: 'Premia automáticamente a clientes frecuentes y motiva nuevas visitas.',
     },
     {
       icon: Gift,
@@ -203,27 +203,27 @@ function PublicHomePage() {
     {
       icon: Tags,
       title: 'Promociones',
-      text: 'Crea ofertas, descuentos y campaÃ±as para atraer mÃ¡s reservas.',
+      text: 'Crea ofertas, descuentos y campañas para atraer más reservas.',
     },
     {
       icon: ReceiptText,
       title: 'Reservas con inicial',
-      text: 'Permite separar citas con pago inicial, nÃºmero de operaciÃ³n y comprobante.',
+      text: 'Permite separar citas con pago inicial, número de operación y comprobante.',
     },
     {
       icon: CheckCircle2,
-      title: 'ValidaciÃ³n de pagos',
-      text: 'El dueÃ±o puede revisar, aprobar o rechazar comprobantes de pagos iniciales.',
+      title: 'Validación de pagos',
+      text: 'El dueño puede revisar, aprobar o rechazar comprobantes de pagos iniciales.',
     },
     {
       icon: UserRoundCog,
-      title: 'GestiÃ³n de profesionales',
+      title: 'Gestión de profesionales',
       text: 'Administra horarios, servicios asignados, comisiones, pagos y rendimiento.',
     },
     {
       icon: Package,
       title: 'Inventario por sede',
-      text: 'Controla productos, stock, imÃ¡genes, precios y disponibilidad por sucursal.',
+      text: 'Controla productos, stock, imágenes, precios y disponibilidad por sucursal.',
     },
     {
       icon: ChartNoAxesCombined,
@@ -234,17 +234,10 @@ function PublicHomePage() {
 
   const plans = [
     {
-      name: 'Basic',
-      price: formatSubscriptionPrice(getPlanPriceFromMap('BASIC', pricingCountry, publicPriceMap)),
-      badge: 'Starter compacto',
-      description: 'La operación Starter para equipos pequeños.',
-      items: ['1 sede', '2 profesionales', '1 admin', 'Caja y puntos'],
-    },
-    {
       name: 'Starter',
       price: formatSubscriptionPrice(getPlanPriceFromMap('STARTER', pricingCountry, publicPriceMap)),
       badge: '1 sede',
-      description: 'Para una sede que necesita agenda, caja y fidelizacion.',
+      description: 'Para una sede que necesita agenda, caja y fidelización.',
       items: ['1 sede', '5 profesionales', '1 admin', 'Caja y puntos'],
     },
     {
@@ -259,39 +252,39 @@ function PublicHomePage() {
       name: 'Pro',
       price: formatSubscriptionPrice(getPlanPriceFromMap('PRO', pricingCountry, publicPriceMap)),
       badge: 'Multi sede',
-      description: 'Para marcas con mas control operativo y equipo grande.',
+      description: 'Para marcas con más control operativo y equipo grande.',
       items: ['3 sedes', '18 profesionales', '6 admins', 'Reportes avanzados'],
     },
     {
       name: 'Enterprise',
       price: formatSubscriptionPrice(getPlanPriceFromMap('ENTERPRISE', pricingCountry, publicPriceMap)),
       badge: 'Desde',
-      description: 'Para cadenas, expansion y acuerdos comerciales a medida.',
+      description: 'Para cadenas, expansión y acuerdos comerciales a medida.',
       items: ['Sedes ilimitadas', 'Equipo ilimitado', 'Onboarding', 'Soporte prioritario'],
     },
   ];
 
   const planComparison = [
-    { feature: 'Reservas online', basic: 'Incluido', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
-    { feature: 'Agenda por profesional', basic: '2 profesionales', starter: '5 profesionales', growth: '10 profesionales', pro: '18 profesionales', enterprise: 'Ilimitado' },
-    { feature: 'Sedes', basic: '1 sede', starter: '1 sede', growth: '2 sedes', pro: '3 sedes', enterprise: 'Ilimitadas' },
-    { feature: 'Clientes e historial', basic: 'Incluido', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
-    { feature: 'Caja y ventas', basic: 'Basica', starter: 'Basica', growth: 'Completa', pro: 'Avanzada', enterprise: 'Avanzada' },
-    { feature: 'Consumo en local con QR', basic: 'Incluido', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
-    { feature: 'Puntos y recompensas', basic: 'Basico', starter: 'Basico', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
-    { feature: 'Promociones', basic: 'No incluido', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
-    { feature: 'Campanas automatizadas', basic: 'No incluido', starter: 'No incluido', growth: 'Push notifications', pro: 'Push + segmentos', enterprise: 'Avanzado' },
-    { feature: 'WhatsApp', basic: 'Manual', starter: 'Manual', growth: 'Premium', pro: 'Premium', enterprise: 'Prioritario' },
-    { feature: 'Inventario por sede', basic: 'No incluido', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
-    { feature: 'Reportes', basic: 'Basicos', starter: 'Basicos', growth: 'Por sede', pro: 'Avanzados', enterprise: 'Avanzados' },
-    { feature: 'Roles de administrador', basic: '1 admin', starter: '1 admin', growth: '3 admins', pro: '6 admins', enterprise: 'Ilimitados' },
-    { feature: 'Gods AI Pro', basic: 'No incluido', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
-    { feature: 'Soporte', basic: 'Estandar', starter: 'Estandar', growth: 'Prioridad media', pro: 'Prioritario', enterprise: 'Directo' },
+    { feature: 'Reservas online', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Agenda por profesional', starter: '5 profesionales', growth: '10 profesionales', pro: '18 profesionales', enterprise: 'Ilimitado' },
+    { feature: 'Sedes', starter: '1 sede', growth: '2 sedes', pro: '3 sedes', enterprise: 'Ilimitadas' },
+    { feature: 'Clientes e historial', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Caja y ventas', starter: 'Básica', growth: 'Completa', pro: 'Avanzada', enterprise: 'Avanzada' },
+    { feature: 'Consumo en local con QR', starter: 'Incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Puntos y recompensas', starter: 'Básico', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Promociones', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Campañas automatizadas', starter: 'No incluido', growth: 'Push notifications', pro: 'Push + segmentos', enterprise: 'Avanzado' },
+    { feature: 'WhatsApp', starter: 'Manual', growth: 'Premium', pro: 'Premium', enterprise: 'Prioritario' },
+    { feature: 'Inventario por sede', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Reportes', starter: 'Básicos', growth: 'Por sede', pro: 'Avanzados', enterprise: 'Avanzados' },
+    { feature: 'Roles de administrador', starter: '1 admin', growth: '3 admins', pro: '6 admins', enterprise: 'Ilimitados' },
+    { feature: 'Gods AI Pro', starter: 'No incluido', growth: 'Incluido', pro: 'Incluido', enterprise: 'Incluido' },
+    { feature: 'Soporte', starter: 'Estándar', growth: 'Prioridad media', pro: 'Prioritario', enterprise: 'Directo' },
   ];
   const screenshots = [
     {
-      title: 'Dashboard del dueÃ±o',
-      text: 'Ventas, reservas, caja, clientes y mÃ©tricas clave en una sola vista.',
+      title: 'Dashboard del dueño',
+      text: 'Ventas, reservas, caja, clientes y métricas clave en una sola vista.',
       image: '/landing/dashboard-owner.png',
     },
     {
@@ -311,7 +304,7 @@ function PublicHomePage() {
     },
     {
       title: 'Inventario por sede',
-      text: 'Productos, stock, precios e imÃ¡genes separados por sucursal.',
+      text: 'Productos, stock, precios e imágenes separados por sucursal.',
       image: '/landing/inventario-sedes.png',
     },
   ];
@@ -324,8 +317,8 @@ function PublicHomePage() {
     },
     {
       icon: Banknote,
-      title: 'Caja mÃ¡s clara',
-      text: 'Ventas, gastos, ingresos, pagos digitales y efectivo separados para cerrar mejor el dÃ­a.',
+      title: 'Caja más clara',
+      text: 'Ventas, gastos, ingresos, pagos digitales y efectivo separados para cerrar mejor el día.',
     },
     {
       icon: UsersRound,
@@ -335,15 +328,15 @@ function PublicHomePage() {
     {
       icon: TrendingUp,
       title: 'Decisiones con datos',
-      text: 'Reportes por sede, servicio y profesional para saber quÃ© vende mÃ¡s y dÃ³nde ajustar.',
+      text: 'Reportes por sede, servicio y profesional para saber qué vende más y dónde ajustar.',
     },
   ];
 
   const salesStats = [
     {
       value: 'S/ 1,240',
-      label: 'Ventas del dÃ­a',
-      detail: 'Resumen por mÃ©todo de pago para cerrar caja con claridad.',
+      label: 'Ventas del día',
+      detail: 'Resumen por método de pago para cerrar caja con claridad.',
     },
     {
       value: '148',
@@ -365,14 +358,14 @@ function PublicHomePage() {
   const verticalMarkets = [
     {
       icon: Scissors,
-      title: 'BarberÃ­as',
+      title: 'Barberías',
       text: 'Controla citas, barberos, comisiones, caja y productos sin perder el ritmo del local.',
       image: '/landing/caja-owner.png',
       stat: 'Ventas + caja',
     },
     {
       icon: Hand,
-      title: 'Estudios de uÃ±as',
+      title: 'Estudios de uñas',
       text: 'Agenda servicios recurrentes, paquetes, clientas frecuentes y promociones por temporada.',
       image: '/landing/agenda-owner.png',
       stat: 'Citas recurrentes',
@@ -386,8 +379,8 @@ function PublicHomePage() {
     },
     {
       icon: Leaf,
-      title: 'Spa y estÃ©tica',
-      text: 'Gestiona paquetes, historial, ventas, fidelizaciÃ³n y reservas con una imagen mÃ¡s profesional.',
+      title: 'Spa y estética',
+      text: 'Gestiona paquetes, historial, ventas, fidelización y reservas con una imagen más profesional.',
       image: '/landing/clientes-puntos.png',
       stat: 'Clientes que vuelven',
     },
@@ -395,20 +388,20 @@ function PublicHomePage() {
 
   const faqItems = [
     {
-      question: 'Â¿Super Gods App sirve solo para barberÃ­as?',
-      answer: 'No. Funciona para barberÃ­as, peluquerÃ­as, salones de belleza, estudios de uÃ±as, cejas y pestaÃ±as, spas, estÃ©tica y negocios que trabajan con reservas, servicios, profesionales y clientes frecuentes.',
+      question: '¿Super Gods App sirve solo para barberías?',
+      answer: 'No. Funciona para barberías, peluquerías, salones de belleza, estudios de uñas, cejas y pestañas, spas, estética y negocios que trabajan con reservas, servicios, profesionales y clientes frecuentes.',
     },
     {
-      question: 'Â¿Puedo usarlo desde celular y computadora?',
-      answer: 'SÃ­. El dueÃ±o puede gestionar desde el panel web y el equipo puede operar desde la app mÃ³vil segÃºn su rol y permisos.',
+      question: '¿Puedo usarlo desde celular y computadora?',
+      answer: 'Sí. El dueño puede gestionar desde el panel web y el equipo puede operar desde la app móvil según su rol y permisos.',
     },
     {
-      question: 'Â¿La prueba gratis necesita tarjeta?',
+      question: '¿La prueba gratis necesita tarjeta?',
       answer: 'No. Primero revisamos tu solicitud y activamos una demo para que pruebes reservas, caja, clientes, puntos, promociones y reportes.',
     },
     {
-      question: 'Â¿Funciona con monedas de otros paÃ­ses?',
-      answer: 'SÃ­. La plataforma soporta moneda por paÃ­s y los pagos internacionales pueden procesarse con Paddle cuando corresponde.',
+      question: '¿Funciona con monedas de otros países?',
+      answer: 'Sí. La plataforma soporta moneda por país y los pagos internacionales pueden procesarse con Paddle cuando corresponde.',
     },
   ];
 
@@ -451,7 +444,7 @@ function PublicHomePage() {
               Iniciar sesion
             </a>
             <a href="/registro-negocio" className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-[#0F2A5F] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84] sm:px-6">
-              Probar 7 dias gratis
+              Probar 7 días gratis
             </a>
           </div>
         </nav>
@@ -469,7 +462,7 @@ function PublicHomePage() {
               </div>
 
               <h1 className="max-w-4xl text-5xl font-black leading-[0.98] tracking-[-0.055em] text-slate-950 md:text-7xl">
-                Mas reservas, caja clara y clientes que vuelven
+                Más reservas, caja clara y clientes que vuelven
               </h1>
 
               <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate-600 md:text-xl">
@@ -478,7 +471,7 @@ function PublicHomePage() {
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a href="/registro-negocio" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-1 hover:bg-[#123A84]">
-                  Probar 7 dias gratis
+                  Probar 7 días gratis
                   <ArrowRight size={18} strokeWidth={2.6} />
                 </a>
                 <a href={whatsappUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white px-7 py-4 text-base font-black text-emerald-700 shadow-sm transition hover:-translate-y-1 hover:border-emerald-500 hover:bg-emerald-50">
@@ -489,7 +482,7 @@ function PublicHomePage() {
                   Ver como funciona
                 </a>
                 <a href="/login" className="inline-flex justify-center rounded-2xl bg-slate-950 px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 sm:hidden">
-                  Iniciar sesiÃ³n
+                  Iniciar sesión
                 </a>
               </div>
 
@@ -503,10 +496,10 @@ function PublicHomePage() {
             <div className="relative">
               <div className="absolute -inset-6 rounded-[40px] bg-gradient-to-br from-blue-500/20 via-green-400/10 to-transparent blur-2xl" />
               <div className="relative overflow-hidden rounded-[36px] border border-white bg-white p-3 shadow-[0_40px_100px_rgba(15,23,42,0.18)]">
-                <img src="/landing/dashboard-owner.png" alt="Dashboard de Super Gods App para barberÃ­as y salones de belleza" className="rounded-[28px] object-cover" />
+                <img src="/landing/dashboard-owner.png" alt="Dashboard de Super Gods App para barberías y salones de belleza" className="rounded-[28px] object-cover" />
                 <div className="grid gap-3 p-3 sm:grid-cols-3">
                   <HeroSignal icon={Clock3} title="Agenda" text="Reservas por horario" />
-                  <HeroSignal icon={Banknote} title="Caja" text="Cierre por mÃ©todo" />
+                  <HeroSignal icon={Banknote} title="Caja" text="Cierre por método" />
                   <HeroSignal icon={MessageCircle} title="Clientes" text="Historial y puntos" />
                 </div>
               </div>
@@ -522,15 +515,15 @@ function PublicHomePage() {
             <div>
               <div className="mb-5 inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-2 text-sm font-black text-blue-700 shadow-sm">
                 <span className="h-2 w-2 rounded-full bg-green-500" />
-                TecnologÃ­a para negocios de belleza, estÃ©tica y bienestar
+                Tecnología para negocios de belleza, estética y bienestar
               </div>
 
               <h1 className="max-w-4xl text-5xl font-black leading-[0.98] tracking-[-0.055em] text-slate-950 md:text-7xl">
-                Digitalizamos tu negocio para que vendas mÃ¡s y trabajes mejor
+                Digitalizamos tu negocio para que vendas más y trabajes mejor
               </h1>
 
               <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate-600 md:text-xl">
-                En Gods Technologies S.A.C. desarrollamos soluciones digitales para barberÃ­as, peluquerÃ­as, salones de belleza, estudios de uÃ±as, cejas y pestaÃ±as, tattoo studios, spas y centros de estÃ©tica.
+                En Gods Technologies S.A.C. desarrollamos soluciones digitales para barberías, peluquerías, salones de belleza, estudios de uñas, cejas y pestañas, tattoo studios, spas y centros de estética.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -541,7 +534,7 @@ function PublicHomePage() {
                   Conocer la empresa
                 </a>
                 <a href="/login" className="inline-flex justify-center rounded-2xl bg-slate-950 px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 sm:hidden">
-                  Iniciar sesiÃ³n
+                  Iniciar sesión
                 </a>
               </div>
 
@@ -567,8 +560,8 @@ function PublicHomePage() {
           <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-4">
             <MetricCard value="24/7" label="Reservas online" />
             <MetricCard value="+Caja" label="Control de pagos y ventas" />
-            <MetricCard value="+Puntos" label="FidelizaciÃ³n y premios" />
-            <MetricCard value="+Reportes" label="MÃ©tricas para decidir mejor" />
+            <MetricCard value="+Puntos" label="Fidelización y premios" />
+            <MetricCard value="+Reportes" label="Métricas para decidir mejor" />
           </div>
         </section>
 
@@ -580,7 +573,7 @@ function PublicHomePage() {
                 Usa Super Gods desde celular o computadora
               </h2>
               <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
-                El dueÃ±o puede revisar reservas, caja, clientes y reportes desde el panel web. El equipo puede operar desde la app mÃ³vil segÃºn sus permisos.
+                El dueño puede revisar reservas, caja, clientes y reportes desde el panel web. El equipo puede operar desde la app móvil según sus permisos.
               </p>
 
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -595,7 +588,7 @@ function PublicHomePage() {
               </div>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                <AppStep number="1" title="RegÃ­strate" text="Crea tu cuenta o solicita tu demo." />
+                <AppStep number="1" title="Regístrate" text="Crea tu cuenta o solicita tu demo." />
                 <AppStep number="2" title="Configura" text="Servicios, horarios y profesionales." />
                 <AppStep number="3" title="Opera" text="Agenda, caja, clientes y reportes." />
               </div>
@@ -617,7 +610,7 @@ function PublicHomePage() {
                 </div>
 
                 <div className="rounded-[30px] bg-white p-4 text-slate-950 shadow-2xl shadow-slate-950/30">
-                  <img src="/landing/dashboard-owner.png" alt="Panel web de Super Gods App para dueÃ±os" className="rounded-[22px]" />
+                  <img src="/landing/dashboard-owner.png" alt="Panel web de Super Gods App para dueños" className="rounded-[22px]" />
                   <div className="mt-4 grid grid-cols-3 gap-3">
                     <div className="rounded-2xl bg-blue-50 p-3">
                       <p className="text-xs font-black text-blue-700">Agenda</p>
@@ -643,10 +636,10 @@ function PublicHomePage() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Resultados que se sienten</p>
               <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">
-                Una operaciÃ³n mÃ¡s ordenada se convierte en mÃ¡s ventas
+                Una operación más ordenada se convierte en más ventas
               </h2>
               <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
-                La plataforma estÃ¡ pensada para el dÃ­a a dÃ­a del dueÃ±o: menos improvisaciÃ³n, mÃ¡s control y una experiencia mÃ¡s profesional para cada cliente.
+                La plataforma está pensada para el día a día del dueño: menos improvisación, más control y una experiencia más profesional para cada cliente.
               </p>
             </div>
 
@@ -670,27 +663,27 @@ function PublicHomePage() {
                 Gods Technologies S.A.C.
               </h2>
               <p className="mt-5 text-lg font-medium leading-8 text-slate-300">
-                Somos una empresa peruana de tecnologÃ­a enfocada en crear soluciones digitales para negocios de belleza, estÃ©tica y bienestar.
+                Somos una empresa peruana de tecnología enfocada en crear soluciones digitales para negocios de belleza, estética y bienestar.
               </p>
             </div>
 
             <div className="rounded-[36px] border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/80 md:p-10">
-              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">MisiÃ³n</p>
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Misión</p>
               <h3 className="mt-4 text-3xl font-black tracking-[-0.04em] text-slate-950">
-                Impulsar la transformaciÃ³n digital
+                Impulsar la transformación digital
               </h3>
               <p className="mt-4 font-medium leading-8 text-slate-600">
-                Nuestra misiÃ³n es impulsar la transformaciÃ³n digital de negocios de belleza, estÃ©tica y bienestar mediante soluciones tecnolÃ³gicas simples, modernas y accesibles, que ayuden a mejorar la gestiÃ³n, aumentar las ventas, fidelizar clientes y optimizar el trabajo diario.
+                Nuestra misión es impulsar la transformación digital de negocios de belleza, estética y bienestar mediante soluciones tecnológicas simples, modernas y accesibles, que ayuden a mejorar la gestión, aumentar las ventas, fidelizar clientes y optimizar el trabajo diario.
               </p>
             </div>
 
             <div className="rounded-[36px] border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/80 md:p-10">
-              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">VisiÃ³n</p>
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Visión</p>
               <h3 className="mt-4 text-3xl font-black tracking-[-0.04em] text-slate-950">
-                Ser lÃ­deres en LatinoamÃ©rica
+                Ser líderes en Latinoamérica
               </h3>
               <p className="mt-4 font-medium leading-8 text-slate-600">
-                Nuestra visiÃ³n es ser una empresa tecnolÃ³gica lÃ­der en LatinoamÃ©rica en el desarrollo de plataformas digitales para negocios de belleza, estÃ©tica y bienestar, reconocida por crear herramientas innovadoras, fÃ¡ciles de usar y enfocadas en el crecimiento real de nuestros clientes.
+                Nuestra visión es ser una empresa tecnológica líder en Latinoamérica en el desarrollo de plataformás digitales para negocios de belleza, estética y bienestar, reconocida por crear herramientas innovadoras, fáciles de usar y enfocadas en el crecimiento real de nuestros clientes.
               </p>
             </div>
           </div>
@@ -703,10 +696,10 @@ function PublicHomePage() {
                 <div>
                   <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-300">Ventas visibles</p>
                   <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] md:text-6xl">
-                    NÃºmeros que el dueÃ±o necesita ver todos los dÃ­as
+                    Números que el dueño necesita ver todos los días
                   </h2>
                   <p className="mt-5 text-lg font-medium leading-8 text-slate-300">
-                    Super Gods App convierte reservas, ventas, caja y clientes en indicadores fÃ¡ciles de revisar para tomar mejores decisiones.
+                    Super Gods App convierte reservas, ventas, caja y clientes en indicadores fáciles de revisar para tomar mejores decisiones.
                   </p>
                 </div>
 
@@ -737,7 +730,7 @@ function PublicHomePage() {
                 <div className="grid grid-cols-3 gap-3">
                   <img src="/landing/agenda-owner.png" alt="Agenda online para negocio de belleza" className="h-28 w-full rounded-2xl object-cover" />
                   <img src="/landing/caja-owner.png" alt="Caja y ventas de Super Gods App" className="h-28 w-full rounded-2xl object-cover" />
-                  <img src="/landing/clientes-puntos.png" alt="Clientes, puntos y premios para fidelizaciÃ³n" className="h-28 w-full rounded-2xl object-cover" />
+                  <img src="/landing/clientes-puntos.png" alt="Clientes, puntos y premios para fidelización" className="h-28 w-full rounded-2xl object-cover" />
                 </div>
               </div>
             </div>
@@ -755,7 +748,7 @@ function PublicHomePage() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Rubros</p>
               <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">
-                TecnologÃ­a para distintos negocios
+                Tecnología para distintos negocios
               </h2>
               <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
                 Nuestra plataforma se adapta a negocios que trabajan con agenda, servicios, profesionales, clientes frecuentes y experiencia personalizada.
@@ -783,9 +776,9 @@ function PublicHomePage() {
                   Soluciones digitales para crecer con orden
                 </h2>
                 <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
-                  En Gods Technologies S.A.C. no solo creamos software. Creamos herramientas para vender mÃ¡s, administrar mejor y ofrecer una experiencia mÃ¡s profesional a los clientes.
+                  En Gods Technologies S.A.C. no solo creamos software. Creamos herramientas para vender más, administrar mejor y ofrecer una experiencia más profesional a los clientes.
                 </p>
-                <a href="#contacto" className="mt-8 inline-flex rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 hover:bg-[#123A84]">Solicitar asesorÃ­a</a>
+                <a href="#contacto" className="mt-8 inline-flex rounded-2xl bg-[#0F2A5F] px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 hover:bg-[#123A84]">Solicitar asesoría</a>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -809,7 +802,7 @@ function PublicHomePage() {
                 Super Gods App
               </h2>
               <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
-                Plataforma digital creada por Gods Technologies S.A.C. para gestionar reservas, caja, clientes, profesionales, productos, puntos, promociones y reportes desde una sola soluciÃ³n.
+                Plataforma digital creada por Gods Technologies S.A.C. para gestionar reservas, caja, clientes, profesionales, productos, puntos, promociones y reportes desde una sola solución.
               </p>
             </div>
 
@@ -828,9 +821,9 @@ function PublicHomePage() {
         <section id="capturas" className="px-4 py-20">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">En acciÃ³n</p>
-              <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">DiseÃ±ado para entender tu negocio rÃ¡pido</h2>
-              <p className="mt-5 text-lg font-medium leading-8 text-slate-600">Pantallas pensadas para que el dueÃ±o pueda revisar operaciÃ³n, ventas y rendimiento de forma simple.</p>
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">En acción</p>
+              <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">Diseñado para entender tu negocio rápido</h2>
+              <p className="mt-5 text-lg font-medium leading-8 text-slate-600">Pantallas pensadas para que el dueño pueda revisar operación, ventas y rendimiento de forma simple.</p>
             </div>
 
             <div className="mt-12 grid gap-6 lg:grid-cols-2">
@@ -856,9 +849,9 @@ function PublicHomePage() {
               <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] md:text-5xl">Reservas por WhatsApp, caja manual y clientes sin seguimiento</h2>
               <div className="mt-8 grid gap-4">
                 <PainItem text="Mensajes desordenados para reservar citas." />
-                <PainItem text="No sabes exactamente cuÃ¡nto quedÃ³ en caja." />
+                <PainItem text="No sabes exactamente cuánto quedó en caja." />
                 <PainItem text="No hay control claro de puntos, premios o promociones." />
-                <PainItem text="DifÃ­cil saber quÃ© profesional vendiÃ³ mÃ¡s." />
+                <PainItem text="Difícil saber qué profesional vendió más." />
               </div>
             </div>
 
@@ -956,7 +949,7 @@ function PublicHomePage() {
 
             <p className="mt-6 text-center text-sm font-semibold text-slate-500">Precio de lanzamiento. 10% de descuento pagando 6 meses. 20% de descuento pagando anual.</p>
             <p className="mx-auto mt-3 max-w-3xl text-center text-xs font-semibold leading-6 text-slate-400">
-              En Peru el pago se gestiona de forma local. Para otros paises, el cobro internacional se procesa con Paddle y el monto final puede variar levemente por conversion de moneda, impuestos o comisiones del medio de pago.
+              En Perú el pago se gestiona de forma local. Para otros países, el cobro internacional se procesa con Paddle y el monto final puede variar levemente por conversión de moneda, impuestos o comisiones del medio de pago.
             </p>
 
             <div className="mt-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-xl shadow-slate-200/70">
@@ -975,7 +968,6 @@ function PublicHomePage() {
                   <thead>
                     <tr className="border-b border-slate-200 text-xs font-black uppercase tracking-[0.14em] text-slate-500">
                       <th className="sticky left-0 z-10 bg-white px-5 py-4">Funcion</th>
-                      <th className="px-4 py-4">Basic</th>
                       <th className="px-4 py-4">Starter</th>
                       <th className="bg-blue-50 px-4 py-4 text-blue-800">Growth</th>
                       <th className="px-4 py-4">Pro</th>
@@ -986,7 +978,6 @@ function PublicHomePage() {
                     {planComparison.map((row) => (
                       <tr key={row.feature} className="border-b border-slate-100 last:border-b-0">
                         <th className="sticky left-0 z-10 bg-white px-5 py-3 text-sm font-black text-slate-950">{row.feature}</th>
-                        <PlanFeatureCell value={row.basic} />
                         <PlanFeatureCell value={row.starter} />
                         <PlanFeatureCell value={row.growth} highlighted />
                         <PlanFeatureCell value={row.pro} />
@@ -1005,10 +996,10 @@ function PublicHomePage() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">Preguntas frecuentes</p>
               <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] text-slate-950 md:text-6xl">
-                Lo que suele preguntar un dueÃ±o antes de probar
+                Lo que suele preguntar un dueño antes de probar
               </h2>
               <p className="mt-5 text-lg font-medium leading-8 text-slate-600">
-                Respuestas claras para decidir si Super Gods App encaja con tu operaciÃ³n.
+                Respuestas claras para decidir si Super Gods App encaja con tu operación.
               </p>
             </div>
 
@@ -1038,17 +1029,17 @@ function PublicHomePage() {
                   </p>
 
                   <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] md:text-6xl">
-                    CuÃ©ntanos cÃ³mo trabaja tu negocio y te mostramos el plan ideal
+                    Cuéntanos cómo trabaja tu negocio y te mostramos el plan ideal
                   </h2>
 
                   <p className="mt-5 text-lg font-medium leading-8 text-blue-100">
-                    Completa tus datos y revisaremos tu negocio para activar una demo gratis de 7 dÃ­as. Si todo estÃ¡ correcto, te enviaremos los accesos por WhatsApp o correo.
+                    Completa tus datos y revisaremos tu negocio para activar una demo gratis de 7 días. Si todo está correcto, te enviaremos los accesos por WhatsApp o correo.
                   </p>
                 </div>
 
                 <div className="mt-10 grid gap-4">
-                  <InfoLine text="Demo personalizada segÃºn tu rubro." />
-                  <InfoLine text="Prueba gratis por 7 dÃ­as." />
+                  <InfoLine text="Demo personalizada según tu rubro." />
+                  <InfoLine text="Prueba gratis por 7 días." />
                   <InfoLine text="Soporte inicial para configurar sedes, profesionales, servicios y horarios." />
                   <InfoLine text="Acceso desde Android, iPhone y panel web." />
                 </div>
@@ -1071,7 +1062,7 @@ function PublicHomePage() {
 
         <section className="px-4 pb-20">
           <div className="mx-auto max-w-7xl rounded-[40px] bg-slate-950 px-8 py-14 text-center text-white shadow-[0_35px_100px_rgba(15,23,42,0.25)]">
-            <h2 className="mx-auto max-w-3xl text-4xl font-black tracking-[-0.05em] md:text-6xl">MÃ¡s orden. MÃ¡s control. MÃ¡s clientes.</h2>
+            <h2 className="mx-auto max-w-3xl text-4xl font-black tracking-[-0.05em] md:text-6xl">Más orden. Más control. Más clientes.</h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg font-medium leading-8 text-slate-300">Activa tu prueba gratis, recibe soporte y empieza a probar reservas, caja, clientes, puntos y reportes.</p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <a href="/registro-negocio" className="rounded-2xl bg-white px-7 py-4 text-base font-black text-slate-950 transition hover:-translate-y-1">Crear cuenta gratis</a>
@@ -1079,7 +1070,7 @@ function PublicHomePage() {
                 <MessageCircle size={18} strokeWidth={2.7} />
                 Hablar por WhatsApp
               </a>
-              <a href="/login" className="rounded-2xl border border-white/30 px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 hover:bg-white/10">Iniciar sesiÃ³n</a>
+              <a href="/login" className="rounded-2xl border border-white/30 px-7 py-4 text-base font-black text-white transition hover:-translate-y-1 hover:bg-white/10">Iniciar sesión</a>
             </div>
           </div>
         </section>
@@ -1143,7 +1134,7 @@ function PublicBusinessSignupPage() {
             <div className="relative flex h-full flex-col justify-between">
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-200">
-                  Prueba gratis 7 dias
+                  Prueba gratis 7 días
                 </p>
                 <h1 className="mt-4 text-4xl font-black tracking-[-0.05em] md:text-6xl">
                   Crea tu negocio y entra al panel en minutos
@@ -1309,7 +1300,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
     whatsapp: '',
     password: '',
     confirmPassword: '',
-    country: 'PerÃº',
+    country: 'Perú',
     city: '',
     profesionales: '',
     sedes: '',
@@ -1320,13 +1311,13 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
   };
 
   const businessTypeOptions = [
-    { value: 'BARBERSHOP', label: 'BarberÃ­a' },
-    { value: 'BEAUTY_SALON', label: 'SalÃ³n de belleza' },
-    { value: 'SPA', label: 'Spa / estÃ©tica' },
+    { value: 'BARBERSHOP', label: 'Barbería' },
+    { value: 'BEAUTY_SALON', label: 'Salón de belleza' },
+    { value: 'SPA', label: 'Spa / estética' },
     { value: 'TATTOO_STUDIO', label: 'Tattoo studio' },
-    { value: 'NAILS', label: 'UÃ±as / nails' },
-    { value: 'BROWS_LASHES', label: 'Cejas y pestaÃ±as' },
-    { value: 'HAIR_SALON', label: 'PeluquerÃ­a' },
+    { value: 'NAILS', label: 'Uñas / nails' },
+    { value: 'BROWS_LASHES', label: 'Cejas y pestañas' },
+    { value: 'HAIR_SALON', label: 'Peluquería' },
     { value: 'OTHER', label: 'Otro rubro' },
   ];
 
@@ -1334,7 +1325,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
 
   const businessTypeLabel =
     businessTypeOptions.find((option) => option.value === lead.businessType)?.label ||
-    'BarberÃ­a';
+    'Barbería';
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -1377,7 +1368,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
       `Negocio: ${lead.negocio || '___'}\n` +
       `Tipo de negocio: ${businessTypeLabel || '___'}\n` +
       `Correo: ${lead.email || '___'}\n` +
-      `Ciudad / paÃ­s: ${lead.city || '___'}, ${lead.country || '___'}\n` +
+      `Ciudad / país: ${lead.city || '___'}, ${lead.country || '___'}\n` +
       `WhatsApp: ${lead.whatsapp || '___'}\n` +
       `Profesionales: ${lead.profesionales || '___'}\n` +
       `Sedes: ${lead.sedes || '___'}\n` +
@@ -1390,14 +1381,14 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappText}`;
 
   const validate = () => {
-    if (!lead.nombre.trim()) return 'Ingresa el nombre del dueÃ±o.';
+    if (!lead.nombre.trim()) return 'Ingresa el nombre del dueño.';
     if (!lead.negocio.trim()) return 'Ingresa el nombre del negocio.';
-    if (!lead.email.trim() || !lead.email.includes('@')) return 'Ingresa un correo vÃ¡lido.';
-    if (!lead.whatsapp.trim()) return 'Ingresa el WhatsApp del dueÃ±o.';
+    if (!lead.email.trim() || !lead.email.includes('@')) return 'Ingresa un correo válido.';
+    if (!lead.whatsapp.trim()) return 'Ingresa el WhatsApp del dueño.';
     if (autoActivate && lead.password.trim().length < 6) return 'Crea una contrasena de al menos 6 caracteres.';
     if (autoActivate && lead.password !== lead.confirmPassword) return 'Las contrasenas no coinciden.';
     if (!lead.city.trim()) return 'Ingresa la ciudad.';
-    if (!lead.country.trim()) return 'Ingresa el paÃ­s.';
+    if (!lead.country.trim()) return 'Ingresa el país.';
     return '';
   };
 
@@ -1448,7 +1439,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
         }, 800);
       }
     } catch (e) {
-      setError(e.message || 'No se pudo enviar la solicitud. IntÃ©ntalo nuevamente.');
+      setError(e.message || 'No se pudo enviar la solicitud. Inténtalo nuevamente.');
     } finally {
       setSaving(false);
     }
@@ -1466,8 +1457,8 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
 
       <p className="mt-4 font-medium leading-7 text-slate-600">
         {autoActivate
-          ? 'Continua con Google, completa los datos de tu negocio y crearemos una cuenta Starter de prueba por 7 dias.'
-          : 'Completa los datos de tu negocio. Revisaremos tu solicitud y, si todo esta correcto, activaremos tu cuenta demo por 7 dias.'}
+          ? 'Continua con Google, completa los datos de tu negocio y crearemos una cuenta Starter de prueba por 7 días.'
+          : 'Completa los datos de tu negocio. Revisaremos tu solicitud y, si todo esta correcto, activaremos tu cuenta demo por 7 días.'}
       </p>
 
       {autoActivate && (
@@ -1506,7 +1497,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
                   Registro recomendado con Google
                 </p>
                 <p className="mt-1 text-xs font-bold leading-5 text-slate-500">
-                  Usaremos tu Gmail verificado para crear el dueÃ±o y permitir ingreso con un clic.
+                  Usaremos tu Gmail verificado para crear el dueño y permitir ingreso con un clic.
                 </p>
               </div>
               <button
@@ -1537,11 +1528,11 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
               : 'Revisaremos los datos de tu negocio. Si es aprobada, recibiras tus accesos por WhatsApp o correo.'}
           </p>
           <div className="hidden">
-            Acceso: {activation?.accessEmail || lead.email.trim().toLowerCase()} Â· clave temporal: {activation?.temporaryPassword || '123456'}
+            Acceso: {activation?.accessEmail || lead.email.trim().toLowerCase()} · clave temporal: {activation?.temporaryPassword || '123456'}
           </div>
           {autoActivate && (
             <div className="mt-4 rounded-2xl bg-white p-4 text-sm font-black text-slate-800">
-              Acceso: {activation?.accessEmail || lead.email.trim().toLowerCase()} Â· entra con la contrasena que acabas de crear.
+              Acceso: {activation?.accessEmail || lead.email.trim().toLowerCase()} · entra con la contrasena que acabas de crear.
             </div>
           )}
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -1572,7 +1563,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
       <div className="mt-8 grid gap-5">
         <div className="grid gap-5 md:grid-cols-2">
           <LandingInput
-            label="Nombre del dueÃ±o"
+            label="Nombre del dueño"
             name="nombre"
             value={lead.nombre}
             onChange={handleChange}
@@ -1603,7 +1594,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
             type="email"
             value={lead.email}
             onChange={handleChange}
-            placeholder="Ej: dueÃ±o@negocio.com"
+            placeholder="Ej: dueño@negocio.com"
           />
         </div>
 
@@ -1617,11 +1608,11 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
           />
 
           <LandingInput
-            label="PaÃ­s"
+            label="País"
             name="country"
             value={lead.country}
             onChange={handleChange}
-            placeholder="Ej: PerÃº"
+            placeholder="Ej: Perú"
           />
         </div>
 
@@ -1673,7 +1664,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
               '2 profesionales',
               '3 a 5 profesionales',
               '6 a 10 profesionales',
-              'MÃ¡s de 10 profesionales',
+              'Más de 10 profesionales',
             ]}
           />
 
@@ -1686,7 +1677,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
               '1 sede',
               '2 sedes',
               '3 sedes',
-              'MÃ¡s de 3 sedes',
+              'Más de 3 sedes',
             ]}
           />
         </div>
@@ -1710,7 +1701,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
         </div>
 
         <LandingSelect
-          label="Â¿QuÃ© quieres mejorar primero?"
+          label="¿Qué quieres mejorar primero?"
           name="objetivo"
           value={lead.objetivo}
           onChange={handleChange}
@@ -1728,7 +1719,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
 
         <label className="grid gap-2">
           <span className="text-sm font-black text-slate-900">
-            Â¿QuÃ© quieres mejorar con Super Gods?
+            ¿Qué quieres mejorar con Super Gods?
           </span>
 
           <textarea
@@ -1756,7 +1747,7 @@ function ContactLeadBox({ whatsappNumber, autoActivate = false }) {
         href="/login"
         className="mt-4 flex w-full justify-center rounded-2xl border border-slate-200 bg-slate-50 px-7 py-4 text-base font-black text-slate-950 transition hover:border-blue-600 hover:text-blue-700"
       >
-        Ya tengo cuenta, iniciar sesiÃ³n
+        Ya tengo cuenta, iniciar sesión
       </a>
 
       <p className="mt-4 text-center text-xs font-semibold leading-5 text-slate-500">
@@ -1772,8 +1763,8 @@ function parseCount(value) {
   const text = String(value || '').toLowerCase();
 
   if (!text.trim()) return null;
-  if (text.includes('mÃ¡s de 10')) return 11;
-  if (text.includes('mÃ¡s de 3')) return 4;
+  if (text.includes('más de 10')) return 11;
+  if (text.includes('más de 3')) return 4;
   if (text.includes('6 a 10')) return 6;
   if (text.includes('3 a 5')) return 3;
 
@@ -1852,7 +1843,7 @@ const LEGAL_PAGES = {
       {
         title: 'Uso de la informacion',
         body:
-          'Usamos la informacion para prestar el servicio, gestionar suscripciones, brindar soporte, mejorar la plataforma, prevenir fraude, mantener seguridad y cumplir obligaciones legales aplicables.',
+          'Usamos la informacion para prestar el servicio, gestionar suscripciónes, brindar soporte, mejorar la plataforma, prevenir fraude, mantener seguridad y cumplir obligaciones legales aplicables.',
       },
       {
         title: 'Procesadores y proveedores',
@@ -1880,7 +1871,7 @@ const LEGAL_PAGES = {
       {
         title: 'Servicio',
         body:
-          'Super Gods App es una plataforma SaaS por suscripcion. El acceso puede incluir panel web, aplicaciones moviles, soporte y modulos segun el plan contratado.',
+          'Super Gods App es una plataforma SaaS por suscripción. El acceso puede incluir panel web, aplicaciones moviles, soporte y modulos segun el plan contratado.',
       },
       {
         title: 'Cuenta y uso aceptable',
@@ -1890,7 +1881,7 @@ const LEGAL_PAGES = {
       {
         title: 'Suscripciones y pagos',
         body:
-          'Los planes pueden cobrarse de forma mensual, semestral o anual segun disponibilidad. En Peru pueden existir pagos manuales locales; para pagos internacionales podemos usar Paddle u otros proveedores autorizados.',
+          'Los planes pueden cobrarse de forma mensual, semestral o anual según disponibilidad. En Perú pueden existir pagos manuales locales; para pagos internacionales podemos usar Paddle u otros proveedores autorizados.',
       },
       {
         title: 'Disponibilidad y cambios',
@@ -1908,12 +1899,12 @@ const LEGAL_PAGES = {
     title: 'Politica de Reembolsos y Cancelacion',
     updatedAt: '25 de mayo de 2026',
     intro:
-      'Esta politica describe como gestionamos cancelaciones y reembolsos de suscripciones de Super Gods App.',
+      'Esta politica describe como gestionamos cancelaciones y reembolsos de suscripciónes de Super Gods App.',
     sections: [
       {
-        title: 'Prueba y suscripcion',
+        title: 'Prueba y suscripción',
         body:
-          'Cuando exista prueba gratis, el cliente puede evaluar el servicio antes del primer cobro. Al continuar con una suscripcion de pago, el acceso se mantiene durante el periodo contratado.',
+          'Cuando exista prueba gratis, el cliente puede evaluar el servicio antes del primer cobro. Al continuar con una suscripción de pago, el acceso se mantiene durante el período contratado.',
       },
       {
         title: 'Cancelaciones',
@@ -1923,7 +1914,7 @@ const LEGAL_PAGES = {
       {
         title: 'Reembolsos',
         body:
-          'Los pagos de suscripcion generalmente no son reembolsables una vez iniciado el periodo de servicio, salvo errores de cobro, duplicidad, imposibilidad tecnica comprobada o requerimientos legales aplicables.',
+          'Los pagos de suscripción generalmente no son reembolsables una vez iniciado el periodo de servicio, salvo errores de cobro, duplicidad, imposibilidad tecnica comprobada o requerimientos legales aplicables.',
       },
       {
         title: 'Pagos internacionales',
@@ -2074,7 +2065,7 @@ function SimplePublicPage({ title }) {
           </div>
         </div>
         <h1 className="mt-10 text-4xl font-black tracking-[-0.04em] text-slate-950">{title}</h1>
-        <p className="mt-4 text-slate-600">PÃ¡gina pÃºblica de Gods Technologies S.A.C. y Super Gods App. AquÃ­ agregaremos el contenido legal o de soporte correspondiente.</p>
+        <p className="mt-4 text-slate-600">Página pública de Gods Technologies S.A.C. y Super Gods App. Aquí agregaremos el contenido legal o de soporte correspondiente.</p>
         <a href="/" className="mt-8 inline-flex rounded-2xl bg-[#0F2A5F] px-5 py-3 font-black text-white">Volver al inicio</a>
       </div>
     </div>
@@ -2085,7 +2076,7 @@ function PlaceholderPage({ title }) {
   return (
     <div className="rounded-[28px] border border-neutral-200 bg-white p-6 shadow-sm">
       <h2 className="text-2xl font-black">{title}</h2>
-      <p className="mt-2 text-neutral-500">MÃ³dulo preparado. AquÃ­ conectaremos el backend de Super Gods.</p>
+      <p className="mt-2 text-neutral-500">Módulo preparado. Aquí conectaremos el backend de Super Gods.</p>
     </div>
   );
 }

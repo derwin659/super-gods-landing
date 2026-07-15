@@ -598,7 +598,6 @@ function EditTenantModal({ item, form, saving, error, onChange, onClose, onSave 
             onChange={(v) => onChange("plan", v)}
             options={[
               ["FREE", "Free"],
-              ["BASIC", "Basic"],
               ["STARTER", "Starter"],
               ["GROWTH", "Growth"],
               ["PRO", "Pro"],

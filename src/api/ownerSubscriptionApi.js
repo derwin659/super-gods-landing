@@ -180,17 +180,17 @@ export function monthlyPrice(plan, planPrices = []) {
     case 'BASIC':
       return 39.90;
     case 'STARTER':
-      return 79.90;
+      return 49.90;
     case 'GROWTH':
-      return 139.90;
+      return 99.90;
     case 'PRO':
-      return 229.90;
+      return 149.90;
     case 'ENTERPRISE':
-      return 399.90;
+      return 299.90;
     case 'GODS_AI':
-      return 139.90;
+      return 99.90;
     default:
-      return 79.90;
+      return 49.90;
   }
 }
 
