@@ -43,7 +43,7 @@ const COUNTRY_OPTIONS = [
   { value: "Bolivia", label: "Bolivia", currency: "BOB" },
   { value: "Brasil", label: "Brasil", currency: "BRL" },
   { value: "Union Europea", label: "Union Europea", currency: "EUR" },
-  { value: "Venezuela", label: "Venezuela", currency: "VES" },
+  { value: "Venezuela", label: "Venezuela", currency: "USD" },
   { value: "Uruguay", label: "Uruguay", currency: "UYU" },
   { value: "Paraguay", label: "Paraguay", currency: "PYG" },
   { value: "Costa Rica", label: "Costa Rica", currency: "CRC" },
