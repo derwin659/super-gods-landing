@@ -117,7 +117,7 @@ function BranchImage({ branch }) {
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#111827_0%,#374151_100%)] text-5xl text-white">
-      ðŸª
+      🏪
     </div>
   );
 }
@@ -254,7 +254,7 @@ function BranchFormModal({ branch, onClose, onSaved }) {
                   />
                 ) : (
                   <div className="flex h-full w-full flex-col items-center justify-center bg-neutral-950 text-white">
-                    <div className="text-4xl">ðŸª</div>
+                    <div className="text-4xl">🏪</div>
                     <div className="mt-2 text-sm font-black">Sin imagen</div>
                     <div className="mt-1 text-xs text-white/50">Agrega una foto del local</div>
                   </div>
@@ -306,14 +306,14 @@ function BranchFormModal({ branch, onClose, onSaved }) {
               />
 
               <InputField
-                label="DirecciÃ³n"
+                label="Dirección"
                 value={direccion}
                 onChange={setDireccion}
                 placeholder="Ej. Av. Los Inkas 805A"
               />
 
               <InputField
-                label="TelÃ©fono"
+                label="Teléfono"
                 value={telefono}
                 onChange={setTelefono}
                 placeholder="Ej. 987654321"
@@ -322,7 +322,7 @@ function BranchFormModal({ branch, onClose, onSaved }) {
               <div data-build-marker="p13-affiliated-directory" className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4">
                 <div className="mb-4">
                   <div className="text-sm font-black text-neutral-950">Directorio afiliado</div>
-                  <div className="mt-1 text-xs font-bold leading-5 text-neutral-500">Activa esto solo si el dueÃ±o acepta que esta sede aparezca en Cerca de ti.</div>
+                  <div className="mt-1 text-xs font-bold leading-5 text-neutral-500">Activa esto solo si el dueño acepta que esta sede aparezca en Cerca de ti.</div>
                 </div>
                 <div className="mb-4">
                   <button
@@ -404,7 +404,7 @@ function ToggleConfirmModal({ branch, onCancel, onConfirm, saving }) {
   return (
     <ModalShell
       title={active ? 'Desactivar sede' : 'Activar sede'}
-      subtitle="ConfirmaciÃ³n"
+      subtitle="Confirmación"
       onClose={onCancel}
       maxWidth="max-w-xl"
     >
@@ -415,17 +415,17 @@ function ToggleConfirmModal({ branch, onCancel, onConfirm, saving }) {
             : 'border-emerald-200 bg-emerald-50'
         }`}>
           <div className="text-3xl">
-            {active ? 'ðŸ™ˆ' : 'âœ…'}
+            {active ? '🙈' : '✅'}
           </div>
 
           <h3 className="mt-3 text-xl font-black text-neutral-950">
-            {active ? 'Esta sede dejarÃ¡ de operar' : 'Esta sede volverÃ¡ a operar'}
+            {active ? 'Esta sede dejará de operar' : 'Esta sede volverá a operar'}
           </h3>
 
           <p className="mt-2 text-sm leading-6 text-neutral-600">
             {active
-              ? `â€œ${branchName(branch)}â€ no deberÃ­a aparecer para nuevas operaciones, pero seguirÃ¡ en reportes e historial.`
-              : `â€œ${branchName(branch)}â€ volverÃ¡ a estar disponible para operar.`}
+              ? `“${branchName(branch)}” no debería aparecer para nuevas operaciones, pero seguirá en reportes e historial.`
+              : `“${branchName(branch)}” volverá a estar disponible para operar.`}
           </p>
         </div>
 
@@ -450,8 +450,8 @@ function ToggleConfirmModal({ branch, onCancel, onConfirm, saving }) {
             {saving
               ? 'Guardando...'
               : active
-                ? 'SÃ­, desactivar'
-                : 'SÃ­, activar'}
+                ? 'Sí, desactivar'
+                : 'Sí, activar'}
           </button>
         </div>
       </div>
@@ -497,13 +497,13 @@ function BranchCard({ branch, onEdit, onToggle, onDeleteImage, onPreview }) {
             </div>
             <div className="mt-1 text-xs font-bold text-blue-700">
               {branch.ciudad || branch.city || 'Sin ciudad'}
-              {branch.latitude && branch.longitude ? ' Â· UbicaciÃ³n lista para rutas' : ' Â· Falta ubicaciÃ³n para CÃ³mo llegar'}
+              {branch.latitude && branch.longitude ? ' · Ubicación lista para rutas' : ' · Falta ubicación para Cómo llegar'}
             </div>
           </div>
 
           <div className="rounded-2xl bg-neutral-50 px-4 py-3">
             <div className="text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
-              DirecciÃ³n
+              Dirección
             </div>
             <div className="mt-1 text-sm font-black text-neutral-800">
               {branch.direccion || branch.address || '-'}
@@ -512,7 +512,7 @@ function BranchCard({ branch, onEdit, onToggle, onDeleteImage, onPreview }) {
 
           <div className="rounded-2xl bg-neutral-50 px-4 py-3">
             <div className="text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
-              TelÃ©fono
+              Teléfono
             </div>
             <div className="mt-1 text-sm font-black text-neutral-800">
               {branch.telefono || branch.phone || '-'}
@@ -645,7 +645,7 @@ export default function OwnerBranchesPage() {
       const detail = await getPublicAffiliatedBranchDetail(getBranchId(branch));
       setPublicPreview(detail);
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudo cargar la vista pÃºblica.');
+      setErrorMsg(error.message || 'No se pudo cargar la vista pública.');
     } finally {
       setPreviewLoading(false);
     }
@@ -653,7 +653,7 @@ export default function OwnerBranchesPage() {
   async function handleDeleteImage(branch) {
     if (!branch?.imageUrl) return;
 
-    const ok = await premiumConfirm(`Â¿Quieres quitar la imagen de ${branchName(branch)}?`);
+    const ok = await premiumConfirm(`¿Quieres quitar la imagen de ${branchName(branch)}?`);
     if (!ok) return;
 
     setErrorMsg('');
@@ -678,11 +678,11 @@ export default function OwnerBranchesPage() {
             </div>
 
             <h2 className="mt-5 text-4xl font-black tracking-tight">
-              Locales y puntos de atenciÃ³n
+              Locales y puntos de atención
             </h2>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">
-              Crea, edita y controla las sedes de la barberÃ­a. Cada sede puede
+              Crea, edita y controla las sedes de la barbería. Cada sede puede
               tener caja, agenda, barberos, productos y reportes propios.
             </p>
           </div>
@@ -715,7 +715,7 @@ export default function OwnerBranchesPage() {
         <StatCard
           title="Inactivas"
           value={inactiveCount}
-          helper="Ocultas para operaciÃ³n"
+          helper="Ocultas para operación"
           tone={inactiveCount > 0 ? 'red' : 'default'}
         />
 
@@ -734,7 +734,7 @@ export default function OwnerBranchesPage() {
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar por nombre, direcciÃ³n o telÃ©fono"
+              placeholder="Buscar por nombre, dirección o teléfono"
               className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-400"
             />
           </label>
@@ -776,19 +776,19 @@ export default function OwnerBranchesPage() {
       ) : filteredBranches.length === 0 ? (
         <div className="rounded-[30px] border border-dashed border-neutral-300 bg-white/70 p-10 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-neutral-100 text-3xl">
-            ðŸª
+            🏪
           </div>
 
           <h3 className="mt-4 text-xl font-black text-neutral-950">
             {branches.length === 0
-              ? 'AÃºn no tienes sedes'
+              ? 'Aún no tienes sedes'
               : 'No encontramos resultados'}
           </h3>
 
           <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-neutral-500">
             {branches.length === 0
               ? 'Crea tu primera sede para operar caja, agenda, barberos y productos.'
-              : 'Prueba cambiando el texto de bÃºsqueda o el filtro de sedes activas.'}
+              : 'Prueba cambiando el texto de búsqueda o el filtro de sedes activas.'}
           </p>
 
           {branches.length === 0 && (
@@ -817,8 +817,8 @@ export default function OwnerBranchesPage() {
 
       {(publicPreview || previewLoading) && (
         <ModalShell
-          title={publicPreview?.branch?.tenantName || 'Vista pÃºblica'}
-          subtitle="AsÃ­ lo verÃ¡ el cliente"
+          title={publicPreview?.branch?.tenantName || 'Vista pública'}
+          subtitle="Así lo verá el cliente"
           onClose={() => setPublicPreview(null)}
           maxWidth="max-w-2xl"
         >
@@ -836,7 +836,7 @@ export default function OwnerBranchesPage() {
                   {(publicPreview?.services || []).map((service) => (
                     <div key={service.id} className="rounded-2xl border border-neutral-200 bg-white p-4">
                       <div className="font-black text-neutral-900">{service.name}</div>
-                      <div className="mt-1 text-xs font-bold text-neutral-500">{service.durationMinutes || '-'} min Â· {service.variablePrice ? 'Desde ' : ''}{service.price}</div>
+                      <div className="mt-1 text-xs font-bold text-neutral-500">{service.durationMinutes || '-'} min · {service.variablePrice ? 'Desde ' : ''}{service.price}</div>
                     </div>
                   ))}
                 </div>
