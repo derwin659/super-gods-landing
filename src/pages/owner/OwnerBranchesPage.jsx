@@ -501,7 +501,7 @@ function BranchCard({ branch, onEdit, onToggle, onDeleteImage, onPreview }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2 xl:grid-cols-5">
             <div className="rounded-2xl bg-amber-50 px-3 py-3 text-center">
               <div className="text-xl font-black text-neutral-950">{Number(branch.directoryViews || 0)}</div>
               <div className="mt-1 text-[10px] font-black uppercase tracking-wide text-amber-700">Vistas</div>
@@ -513,6 +513,14 @@ function BranchCard({ branch, onEdit, onToggle, onDeleteImage, onPreview }) {
             <div className="rounded-2xl bg-violet-50 px-3 py-3 text-center">
               <div className="text-xl font-black text-neutral-950">{Number(branch.bookingIntents || 0)}</div>
               <div className="mt-1 text-[10px] font-black uppercase tracking-wide text-violet-700">Interés de reserva</div>
+            </div>
+            <div className="rounded-2xl bg-emerald-50 px-3 py-3 text-center">
+              <div className="text-xl font-black text-neutral-950">{Number(branch.confirmedBookings || 0)}</div>
+              <div className="mt-1 text-[10px] font-black uppercase tracking-wide text-emerald-700">Reservas confirmadas</div>
+            </div>
+            <div className="rounded-2xl bg-neutral-900 px-3 py-3 text-center">
+              <div className="text-xl font-black text-white">{Number(branch.bookingConversionRate || 0).toFixed(1)}%</div>
+              <div className="mt-1 text-[10px] font-black uppercase tracking-wide text-white/70">Conversión</div>
             </div>
           </div>
 
