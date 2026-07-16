@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import { getPublicSubscriptionPrices } from '../../api/publicSubscriptionPricingApi';
 import {
@@ -584,7 +584,7 @@ function SuperGodsLandingPage() {
                   key={item}
                   className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white/80"
                 >
-                  âœ¦ {item}
+                  ✦ {item}
                 </div>
               ))}
             </div>
