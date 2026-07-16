@@ -501,6 +501,21 @@ function BranchCard({ branch, onEdit, onToggle, onDeleteImage, onPreview }) {
             </div>
           </div>
 
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-2xl bg-amber-50 px-3 py-3 text-center">
+              <div className="text-xl font-black text-neutral-950">{Number(branch.directoryViews || 0)}</div>
+              <div className="mt-1 text-[10px] font-black uppercase tracking-wide text-amber-700">Vistas</div>
+            </div>
+            <div className="rounded-2xl bg-blue-50 px-3 py-3 text-center">
+              <div className="text-xl font-black text-neutral-950">{Number(branch.routeOpens || 0)}</div>
+              <div className="mt-1 text-[10px] font-black uppercase tracking-wide text-blue-700">Rutas abiertas</div>
+            </div>
+            <div className="rounded-2xl bg-violet-50 px-3 py-3 text-center">
+              <div className="text-xl font-black text-neutral-950">{Number(branch.bookingIntents || 0)}</div>
+              <div className="mt-1 text-[10px] font-black uppercase tracking-wide text-violet-700">Interés de reserva</div>
+            </div>
+          </div>
+
           <div className="rounded-2xl bg-neutral-50 px-4 py-3">
             <div className="text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
               Dirección
