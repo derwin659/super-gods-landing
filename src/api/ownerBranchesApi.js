@@ -1,4 +1,4 @@
-import { apiRequest, getApiBaseUrl, getToken } from './apiClient';
+﻿import { apiRequest, getApiBaseUrl, getToken } from './apiClient';
 
 export async function getOwnerBranches({ onlyActive } = {}) {
   const path = onlyActive
@@ -73,4 +73,7 @@ export async function deleteOwnerBranchImage(branchId) {
   return apiRequest(`/api/owner/branches/${branchId}/image`, {
     method: 'DELETE',
   });
+}
+export async function getPublicAffiliatedBranchDetail(branchId) {
+  return apiRequest(`/api/public/affiliated-branches/${branchId}`);
 }
