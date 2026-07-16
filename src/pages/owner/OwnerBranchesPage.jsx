@@ -700,9 +700,9 @@ export default function OwnerBranchesPage() {
         />
 
         <StatCard
-          title="Con imagen"
-          value={branches.filter((item) => item.imageUrl).length}
-          helper="Locales con foto"
+          title="Seguidores"
+          value={branches.length > 0 ? Number(branches[0]?.followerCount || 0) : 0}
+          helper="Clientes que guardaron el negocio"
           tone="gold"
         />
       </section>
