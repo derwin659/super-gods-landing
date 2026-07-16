@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Scissors,
   Sparkles,
@@ -50,6 +50,7 @@ import OwnerCashPage from './pages/owner/OwnerCashPage';
 import OwnerAuditPage from './pages/owner/OwnerAuditPage';
 import OwnerProductsPage from './pages/owner/OwnerProductsPage';
 import OwnerReportsPage from './pages/owner/OwnerReportsPage';
+import OwnerReviewsPage from './pages/owner/OwnerReviewsPage';
 import OwnerConfigPage from './pages/owner/OwnerConfigPage';
 import OwnerBrandingPage from './pages/owner/OwnerBrandingPage';
 import OwnerServicesPage from './pages/owner/OwnerServicesPage';
@@ -2139,6 +2140,8 @@ export default function App() {
           />
 
 
+
+          <Route path="resenas" element={<OwnerReviewsPage />} />
 
           <Route
             path="productos"

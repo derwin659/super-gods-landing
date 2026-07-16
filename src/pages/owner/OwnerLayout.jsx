@@ -6,6 +6,7 @@ import {
   ChartNoAxesCombined,
   UsersRound,
   Star,
+  MessageSquareText,
   Gift,
   Tags,
   Scissors,
@@ -122,6 +123,18 @@ const navGroups = [
         feature: 'core',
       },
       {
+        to: '/owner/resenas',
+        label: 'Reseñas',
+        description: 'Opiniones verificadas',
+        icon: MessageSquareText,
+        tone: {
+          soft: 'bg-amber-50 text-amber-700 ring-amber-100',
+          active: 'from-amber-500 to-yellow-400',
+          glow: 'shadow-amber-300/60',
+        },
+        permissions: [],
+        feature: 'core',
+      },      {
         to: '/owner/ajustar-puntos',
         label: 'Ajustar puntos',
         description: 'Sumar o descontar',
