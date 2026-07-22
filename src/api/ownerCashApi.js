@@ -101,6 +101,45 @@ export async function getPendingCashReconciliation(branchId) {
     throw error;
   }
 }
+
+export async function getCashFundSummary(branchId) {
+  return apiRequest(
+    `/api/owner/cash-registers/fund${toQuery({ branchId })}`
+  );
+}
+
+export async function getCashFundMovements(branchId) {
+  const data = await apiRequest(
+    `/api/owner/cash-registers/fund/movements${toQuery({ branchId })}`
+  );
+
+  return extractList(data);
+}
+
+export async function createCashFundMovement({
+  branchId,
+  type,
+  paymentMethod = 'CASH',
+  amount = 0,
+  concept = null,
+  note = null,
+  movementDate = null,
+}) {
+  return apiRequest(
+    `/api/owner/cash-registers/fund/movements${toQuery({ branchId })}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        type,
+        paymentMethod,
+        amount: Number(amount || 0),
+        concept,
+        note,
+        movementDate,
+      }),
+    }
+  );
+}
 export async function reconcileCashRegister({ branchId, cashRegisterId, closingAmountCounted, fundDeposits = {}, note = null }) {
   return apiRequest(
     `/api/owner/cash-registers/${cashRegisterId}/reconcile${toQuery({ branchId })}`,
@@ -179,6 +218,7 @@ export async function createCashMovement({
   fundingSource = 'CASH_REGISTER',
   fromPaymentMethod = null,
   toPaymentMethod = null,
+  movementDate = null,
 }) {
   return apiRequest(
     `/api/owner/cash-registers/${cashRegisterId}/movements${toQuery({
@@ -196,6 +236,7 @@ export async function createCashMovement({
         fundingSource,
         fromPaymentMethod,
         toPaymentMethod,
+        movementDate,
       }),
     }
   );

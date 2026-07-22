@@ -5,6 +5,7 @@ import {
   approveSalePayment,
   closeCashRegister,
   createBarberPayment,
+  createCashFundMovement,
   createCashMovement,
   createCashSale,
   deleteCashMovement,
@@ -13,6 +14,7 @@ import {
   getCashBarbers,
   getCashAudit,
   getCashHistory,
+  getCashFundSummary,
   getCashProducts,
   getCashServices,
   getCashMovements,
@@ -372,6 +374,66 @@ function paymentSelectOptions(methods = []) {
   return normalizePaymentMethodOptions(methods).map((method) => ({
     value: method.code,
     label: method.label,
+  }));
+}
+
+function balanceRowsForSource(cashRegister, fundingSource) {
+  const key = fundingSource === 'ACCUMULATED_FUND'
+    ? 'accumulatedFundBalances'
+    : 'paymentMethodBalances';
+  return Array.isArray(cashRegister?.[key]) ? cashRegister[key] : [];
+}
+
+function availableBalanceForMethod(cashRegister, fundingSource, paymentMethod) {
+  const method = normalizeMethod(paymentMethod);
+  const row = balanceRowsForSource(cashRegister, fundingSource)
+    .find((item) => summaryMethodOf(item) === method);
+
+  if (row) return summaryAmountOf(row);
+  if (fundingSource === 'CASH_REGISTER' && method === 'CASH') {
+    return Number(cashRegister?.closingAmountExpected || 0);
+  }
+  return 0;
+}
+
+function totalBalanceForSource(cashRegister, fundingSource) {
+  if (fundingSource === 'ACCUMULATED_FUND') {
+    const total = Number(cashRegister?.accumulatedFundBalance);
+    if (Number.isFinite(total)) return total;
+  }
+
+  const rows = balanceRowsForSource(cashRegister, fundingSource);
+  if (rows.length > 0) {
+    return rows.reduce((sum, item) => sum + summaryAmountOf(item), 0);
+  }
+
+  return fundingSource === 'CASH_REGISTER'
+    ? Number(cashRegister?.closingAmountExpected || 0)
+    : 0;
+}
+
+function fundingSourceSelectOptions(cashRegister, paymentMethod = null) {
+  const method = normalizeMethod(paymentMethod);
+  const balanceLabel = (source) => method
+    ? `${methodLabel(method)} disponible ${formatMoney(availableBalanceForMethod(cashRegister, source, method))}`
+    : `disponible total ${formatMoney(totalBalanceForSource(cashRegister, source))}`;
+
+  return [
+    { value: 'CASH_REGISTER', label: `Caja actual · ${balanceLabel('CASH_REGISTER')}` },
+    { value: 'ACCUMULATED_FUND', label: `Fondo acumulado · ${balanceLabel('ACCUMULATED_FUND')}` },
+    { value: 'EXTERNAL', label: 'Cuenta digital o externa · sin afectar saldos internos' },
+  ];
+}
+
+function paymentSelectOptionsWithBalances(methods, cashRegister, fundingSource) {
+  const options = paymentSelectOptions(methods);
+  if (fundingSource === 'EXTERNAL') return options;
+
+  return options.map((option) => ({
+    ...option,
+    label: `${option.label} · disponible ${formatMoney(
+      availableBalanceForMethod(cashRegister, fundingSource, option.value)
+    )}`,
   }));
 }
 
@@ -1366,6 +1428,11 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
   const [amount, setAmount] = useState(initialMovement?.amount ? String(initialMovement.amount) : '');
   const [concept, setConcept] = useState(initialMovement?.concept || 'Gasto general');
   const [note, setNote] = useState(initialMovement?.note || '');
+  const [movementDate, setMovementDate] = useState(
+    initialMovement?.movementDate
+      ? String(initialMovement.movementDate).slice(0, 10)
+      : toDateInputValue(new Date())
+  );
   const [auditReason, setAuditReason] = useState('');
   const [paymentMethod, setPaymentMethod] = useState(normalizeMethod(initialMovement?.paymentMethod) || 'CASH');
   const [fundingSource, setFundingSource] = useState(initialMovement?.fundingSource || 'CASH_REGISTER');
@@ -1388,6 +1455,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
       'Otro ingreso',
     ],
     EXPENSE: [
+      'Regularización de caja',
       'Compra de productos',
       'Limpieza',
       'Movilidad',
@@ -1417,8 +1485,6 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
     ],
   };
 
-  const paymentOptions = paymentSelectOptions(paymentMethods);
-
   useEffect(() => {
     let alive = true;
     setLoadingBarbers(true);
@@ -1432,6 +1498,10 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
   const needsBarber = type === 'ADVANCE_BARBER' || type === 'PAYMENT_BARBER';
   const isOutflow = type === 'EXPENSE' || type === 'ADVANCE_BARBER' || type === 'PAYMENT_BARBER';
   const isTransfer = type === 'PAYMENT_METHOD_TRANSFER';
+  const sourceOptions = fundingSourceSelectOptions(cashRegister, paymentMethod);
+  const paymentOptions = isOutflow
+    ? paymentSelectOptionsWithBalances(paymentMethods, cashRegister, fundingSource)
+    : paymentSelectOptions(paymentMethods);
 
   useEffect(() => {
     async function loadBarbers() {
@@ -1477,6 +1547,16 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
       return;
     }
 
+    if (!isEditing && isOutflow && fundingSource !== 'EXTERNAL') {
+      const available = availableBalanceForMethod(cashRegister, fundingSource, paymentMethod);
+      if (parsedAmount > available + 0.009) {
+        setErrorMsg(
+          `No hay saldo suficiente en ${methodLabel(paymentMethod)}. Disponible: ${formatMoney(available)}.`
+        );
+        return;
+      }
+    }
+
     if (isTransfer && fromPaymentMethod === toPaymentMethod) {
       setErrorMsg('El método origen y destino no pueden ser iguales.');
       return;
@@ -1506,7 +1586,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
         fundingSource: isOutflow ? fundingSource : 'CASH_REGISTER',
         fromPaymentMethod: isTransfer ? fromPaymentMethod : null,
         toPaymentMethod: isTransfer ? toPaymentMethod : null,
-        movementDate: initialMovement?.movementDate || null,
+        movementDate,
         auditReason: isEditing ? auditReason.trim() : null,
       };
 
@@ -1533,13 +1613,19 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
   return (
     <ModalShell title={isEditing ? 'Editar movimiento' : 'Registrar movimiento'} subtitle={branch?.name || 'Sede'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {!isEditing && (
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold leading-6 text-blue-800">
+            Para cuadrar hoy: registra un ingreso si tienes más dinero físico que el sistema, o una salida si tienes menos. Usa “Regularización de caja” y deja el motivo en la nota.
+          </div>
+        )}
+
         <SelectField
           label="Tipo de movimiento"
           value={type}
           onChange={handleTypeChange}
           options={[
-            { value: 'INCOME', label: 'Añadir ingreso' },
-            { value: 'EXPENSE', label: 'Gasto general' },
+            { value: 'INCOME', label: 'Ingresar dinero / ajuste a favor' },
+            { value: 'EXPENSE', label: 'Sacar dinero / registrar gasto' },
             { value: 'ADVANCE_BARBER', label: 'Adelanto a barbero' },
             { value: 'PAYMENT_BARBER', label: 'Pago a barbero manual' },
             { value: 'PAYMENT_METHOD_TRANSFER', label: 'Trasladar dinero entre métodos' },
@@ -1553,6 +1639,13 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
           type="number"
           step="0.01"
           prefix={getTenantCurrencySymbol()}
+        />
+
+        <InputField
+          label="Fecha del movimiento"
+          value={movementDate}
+          onChange={setMovementDate}
+          type="date"
         />
 
         <SelectField
@@ -1598,11 +1691,8 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
             value={fundingSource}
             onChange={setFundingSource}
             disabled={isEditing}
-            options={[
-              { value: 'CASH_REGISTER', label: 'Caja actual' },
-              { value: 'ACCUMULATED_FUND', label: 'Fondo acumulado' },
-              { value: 'EXTERNAL', label: 'Cuenta digital o externa' },
-            ]}
+            options={sourceOptions}
+
           />
         )}
         {isTransfer ? (
@@ -1669,6 +1759,174 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
   );
 }
 
+function FundMovementModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
+  const [type, setType] = useState('MANUAL_DEPOSIT');
+  const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const [amount, setAmount] = useState('');
+  const [concept, setConcept] = useState('Ingreso manual al fondo');
+  const [note, setNote] = useState('');
+  const [movementDate, setMovementDate] = useState(toDateInputValue(new Date()));
+  const [summary, setSummary] = useState({ totalBalance: 0, balances: [] });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    getCashFundSummary(branch.id)
+      .then((data) => {
+        if (active) {
+          setSummary({
+            totalBalance: Number(data?.totalBalance || 0),
+            balances: Array.isArray(data?.balances) ? data.balances : [],
+          });
+        }
+      })
+      .catch((error) => {
+        if (active) setErrorMsg(error.message || 'No se pudo cargar el fondo acumulado.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [branch.id]);
+
+  const fundCashRegister = {
+    accumulatedFundBalance: summary.totalBalance,
+    accumulatedFundBalances: summary.balances,
+  };
+  const available = availableBalanceForMethod(
+    fundCashRegister,
+    'ACCUMULATED_FUND',
+    paymentMethod
+  );
+  const paymentOptions = paymentSelectOptions(paymentMethods).map((option) => ({
+    ...option,
+    label: `${option.label} · disponible ${formatMoney(
+      availableBalanceForMethod(fundCashRegister, 'ACCUMULATED_FUND', option.value)
+    )}`,
+  }));
+  const isWithdrawal = type === 'MANUAL_WITHDRAWAL';
+
+  function handleTypeChange(value) {
+    setType(value);
+    setConcept(
+      value === 'MANUAL_WITHDRAWAL'
+        ? 'Retiro manual del fondo'
+        : 'Ingreso manual al fondo'
+    );
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setErrorMsg('');
+    const parsedAmount = roundMoney(parseMoneyInput(amount));
+
+    if (parsedAmount <= 0) {
+      setErrorMsg('Ingresa un monto mayor a cero.');
+      return;
+    }
+    if (isWithdrawal && parsedAmount > available + 0.009) {
+      setErrorMsg(
+        `No hay saldo suficiente en ${methodLabel(paymentMethod)}. Disponible: ${formatMoney(available)}.`
+      );
+      return;
+    }
+    if (!concept.trim()) {
+      setErrorMsg('Escribe el motivo del movimiento para dejar auditoría.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await createCashFundMovement({
+        branchId: branch.id,
+        type,
+        paymentMethod,
+        amount: parsedAmount,
+        concept: concept.trim(),
+        note: note.trim() || null,
+        movementDate,
+      });
+      await onSaved();
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo actualizar el fondo acumulado.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <ModalShell title="Gestionar fondo acumulado" subtitle={branch?.name || 'Sede'} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <MiniPreviewItem label="Saldo total del fondo" value={formatMoney(summary.totalBalance)} strong />
+          <MiniPreviewItem
+            label={`${methodLabel(paymentMethod)} disponible`}
+            value={loading ? 'Cargando...' : formatMoney(available)}
+          />
+        </div>
+
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-800">
+          Este formulario modifica el fondo guardado, no el saldo de la caja abierta. Para cuadrar el dinero físico de hoy usa “Ingresar / sacar dinero”.
+        </div>
+
+        <SelectField
+          label="Operación"
+          value={type}
+          onChange={handleTypeChange}
+          options={[
+            { value: 'MANUAL_DEPOSIT', label: 'Ingresar dinero al fondo' },
+            { value: 'MANUAL_WITHDRAWAL', label: 'Retirar dinero del fondo' },
+          ]}
+        />
+
+        <SelectField
+          label="Método donde está el dinero"
+          value={paymentMethod}
+          onChange={setPaymentMethod}
+          options={paymentOptions}
+        />
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <InputField
+            label="Monto"
+            value={amount}
+            onChange={setAmount}
+            type="number"
+            step="0.01"
+            prefix={getTenantCurrencySymbol()}
+          />
+          <InputField
+            label="Fecha"
+            value={movementDate}
+            onChange={setMovementDate}
+            type="date"
+          />
+        </div>
+
+        <InputField label="Motivo" value={concept} onChange={setConcept} />
+        <TextAreaField
+          label="Nota"
+          value={note}
+          onChange={setNote}
+          placeholder="Ej. Dinero reservado por el dueño o retiro para depósito bancario."
+        />
+
+        {errorMsg && <ErrorBox message={errorMsg} />}
+
+        <button
+          disabled={saving || loading}
+          className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 disabled:opacity-60"
+        >
+          {saving ? 'Guardando...' : isWithdrawal ? 'Confirmar retiro' : 'Confirmar ingreso'}
+        </button>
+      </form>
+    </ModalShell>
+  );
+}
+
 function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
   const today = new Date();
   const sevenDaysAgo = new Date();
@@ -1690,7 +1948,12 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const paymentOptions = paymentSelectOptions(paymentMethods);
+  const sourceOptions = fundingSourceSelectOptions(cashRegister);
+  const paymentOptions = paymentSelectOptionsWithBalances(
+    paymentMethods,
+    cashRegister,
+    fundingSource
+  );
 
   const amountToPay = roundMoney(parseMoneyInput(amountPaid));
   const distributedTotal = useMemo(
@@ -1861,6 +2124,23 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
       return;
     }
 
+    if (fundingSource !== 'EXTERNAL') {
+      const requestedByMethod = normalizedPayments.reduce((totals, payment) => {
+        totals[payment.method] = roundMoney((totals[payment.method] || 0) + payment.amount);
+        return totals;
+      }, {});
+
+      for (const [method, requested] of Object.entries(requestedByMethod)) {
+        const available = availableBalanceForMethod(cashRegister, fundingSource, method);
+        if (requested > available + 0.009) {
+          setErrorMsg(
+            `No hay saldo suficiente en ${methodLabel(method)}. Disponible: ${formatMoney(available)}.`
+          );
+          return;
+        }
+      }
+    }
+
     setSaving(true);
 
     try {
@@ -1935,12 +2215,12 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
           label="Sale desde"
           value={fundingSource}
           onChange={setFundingSource}
-          options={[
-            { value: 'CASH_REGISTER', label: 'Caja actual' },
-            { value: 'ACCUMULATED_FUND', label: 'Fondo acumulado' },
-            { value: 'EXTERNAL', label: 'Cuenta digital o externa' },
-          ]}
+          options={sourceOptions}
         />
+
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">
+          Los saldos se validan por método. Si eliges fondo acumulado, el pago descontará el fondo del método seleccionado; la cuenta externa no altera la caja.
+        </div>
 
         <button
           type="button"
@@ -5646,6 +5926,7 @@ export default function OwnerCashPage() {
   const [showReconciliationModal, setShowReconciliationModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [showMovementModal, setShowMovementModal] = useState(false);
+  const [showFundMovementModal, setShowFundMovementModal] = useState(false);
   const [showSaleModal, setShowSaleModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showAuditActivityModal, setShowAuditActivityModal] = useState(false);
@@ -5824,6 +6105,7 @@ export default function OwnerCashPage() {
         showOpenModal ||
         showCloseModal ||
         showMovementModal ||
+        showFundMovementModal ||
         showSaleModal ||
         showHistoryModal ||
         showAuditActivityModal ||
@@ -5846,6 +6128,7 @@ export default function OwnerCashPage() {
     showOpenModal,
     showCloseModal,
     showMovementModal,
+    showFundMovementModal,
     showSaleModal,
     showHistoryModal,
     showAuditActivityModal,
@@ -6279,6 +6562,13 @@ export default function OwnerCashPage() {
             >
               Actividad
             </button>
+            <button
+              onClick={() => setShowFundMovementModal(true)}
+              disabled={!selectedBranch}
+              className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-5 py-4 text-sm font-black text-amber-200 transition hover:bg-amber-300/20 disabled:opacity-50"
+            >
+              Gestionar fondo
+            </button>
             {isOpen ? (
               <>
                 <button
@@ -6293,7 +6583,7 @@ export default function OwnerCashPage() {
                   onClick={() => setShowMovementModal(true)}
                   className="rounded-2xl bg-amber-400 px-5 py-4 text-sm font-black text-neutral-950 shadow-[0_16px_35px_rgba(251,191,36,0.22)] transition hover:scale-[1.02]"
                 >
-                  Movimiento
+                  Ingresar / sacar dinero
                 </button>
 
                 <button
@@ -6679,6 +6969,18 @@ export default function OwnerCashPage() {
           onClose={() => setShowSaleModal(false)}
           onSaved={async () => {
             setShowSaleModal(false);
+            await loadCash(selectedBranchId);
+          }}
+        />
+      )}
+
+      {showFundMovementModal && selectedBranch && (
+        <FundMovementModal
+          branch={selectedBranch}
+          paymentMethods={paymentMethods}
+          onClose={() => setShowFundMovementModal(false)}
+          onSaved={async () => {
+            setShowFundMovementModal(false);
             await loadCash(selectedBranchId);
           }}
         />
