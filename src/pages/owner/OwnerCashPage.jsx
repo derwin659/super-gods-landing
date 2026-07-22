@@ -412,7 +412,7 @@ function totalBalanceForSource(cashRegister, fundingSource) {
     : 0;
 }
 
-function fundingSourceSelectOptions(cashRegister, paymentMethod = null) {
+function fundingSourceSelectOptions(cashRegister, paymentMethod = null, canManageFund = false) {
   const method = normalizeMethod(paymentMethod);
   const balanceLabel = (source) => method
     ? `${methodLabel(method)} disponible ${formatMoney(availableBalanceForMethod(cashRegister, source, method))}`
@@ -422,7 +422,7 @@ function fundingSourceSelectOptions(cashRegister, paymentMethod = null) {
     { value: 'CASH_REGISTER', label: `Caja actual · ${balanceLabel('CASH_REGISTER')}` },
     { value: 'ACCUMULATED_FUND', label: `Fondo acumulado · ${balanceLabel('ACCUMULATED_FUND')}` },
     { value: 'EXTERNAL', label: 'Cuenta digital o externa · sin afectar saldos internos' },
-  ];
+  ].filter((option) => canManageFund || option.value !== 'ACCUMULATED_FUND');
 }
 
 function paymentSelectOptionsWithBalances(methods, cashRegister, fundingSource) {
@@ -1154,7 +1154,7 @@ function PendingSaleValidationsSection({
   );
 }
 
-function OpenCashModal({ branch, onClose, onSaved }) {
+function OpenCashModal({ branch, canManageFund = false, onClose, onSaved }) {
   const [openingAmount, setOpeningAmount] = useState('0');
   const [fundWithdrawalAmount, setFundWithdrawalAmount] = useState('0');
   const [openingNote, setOpeningNote] = useState('');
@@ -1166,7 +1166,9 @@ function OpenCashModal({ branch, onClose, onSaved }) {
     setErrorMsg('');
 
     const amount = Number(String(openingAmount).replace(',', '.'));
-    const fundWithdrawal = Number(String(fundWithdrawalAmount).replace(',', '.')) || 0;
+    const fundWithdrawal = canManageFund
+      ? Number(String(fundWithdrawalAmount).replace(',', '.')) || 0
+      : 0;
 
     if (Number.isNaN(amount) || amount < 0) {
       setErrorMsg('Ingresa un monto válido.');
@@ -1208,6 +1210,8 @@ function OpenCashModal({ branch, onClose, onSaved }) {
           prefix={getTenantCurrencySymbol()}
         />
 
+        {canManageFund && (
+          <>
         <InputField
           label="Tomar del fondo acumulado"
           value={fundWithdrawalAmount}
@@ -1220,6 +1224,8 @@ function OpenCashModal({ branch, onClose, onSaved }) {
         <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-5 text-amber-800">
           Opcional: pasa dinero guardado al efectivo inicial de esta caja.
         </p>
+          </>
+        )}
 
         <TextAreaField
           label="Nota de apertura"
@@ -1241,7 +1247,7 @@ function OpenCashModal({ branch, onClose, onSaved }) {
   );
 }
 
-function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
+function CloseCashModal({ branch, cashRegister, canManageFund = false, onClose, onSaved }) {
   const expected = Number(cashRegister?.closingAmountExpected || 0);
 
   const [counted, setCounted] = useState(String(expected.toFixed(2)));
@@ -1251,7 +1257,9 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
   const [errorMsg, setErrorMsg] = useState('');
 
   const countedNumber = Number(String(counted).replace(',', '.')) || 0;
-  const fundDepositNumber = Number(String(fundDepositAmount).replace(',', '.')) || 0;
+  const fundDepositNumber = canManageFund
+    ? Number(String(fundDepositAmount).replace(',', '.')) || 0
+    : 0;
   const difference = countedNumber - expected;
 
   async function handleSubmit(e) {
@@ -1314,6 +1322,8 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
           prefix={getTenantCurrencySymbol()}
         />
 
+        {canManageFund && (
+          <>
         <InputField
           label="Enviar al fondo acumulado"
           value={fundDepositAmount}
@@ -1326,6 +1336,8 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
         <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-5 text-amber-800">
           Este monto queda como colchon acumulado para gastos grandes futuros.
         </p>
+          </>
+        )}
 
         <TextAreaField
           label="Observación de cierre"
@@ -1347,7 +1359,7 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
   );
 }
 
-function ReconciliationModal({ branch, cashRegister, onClose, onSaved }) {
+function ReconciliationModal({ branch, cashRegister, canManageFund = false, onClose, onSaved }) {
   const expected = Number(cashRegister?.closingAmountExpected || 0);
   const [counted, setCounted] = useState(String(expected.toFixed(2)));
   const [fundDeposits, setFundDeposits] = useState({});
@@ -1366,9 +1378,11 @@ function ReconciliationModal({ branch, cashRegister, onClose, onSaved }) {
       return;
     }
     const deposits = {};
-    for (const [method, raw] of Object.entries(fundDeposits)) {
-      const amount = Number(String(raw || 0).replace(',', '.'));
-      if (amount > 0) deposits[method] = amount;
+    if (canManageFund) {
+      for (const [method, raw] of Object.entries(fundDeposits)) {
+        const amount = Number(String(raw || 0).replace(',', '.'));
+        if (amount > 0) deposits[method] = amount;
+      }
     }
     setSaving(true);
     setErrorMsg('');
@@ -1393,6 +1407,7 @@ function ReconciliationModal({ branch, cashRegister, onClose, onSaved }) {
       <form onSubmit={submit} className="space-y-4">
         <StatCard title="Esperado por sistema" value={formatMoney(expected)} helper="Revisa gastos olvidados antes de confirmar" tone="gold" />
         <InputField label="Efectivo contado" value={counted} onChange={setCounted} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
+        {canManageFund && (
         <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
           <div className="font-black text-neutral-950">Enviar al fondo acumulado</div>
           <div className="mt-1 text-xs font-semibold text-neutral-500">Elige cuanto guardar por cada metodo. Puedes dejar todo en cero.</div>
@@ -1413,6 +1428,7 @@ function ReconciliationModal({ branch, cashRegister, onClose, onSaved }) {
             })}
           </div>
         </div>
+        )}
         <TextAreaField label="Observacion" value={note} onChange={setNote} placeholder="Ej. Efectivo confirmado y saldo enviado al fondo." />
         {errorMsg && <ErrorBox message={errorMsg} />}
         <button disabled={saving} className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 disabled:opacity-60">
@@ -1422,7 +1438,7 @@ function ReconciliationModal({ branch, cashRegister, onClose, onSaved }) {
     </ModalShell>
   );
 }
-function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, initialMovement = null, onClose, onSaved }) {
+function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, initialMovement = null, canManageFund = false, onClose, onSaved }) {
   const isEditing = Boolean(initialMovement?.id);
   const [type, setType] = useState(initialMovement?.type || 'EXPENSE');
   const [amount, setAmount] = useState(initialMovement?.amount ? String(initialMovement.amount) : '');
@@ -1435,7 +1451,9 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
   );
   const [auditReason, setAuditReason] = useState('');
   const [paymentMethod, setPaymentMethod] = useState(normalizeMethod(initialMovement?.paymentMethod) || 'CASH');
-  const [fundingSource, setFundingSource] = useState(initialMovement?.fundingSource || 'CASH_REGISTER');
+  const [fundingSource, setFundingSource] = useState(
+    canManageFund ? initialMovement?.fundingSource || 'CASH_REGISTER' : 'CASH_REGISTER'
+  );
   const [fromPaymentMethod, setFromPaymentMethod] = useState(normalizeMethod(initialMovement?.fromPaymentMethod) || defaultExtraPaymentMethod(paymentMethods));
   const [toPaymentMethod, setToPaymentMethod] = useState(normalizeMethod(initialMovement?.toPaymentMethod) || 'CASH');
 
@@ -1498,7 +1516,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
   const needsBarber = type === 'ADVANCE_BARBER' || type === 'PAYMENT_BARBER';
   const isOutflow = type === 'EXPENSE' || type === 'ADVANCE_BARBER' || type === 'PAYMENT_BARBER';
   const isTransfer = type === 'PAYMENT_METHOD_TRANSFER';
-  const sourceOptions = fundingSourceSelectOptions(cashRegister, paymentMethod);
+  const sourceOptions = fundingSourceSelectOptions(cashRegister, paymentMethod, canManageFund);
   const paymentOptions = isOutflow
     ? paymentSelectOptionsWithBalances(paymentMethods, cashRegister, fundingSource)
     : paymentSelectOptions(paymentMethods);
@@ -1927,7 +1945,7 @@ function FundMovementModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, o
   );
 }
 
-function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, onClose, onSaved }) {
+function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, canManageFund = false, onClose, onSaved }) {
   const today = new Date();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(today.getDate() - 6);
@@ -1948,7 +1966,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const sourceOptions = fundingSourceSelectOptions(cashRegister);
+  const sourceOptions = fundingSourceSelectOptions(cashRegister, null, canManageFund);
   const paymentOptions = paymentSelectOptionsWithBalances(
     paymentMethods,
     cashRegister,
@@ -5091,7 +5109,7 @@ function HistoryPaymentPill({ label, value }) {
   );
 }
 
-function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, session = null, onClose }) {
+function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, session = null, canManageFund = false, onClose }) {
   const [sales, setSales] = useState([]);
   const [movements, setMovements] = useState(Array.isArray(cash?.movements) ? cash.movements : []);
   const [editingSale, setEditingSale] = useState(null);
@@ -5104,6 +5122,12 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
   const [auditLogs, setAuditLogs] = useState([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const visibleHistoryMovements = movements.filter(
+    (movement) =>
+      canManageFund ||
+      String(movement?.fundingSource || '').toUpperCase() !==
+        'ACCUMULATED_FUND'
+  );
 
   async function loadSales() {
     setLoadingSales(true);
@@ -5363,12 +5387,12 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
               <div className="rounded-2xl bg-neutral-50 p-4 text-sm font-bold text-neutral-500">
                 Cargando movimientos...
               </div>
-            ) : movements.length === 0 ? (
+            ) : visibleHistoryMovements.length === 0 ? (
               <div className="rounded-2xl bg-neutral-50 p-4 text-sm font-bold text-neutral-500">
                 No hubo gastos, ingresos, adelantos ni pagos.
               </div>
             ) : (
-              movements.map((movement) => {
+              visibleHistoryMovements.map((movement) => {
                 const isDeleting = deletingMovementId === movement.id;
 
                 return (
@@ -5490,6 +5514,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
           branch={branch}
           cashRegister={cash}
           paymentMethods={paymentMethods}
+          canManageFund={canManageFund}
           initialMovement={editingMovement}
           onClose={() => setEditingMovement(null)}
           onSaved={async () => {
@@ -5503,7 +5528,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
   );
 }
 
-function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, session = null, onClose }) {
+function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, session = null, canManageFund = false, onClose }) {
   const today = new Date();
   const fromDefault = new Date();
   fromDefault.setDate(today.getDate() - 30);
@@ -5640,6 +5665,7 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
           branch={branch}
           cash={selectedCash}
           paymentMethods={paymentMethods}
+          canManageFund={canManageFund}
           onClose={() => setSelectedCash(null)}
         />
       )}
@@ -5944,6 +5970,10 @@ export default function OwnerCashPage() {
   const canManageSales =
     currentRole === 'OWNER' ||
     hasAnyOwnerPermission(permissionBundle, ['CASH_ACCESS']);
+  const canManageFund =
+    currentRole === 'OWNER' ||
+    (currentRole === 'ADMIN' &&
+      hasAnyOwnerPermission(permissionBundle, ['CASH_FUND_MANAGE']));
   const labels = useMemo(
     () => getBusinessLabels(session?.businessType),
     [session?.businessType]
@@ -6179,6 +6209,14 @@ export default function OwnerCashPage() {
 
   async function handleDeleteMovement(movement) {
     if (!selectedBranch || !movement?.id) return;
+    if (
+      String(movement?.fundingSource || '').toUpperCase() ===
+        'ACCUMULATED_FUND' &&
+      !canManageFund
+    ) {
+      setErrorMsg('No tienes permiso para eliminar movimientos del fondo acumulado.');
+      return;
+    }
 
     const auditReason = window.prompt('Motivo para eliminar este movimiento:');
     if (auditReason === null) return;
@@ -6435,7 +6473,13 @@ export default function OwnerCashPage() {
   const courtesySummary = buildCourtesySummary(sales);
   const pendingSales = pendingValidationSales.filter(isPendingSaleValidation);
   const pendingApprovalMovements = movements.filter(isPendingOwnerApproval);
-  const visibleMovements = movements.filter((movement) => !isPendingOwnerApproval(movement));
+  const visibleMovements = movements.filter(
+    (movement) =>
+      !isPendingOwnerApproval(movement) &&
+      (canManageFund ||
+        String(movement?.fundingSource || '').toUpperCase() !==
+          'ACCUMULATED_FUND')
+  );
 
   return (
     <div className="space-y-7">
@@ -6446,7 +6490,11 @@ export default function OwnerCashPage() {
               <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Conciliacion pendiente</div>
               <h3 className="mt-2 text-xl font-black text-neutral-950">Una caja anterior se cerro automaticamente</h3>
               <p className="mt-2 text-sm font-semibold text-neutral-600">
-                Esperado {formatMoney(pendingReconciliation.closingAmountExpected)}. Confirma el efectivo, registra un gasto olvidado o envia el saldo al fondo acumulado.
+                {canManageFund ? (
+                  <>Esperado {formatMoney(pendingReconciliation.closingAmountExpected)}. Confirma el efectivo, registra un gasto olvidado o envía el saldo al fondo acumulado.</>
+                ) : (
+                  <>Esperado {formatMoney(pendingReconciliation.closingAmountExpected)}. Confirma el efectivo y registra cualquier gasto olvidado.</>
+                )}
               </p>
             </div>
             <button type="button" onClick={() => setShowReconciliationModal(true)} className="rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white">
@@ -6562,6 +6610,7 @@ export default function OwnerCashPage() {
             >
               Actividad
             </button>
+            {canManageFund && (
             <button
               onClick={() => setShowFundMovementModal(true)}
               disabled={!selectedBranch}
@@ -6569,6 +6618,7 @@ export default function OwnerCashPage() {
             >
               Gestionar fondo
             </button>
+            )}
             {isOpen ? (
               <>
                 <button
@@ -6670,7 +6720,9 @@ export default function OwnerCashPage() {
       ) : (
         <>
           <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-6">
+            {canManageFund && (
             <StatCard title="Fondo acumulado" value={formatMoney(accumulatedFundBalance)} helper="Colchon para gastos grandes" tone="gold" />
+            )}
             <StatCard title="Apertura" value={formatMoney(openingAmount)} helper="Fondo inicial de efectivo" />
             <StatCard title="Ventas total" value={formatMoney(salesTotal)} helper="Todos los métodos" tone="gold" />
             <StatCard title="Efectivo físico" value={formatMoney(cashBalance)} helper="Saldo esperado en caja" tone={balanceTone(cashBalance)} />
@@ -6915,6 +6967,7 @@ export default function OwnerCashPage() {
         <ReconciliationModal
           branch={selectedBranch}
           cashRegister={pendingReconciliation}
+          canManageFund={canManageFund}
           onClose={() => setShowReconciliationModal(false)}
           onSaved={() => {
             setShowReconciliationModal(false);
@@ -6925,6 +6978,7 @@ export default function OwnerCashPage() {
       {showOpenModal && selectedBranch && (
         <OpenCashModal
           branch={selectedBranch}
+          canManageFund={canManageFund}
           onClose={() => setShowOpenModal(false)}
           onSaved={() => {
             setShowOpenModal(false);
@@ -6937,6 +6991,7 @@ export default function OwnerCashPage() {
         <CloseCashModal
           branch={selectedBranch}
           cashRegister={cashRegister}
+          canManageFund={canManageFund}
           onClose={() => setShowCloseModal(false)}
           onSaved={() => {
             setShowCloseModal(false);
@@ -6955,6 +7010,7 @@ export default function OwnerCashPage() {
         <CashHistoryModal
           branch={selectedBranch}
           paymentMethods={paymentMethods}
+          canManageFund={canManageFund}
           onClose={() => setShowHistoryModal(false)}
         />
       )}
@@ -6974,7 +7030,7 @@ export default function OwnerCashPage() {
         />
       )}
 
-      {showFundMovementModal && selectedBranch && (
+      {showFundMovementModal && canManageFund && selectedBranch && (
         <FundMovementModal
           branch={selectedBranch}
           paymentMethods={paymentMethods}
@@ -6991,6 +7047,7 @@ export default function OwnerCashPage() {
           branch={selectedBranch}
           cashRegister={cashRegister}
           paymentMethods={paymentMethods}
+          canManageFund={canManageFund}
           onClose={() => setShowMovementModal(false)}
           onSaved={() => {
             setShowMovementModal(false);
@@ -7004,6 +7061,7 @@ export default function OwnerCashPage() {
           branch={selectedBranch}
           cashRegister={cashRegister}
           paymentMethods={paymentMethods}
+          canManageFund={canManageFund}
           initialMovement={editingMovement}
           onClose={() => setEditingMovement(null)}
           onSaved={() => {
@@ -7018,6 +7076,7 @@ export default function OwnerCashPage() {
           branch={selectedBranch}
           cashRegister={cashRegister}
           paymentMethods={paymentMethods}
+          canManageFund={canManageFund}
           onClose={() => setShowBarberPaymentModal(false)}
           onSaved={() => {
             setShowBarberPaymentModal(false);

@@ -146,6 +146,7 @@ export const ADMIN_PERMISSION_GROUPS = [
       ['Abrir caja', 'CASH_OPEN'],
       ['Registrar ingresos', 'CASH_REGISTER_INCOME'],
       ['Registrar gastos', 'CASH_REGISTER_EXPENSE'],
+      ['Gestionar fondo acumulado', 'CASH_FUND_MANAGE'],
       ['Cerrar caja', 'CASH_CLOSE'],
       ['Eliminar ventas', 'CASH_DELETE_SALES'],
       ['Eliminar pagos y movimientos', 'CASH_DELETE_MOVEMENTS'],

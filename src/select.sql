@@ -11,7 +11,7 @@ select
     concat(coalesce(u.nombre, ''), ' ', coalesce(u.apellido, '')) as barbero_venta,
 
     s.branch_id,
-    s.fecha_creacion
+    s.fecha_creacion   
 from sale_item si
 join sale s 
     on s.sale_id = si.sale_id
@@ -334,3 +334,78 @@ LEFT JOIN clientes c ON c.tenant_id = bv.tenant_id
 LEFT JOIN ventas v ON v.tenant_id = bv.tenant_id
 LEFT JOIN transacciones t ON t.tenant_id = bv.tenant_id
 ORDER BY bv.fecha_fin DESC;
+
+
+BEGIN;
+
+-- Validación de seguridad
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM tenant
+        WHERE tenant_id = 70
+          AND LOWER(TRIM(nombre)) = LOWER('Chavarri barber studio')
+    ) THEN
+        RAISE EXCEPTION 'El tenant 70 no corresponde a Chavarri barber studio';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM subscription
+        WHERE tenant_id = 70
+    ) THEN
+        RAISE EXCEPTION 'El tenant 70 no tiene una suscripción registrada';
+    END IF;
+END $$;
+
+-- Actualiza únicamente la suscripción más reciente
+WITH latest_subscription AS (
+    SELECT sub_id
+    FROM subscription
+    WHERE tenant_id = 70
+    ORDER BY sub_id DESC
+    LIMIT 1
+    FOR UPDATE
+)
+UPDATE subscription s
+SET
+    plan                    = 'GROWTH',
+    precio_mensual          = 99.90,
+    estado                  = 'ACTIVE',
+    trial                   = FALSE,
+    dias_gracia             = 0,
+    billing_cycle           = 'MONTHLY',
+    currency                = 'PEN',
+
+    fecha_inicio            = TIMEZONE('America/Lima', CURRENT_TIMESTAMP),
+    fecha_renovacion        = TIMEZONE('America/Lima', CURRENT_TIMESTAMP) + INTERVAL '1 month',
+    fecha_fin               = TIMEZONE('America/Lima', CURRENT_TIMESTAMP) + INTERVAL '1 month',
+
+    max_branches            = 2,
+    max_barbers             = 10,
+    max_admins              = 3,
+    ai_enabled              = TRUE,
+    loyalty_enabled         = TRUE,
+    promotions_enabled      = TRUE,
+    custom_rewards_enabled  = TRUE,
+
+    observaciones = CONCAT_WS(
+        ' | ',
+        NULLIF(TRIM(s.observaciones), ''),
+        'Activación manual SQL: plan GROWTH mensual'
+    ),
+    updated_at = TIMEZONE('America/Lima', CURRENT_TIMESTAMP)
+FROM latest_subscription ls
+WHERE s.sub_id = ls.sub_id;
+
+-- Sincroniza el estado general del negocio
+UPDATE tenant
+SET
+    plan = 'GROWTH',
+    active = TRUE,
+    estado_suscripcion = 'ACTIVE',
+    fecha_actualizacion = TIMEZONE('America/Lima', CURRENT_TIMESTAMP)
+WHERE tenant_id = 70;
+
+COMMIT;
