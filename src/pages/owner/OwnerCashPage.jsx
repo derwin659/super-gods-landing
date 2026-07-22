@@ -17,6 +17,7 @@ import {
   getCashServices,
   getCashMovements,
   getCurrentCashRegister,
+  getPendingCashReconciliation,
   getOwnerBranches,
   getOwnerPaymentMethods,
   getPendingValidationSales,
@@ -24,6 +25,7 @@ import {
   getTodayCashSales,
   openCashRegister,
   rejectCashMovement,
+  reconcileCashRegister,
   rejectSalePayment,
   updateCashMovement,
   updateCashSale,
@@ -1283,6 +1285,81 @@ function CloseCashModal({ branch, cashRegister, onClose, onSaved }) {
   );
 }
 
+function ReconciliationModal({ branch, cashRegister, onClose, onSaved }) {
+  const expected = Number(cashRegister?.closingAmountExpected || 0);
+  const [counted, setCounted] = useState(String(expected.toFixed(2)));
+  const [fundDeposits, setFundDeposits] = useState({});
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const balances = Array.isArray(cashRegister?.paymentMethodBalances)
+    ? cashRegister.paymentMethodBalances
+    : [];
+
+  async function submit(event) {
+    event.preventDefault();
+    const countedAmount = Number(String(counted).replace(',', '.'));
+    if (!Number.isFinite(countedAmount) || countedAmount < 0) {
+      setErrorMsg('Ingresa el efectivo contado correctamente.');
+      return;
+    }
+    const deposits = {};
+    for (const [method, raw] of Object.entries(fundDeposits)) {
+      const amount = Number(String(raw || 0).replace(',', '.'));
+      if (amount > 0) deposits[method] = amount;
+    }
+    setSaving(true);
+    setErrorMsg('');
+    try {
+      await reconcileCashRegister({
+        branchId: branch.id,
+        cashRegisterId: cashRegister.id,
+        closingAmountCounted: countedAmount,
+        fundDeposits: deposits,
+        note: note.trim() || null,
+      });
+      onSaved();
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo conciliar la caja.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <ModalShell title="Conciliar cierre automatico" subtitle={branch?.name || 'Sede'} onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <StatCard title="Esperado por sistema" value={formatMoney(expected)} helper="Revisa gastos olvidados antes de confirmar" tone="gold" />
+        <InputField label="Efectivo contado" value={counted} onChange={setCounted} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
+        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+          <div className="font-black text-neutral-950">Enviar al fondo acumulado</div>
+          <div className="mt-1 text-xs font-semibold text-neutral-500">Elige cuanto guardar por cada metodo. Puedes dejar todo en cero.</div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {balances.map((row) => {
+              const method = normalizeMethod(row.paymentMethod);
+              return (
+                <InputField
+                  key={method}
+                  label={`${methodLabel(method)} · disponible ${formatMoney(row.totalAmount)}`}
+                  value={fundDeposits[method] || ''}
+                  onChange={(value) => setFundDeposits((current) => ({ ...current, [method]: value }))}
+                  type="number"
+                  step="0.01"
+                  prefix={getTenantCurrencySymbol()}
+                />
+              );
+            })}
+          </div>
+        </div>
+        <TextAreaField label="Observacion" value={note} onChange={setNote} placeholder="Ej. Efectivo confirmado y saldo enviado al fondo." />
+        {errorMsg && <ErrorBox message={errorMsg} />}
+        <button disabled={saving} className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 disabled:opacity-60">
+          {saving ? 'Conciliando...' : 'Confirmar conciliacion'}
+        </button>
+      </form>
+    </ModalShell>
+  );
+}
 function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, initialMovement = null, onClose, onSaved }) {
   const isEditing = Boolean(initialMovement?.id);
   const [type, setType] = useState(initialMovement?.type || 'EXPENSE');
@@ -1291,6 +1368,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
   const [note, setNote] = useState(initialMovement?.note || '');
   const [auditReason, setAuditReason] = useState('');
   const [paymentMethod, setPaymentMethod] = useState(normalizeMethod(initialMovement?.paymentMethod) || 'CASH');
+  const [fundingSource, setFundingSource] = useState(initialMovement?.fundingSource || 'CASH_REGISTER');
   const [fromPaymentMethod, setFromPaymentMethod] = useState(normalizeMethod(initialMovement?.fromPaymentMethod) || defaultExtraPaymentMethod(paymentMethods));
   const [toPaymentMethod, setToPaymentMethod] = useState(normalizeMethod(initialMovement?.toPaymentMethod) || 'CASH');
 
@@ -1352,6 +1430,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
   }, [branch?.id]);
 
   const needsBarber = type === 'ADVANCE_BARBER' || type === 'PAYMENT_BARBER';
+  const isOutflow = type === 'EXPENSE' || type === 'ADVANCE_BARBER' || type === 'PAYMENT_BARBER';
   const isTransfer = type === 'PAYMENT_METHOD_TRANSFER';
 
   useEffect(() => {
@@ -1424,6 +1503,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
         note: note.trim() || null,
         barberUserId: needsBarber ? Number(selectedBarberId) : null,
         paymentMethod: isTransfer ? toPaymentMethod : paymentMethod,
+        fundingSource: isOutflow ? fundingSource : 'CASH_REGISTER',
         fromPaymentMethod: isTransfer ? fromPaymentMethod : null,
         toPaymentMethod: isTransfer ? toPaymentMethod : null,
         movementDate: initialMovement?.movementDate || null,
@@ -1512,6 +1592,19 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
           </>
         )}
 
+        {isOutflow && (
+          <SelectField
+            label="Sale desde"
+            value={fundingSource}
+            onChange={setFundingSource}
+            disabled={isEditing}
+            options={[
+              { value: 'CASH_REGISTER', label: 'Caja actual' },
+              { value: 'ACCUMULATED_FUND', label: 'Fondo acumulado' },
+              { value: 'EXTERNAL', label: 'Cuenta digital o externa' },
+            ]}
+          />
+        )}
         {isTransfer ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <SelectField
@@ -1588,6 +1681,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
   const [movementDate, setMovementDate] = useState(toDateInputValue(today));
   const [amountPaid, setAmountPaid] = useState('');
   const [paymentRows, setPaymentRows] = useState([createPaymentDraft('CASH', 0)]);
+  const [fundingSource, setFundingSource] = useState('CASH_REGISTER');
   const [note, setNote] = useState('');
 
   const [preview, setPreview] = useState(null);
@@ -1641,6 +1735,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
         barberUserId: Number(nextBarberId),
         periodFrom,
         periodTo,
+        movementDate,
       });
 
       setPreview(data);
@@ -1775,8 +1870,10 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
         barberUserId: Number(selectedBarberId),
         periodFrom,
         periodTo,
+        movementDate,
         amountPaid: amount,
         paymentMethod: normalizedPayments.length > 1 ? 'MIXED' : normalizedPayments[0].method,
+        fundingSource,
         payments: normalizedPayments,
         note: note.trim() || null,
       });
@@ -1825,7 +1922,25 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
             onChange={(value) => handleDateChange('to', value)}
             type="date"
           />
+
+          <InputField
+            label="Fecha en caja"
+            value={movementDate}
+            onChange={setMovementDate}
+            type="date"
+          />
         </div>
+
+        <SelectField
+          label="Sale desde"
+          value={fundingSource}
+          onChange={setFundingSource}
+          options={[
+            { value: 'CASH_REGISTER', label: 'Caja actual' },
+            { value: 'ACCUMULATED_FUND', label: 'Fondo acumulado' },
+            { value: 'EXTERNAL', label: 'Cuenta digital o externa' },
+          ]}
+        />
 
         <button
           type="button"
@@ -4516,7 +4631,7 @@ function TextAreaField({ label, value, onChange, placeholder }) {
   );
 }
 
-function SelectField({ label, value, onChange, options }) {
+function SelectField({ label, value, onChange, options, disabled = false }) {
   return (
     <label className="block">
       <span className="text-sm font-black text-neutral-700">{label}</span>
@@ -4524,6 +4639,7 @@ function SelectField({ label, value, onChange, options }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
         className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition focus:border-amber-400"
       >
         {options.map((item) => (
@@ -5514,6 +5630,7 @@ export default function OwnerCashPage() {
   const [branches, setBranches] = useState([]);
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [cashRegister, setCashRegister] = useState(null);
+  const [pendingReconciliation, setPendingReconciliation] = useState(null);
   const [movements, setMovements] = useState([]);
   const [sales, setSales] = useState([]);
   const [pendingValidationSales, setPendingValidationSales] = useState([]);
@@ -5526,6 +5643,7 @@ export default function OwnerCashPage() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const [showOpenModal, setShowOpenModal] = useState(false);
+  const [showReconciliationModal, setShowReconciliationModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [showMovementModal, setShowMovementModal] = useState(false);
   const [showSaleModal, setShowSaleModal] = useState(false);
@@ -5626,8 +5744,12 @@ export default function OwnerCashPage() {
     setErrorMsg('');
 
     try {
-      const current = await getCurrentCashRegister(branchId);
+      const [current, pendingCash] = await Promise.all([
+        getCurrentCashRegister(branchId),
+        getPendingCashReconciliation(branchId),
+      ]);
       setCashRegister(current);
+      setPendingReconciliation(pendingCash);
 
       let dataPendingSales = [];
       let dataProductOrders = [];
@@ -6024,6 +6146,7 @@ export default function OwnerCashPage() {
       ['EXPENSE', 'ADVANCE_BARBER', 'PAYMENT_BARBER'].includes(String(movement?.type || '').toUpperCase())
     )
     .filter((movement) => normalizeMethod(movement?.paymentMethod) === 'CASH')
+    .filter((movement) => String(movement?.fundingSource || 'CASH_REGISTER').toUpperCase() === 'CASH_REGISTER')
     .reduce((sum, movement) => sum + Number(movement?.amount || 0), 0);
   const cashExpense = Number(cashRegister?.cashMovementsExpense ?? derivedCashExpense);
   const courtesySummary = buildCourtesySummary(sales);
@@ -6033,6 +6156,22 @@ export default function OwnerCashPage() {
 
   return (
     <div className="space-y-7">
+      {pendingReconciliation && (
+        <section className="rounded-[28px] border border-amber-300 bg-amber-50 p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Conciliacion pendiente</div>
+              <h3 className="mt-2 text-xl font-black text-neutral-950">Una caja anterior se cerro automaticamente</h3>
+              <p className="mt-2 text-sm font-semibold text-neutral-600">
+                Esperado {formatMoney(pendingReconciliation.closingAmountExpected)}. Confirma el efectivo, registra un gasto olvidado o envia el saldo al fondo acumulado.
+              </p>
+            </div>
+            <button type="button" onClick={() => setShowReconciliationModal(true)} className="rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white">
+              Revisar cierre
+            </button>
+          </div>
+        </section>
+      )}
       <section className="relative overflow-hidden rounded-[34px] border border-amber-400/15 bg-[linear-gradient(135deg,#090909_0%,#15110A_42%,#101827_100%)] p-6 text-white shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(251,191,36,0.20),transparent_30%),radial-gradient(circle_at_100%_0%,rgba(59,130,246,0.16),transparent_32%)]" />
 
@@ -6482,6 +6621,17 @@ export default function OwnerCashPage() {
         </>
       )}
 
+      {showReconciliationModal && pendingReconciliation && selectedBranch && (
+        <ReconciliationModal
+          branch={selectedBranch}
+          cashRegister={pendingReconciliation}
+          onClose={() => setShowReconciliationModal(false)}
+          onSaved={() => {
+            setShowReconciliationModal(false);
+            loadCash(selectedBranchId);
+          }}
+        />
+      )}
       {showOpenModal && selectedBranch && (
         <OpenCashModal
           branch={selectedBranch}

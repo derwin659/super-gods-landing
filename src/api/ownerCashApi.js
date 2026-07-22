@@ -90,6 +90,30 @@ export async function getCurrentCashRegister(branchId) {
   }
 }
 
+export async function getPendingCashReconciliation(branchId) {
+  try {
+    return await apiRequest(
+      `/api/owner/cash-registers/reconciliation-pending${toQuery({ branchId })}`
+    );
+  } catch (error) {
+    const message = String(error?.message || '').toLowerCase();
+    if (message.includes('404') || message.includes('no hay cierres pendientes')) return null;
+    throw error;
+  }
+}
+export async function reconcileCashRegister({ branchId, cashRegisterId, closingAmountCounted, fundDeposits = {}, note = null }) {
+  return apiRequest(
+    `/api/owner/cash-registers/${cashRegisterId}/reconcile${toQuery({ branchId })}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        closingAmountCounted: Number(closingAmountCounted || 0),
+        fundDeposits,
+        note,
+      }),
+    }
+  );
+}
 export async function openCashRegister({
   branchId,
   assignedUserId = null,
@@ -152,6 +176,7 @@ export async function createCashMovement({
   note = null,
   barberUserId = null,
   paymentMethod = 'CASH',
+  fundingSource = 'CASH_REGISTER',
   fromPaymentMethod = null,
   toPaymentMethod = null,
 }) {
@@ -168,6 +193,7 @@ export async function createCashMovement({
         note,
         barberUserId,
         paymentMethod,
+        fundingSource,
         fromPaymentMethod,
         toPaymentMethod,
       }),
@@ -184,6 +210,7 @@ export async function updateCashMovement({
   note = null,
   barberUserId = null,
   paymentMethod = 'CASH',
+  fundingSource = 'CASH_REGISTER',
   fromPaymentMethod = null,
   toPaymentMethod = null,
   movementDate = null,
@@ -196,6 +223,7 @@ export async function updateCashMovement({
     note,
     barberUserId,
     paymentMethod,
+    fundingSource,
     fromPaymentMethod,
     toPaymentMethod,
   };
@@ -323,6 +351,7 @@ export async function createBarberPayment({
   movementDate = null,
   amountPaid,
   paymentMethod,
+  fundingSource = 'CASH_REGISTER',
   payments = null,
   note = null,
 }) {
@@ -340,6 +369,7 @@ export async function createBarberPayment({
     periodFrom,
     periodTo,
     movementDate,
+    fundingSource,
     note,
   };
 
