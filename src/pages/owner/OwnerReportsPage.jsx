@@ -527,6 +527,55 @@ function CourtesyReportSection({ summary, from, to }) {
   );
 }
 
+function ExpenseDetailModal({ item, methods, onClose }) {
+  if (!item) return null;
+
+  const paymentMethod = methods.find(
+    (method) => normalizeMethodCode(method.code) === normalizeMethodCode(item.paymentMethod)
+  )?.displayName || methodLabel(item.paymentMethod);
+  const rows = [
+    ['Fecha', shortDate(item.date)],
+    ['Tipo', expenseTypeLabel(item.type)],
+    ['Método de pago', paymentMethod || 'Sin método'],
+    ['Sede', item.branchName || 'Sede no indicada'],
+    ['Profesional', item.professional || 'No aplica'],
+    ['Código de movimiento', item.id || '-'],
+  ];
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-neutral-950/65 px-4 py-8 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Detalle del gasto">
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-auto rounded-[34px] border border-white/10 bg-white p-5 shadow-[0_30px_90px_rgba(15,23,42,0.38)] sm:p-7">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-600">Detalle del egreso</div>
+            <h2 className="mt-2 break-words text-2xl font-black text-neutral-950">{item.concept || 'Movimiento'}</h2>
+            <p className="mt-1 text-sm font-semibold text-neutral-500">Información registrada al momento de realizar el gasto.</p>
+          </div>
+          <button type="button" onClick={onClose} className="shrink-0 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-black text-neutral-700 transition hover:bg-neutral-100">Cerrar</button>
+        </div>
+
+        <div className="mt-6 rounded-[26px] bg-gradient-to-br from-neutral-950 via-neutral-900 to-red-950 p-5 text-white shadow-xl">
+          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-red-200">Monto registrado</div>
+          <div className="mt-2 text-4xl font-black">{formatMoney(item.amount)}</div>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {rows.map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-neutral-400">{label}</div>
+              <div className="mt-2 break-words text-sm font-black text-neutral-900">{value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 rounded-[22px] border border-amber-200 bg-amber-50 p-4">
+          <div className="text-[10px] font-black uppercase tracking-[0.12em] text-amber-700">Nota o descripción</div>
+          <p className="mt-2 whitespace-pre-wrap break-words text-sm font-bold text-neutral-800">{item.note || 'Este movimiento fue registrado sin una nota adicional.'}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 function BarberDetailModal({ barber, loading, errorMsg, items, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/60 px-4 py-8 backdrop-blur-sm">
@@ -908,6 +957,7 @@ export default function OwnerReportsPage() {
   const [barberDetailLoading, setBarberDetailLoading] = useState(false);
   const [barberDetailError, setBarberDetailError] = useState('');
   const [selectedBranchReport, setSelectedBranchReport] = useState(null);
+  const [selectedExpense, setSelectedExpense] = useState(null);
 
   const query = useMemo(() => {
     return {
@@ -1375,9 +1425,33 @@ export default function OwnerReportsPage() {
                 <PremiumReportPicker label="Método" value={expensePaymentMethod} onChange={setExpensePaymentMethod} options={[{ value: "", label: "Todos los métodos", icon: "✦" }, ...expensePaymentMethods.map((method) => ({ value: normalizeMethodCode(method.code), label: method.displayName || method.label || method.code, icon: "$" }))]} />
               </div></div>
             <div className="mt-4 grid gap-3 sm:grid-cols-4"><StatCard label="Total" value={formatMoney(expenseReport?.total)} tone="red" /><StatCard label="Movimientos" value={n(expenseReport?.count)} /><StatCard label="Operativos" value={formatMoney(expenseReport?.totalsByType?.EXPENSE)} /><StatCard label="Pagos + adelantos" value={formatMoney(n(expenseReport?.totalsByType?.ADVANCE_BARBER) + n(expenseReport?.totalsByType?.PAYMENT_BARBER))} /></div>
-            <div className="mt-5 max-h-[360px] overflow-auto rounded-2xl border border-neutral-200"><table className="w-full min-w-[880px] text-left text-sm"><thead className="sticky top-0 bg-neutral-50 text-xs font-black uppercase text-neutral-400"><tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Concepto</th><th className="px-4 py-3">Método</th><th className="px-4 py-3">Sede / profesional</th><th className="px-4 py-3 text-right">Monto</th></tr></thead><tbody className="divide-y divide-neutral-100">
-              {(expenseReport?.items || []).map((item) => <tr key={item.id}><td className="px-4 py-3 font-bold">{String(item.date || "").slice(0, 10)}</td><td className="px-4 py-3 font-black text-amber-700">{expenseTypeLabel(item.type)}</td><td className="px-4 py-3">{item.concept}</td><td className="px-4 py-3 font-bold text-blue-700">{expensePaymentMethods.find((method) => normalizeMethodCode(method.code) === normalizeMethodCode(item.paymentMethod))?.displayName || methodLabel(item.paymentMethod)}</td><td className="px-4 py-3">{item.branchName}{item.professional ? ` · ${item.professional}` : ""}</td><td className="px-4 py-3 text-right font-black">{formatMoney(item.amount)}</td></tr>)}
-              {(expenseReport?.items || []).length === 0 && <tr><td colSpan="6" className="px-4 py-8 text-center font-bold text-neutral-400">Sin gastos para estos filtros.</td></tr>}
+            <div className="mt-5 max-h-[360px] overflow-auto rounded-2xl border border-neutral-200"><table className="w-full min-w-[980px] text-left text-sm"><thead className="sticky top-0 bg-neutral-50 text-xs font-black uppercase text-neutral-400"><tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Concepto</th><th className="px-4 py-3">Método</th><th className="px-4 py-3">Sede / profesional</th><th className="px-4 py-3 text-right">Monto</th><th className="px-4 py-3 text-right">Detalle</th></tr></thead><tbody className="divide-y divide-neutral-100">
+              {(expenseReport?.items || []).map((item) => (
+                <tr key={item.id} className="align-top transition hover:bg-amber-50/40">
+                  <td className="px-4 py-3 font-bold">{String(item.date || "").slice(0, 10)}</td>
+                  <td className="px-4 py-3 font-black text-amber-700">{expenseTypeLabel(item.type)}</td>
+                  <td className="px-4 py-3">
+                    <p className="font-black text-neutral-900">{item.concept || "Movimiento"}</p>
+                    {item.note ? <p className="mt-1 max-w-sm whitespace-normal text-xs font-semibold text-neutral-500">{item.note}</p> : null}
+                  </td>
+                  <td className="px-4 py-3 font-bold text-blue-700">{expensePaymentMethods.find((method) => normalizeMethodCode(method.code) === normalizeMethodCode(item.paymentMethod))?.displayName || methodLabel(item.paymentMethod)}</td>
+                  <td className="px-4 py-3">
+                    <p className="font-bold text-neutral-800">{item.branchName || "Sede no indicada"}</p>
+                    {item.professional ? <p className="mt-1 text-xs font-semibold text-neutral-500">{item.professional}</p> : null}
+                  </td>
+                  <td className="px-4 py-3 text-right font-black text-red-700">{formatMoney(item.amount)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedExpense(item)}
+                      className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-black text-neutral-700 shadow-sm transition hover:border-amber-300 hover:bg-amber-50"
+                    >
+                      Ver detalle
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {(expenseReport?.items || []).length === 0 && <tr><td colSpan="7" className="px-4 py-8 text-center font-bold text-neutral-400">Sin gastos para estos filtros.</td></tr>}
             </tbody></table></div>
           </section>
                     <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)] sm:rounded-[30px] sm:p-5"><h3 className="text-xl font-black text-neutral-950">Comparativo por periodos</h3><p className="mt-1 text-sm text-neutral-500">{periodComparison?.currentFrom} → {periodComparison?.currentTo} frente a {periodComparison?.previousFrom} → {periodComparison?.previousTo}</p><div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{[["Ventas","sales"],["Gastos","expenses"],["Utilidad","profit"],["Ticket promedio","averageTicket"],["Pagos profesionales","professionalPayments"]].map(([label,key]) => { const metric=periodComparison?.metrics?.[key] || {}; const up=n(metric.difference)>=0; return <div key={key} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4"><p className="text-xs font-black uppercase text-neutral-400">{label}</p><p className="mt-2 text-xl font-black text-neutral-950">{formatMoney(metric.current)}</p><p className="mt-1 text-xs font-bold text-neutral-500">Anterior: {formatMoney(metric.previous)}</p><span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-black ${up ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-700"}`}>{up ? "↑" : "↓"} {Math.abs(n(metric.percentage)).toFixed(1)}%</span></div>; })}</div></section>
@@ -1591,6 +1665,14 @@ export default function OwnerReportsPage() {
             </div>
           </section>
         </>
+      )}
+
+      {selectedExpense && (
+        <ExpenseDetailModal
+          item={selectedExpense}
+          methods={expensePaymentMethods}
+          onClose={() => setSelectedExpense(null)}
+        />
       )}
 
       {selectedBranchReport && (
