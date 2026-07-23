@@ -47,8 +47,8 @@ export async function getProductReport({ branchId, from, to }) {
   return apiRequest(`/api/owner/reports/products${buildQuery({ branchId, from, to })}`);
 }
 
-export async function getExpenseReport({ branchId, from, to, type }) {
-  return apiRequest(`/api/owner/reports/expenses${buildQuery({ branchId, from, to, type })}`);
+export async function getExpenseReport({ branchId, from, to, type, paymentMethod }) {
+  return apiRequest(`/api/owner/reports/expenses${buildQuery({ branchId, from, to, type, paymentMethod })}`);
 }
 
 export async function getPaymentSummary({ branchId, from, to }) {

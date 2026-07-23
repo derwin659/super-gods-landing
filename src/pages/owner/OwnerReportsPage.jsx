@@ -15,7 +15,7 @@ import {
   YAxis,
 } from 'recharts';
 
-import { getOwnerBranches } from '../../api/ownerCashApi';
+import { getOwnerBranches, getOwnerPaymentMethods } from '../../api/ownerCashApi';
 import {
   getBarberDetail,
   getBarberSummary,
@@ -110,6 +110,16 @@ function shortDate(value) {
     day: '2-digit',
     month: 'short',
   });
+}
+
+function normalizeMethodCode(value) {
+  const code = String(value || '').trim().toUpperCase().replaceAll(' ', '_');
+  return {
+    EFECTIVO: 'CASH',
+    TARJETA: 'CARD',
+    TRANSFERENCIA: 'TRANSFER',
+    GRATIS: 'FREE',
+  }[code] || code;
 }
 
 function methodLabel(value) {
@@ -885,6 +895,8 @@ export default function OwnerReportsPage() {
   const [paymentBarberId, setPaymentBarberId] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("");
   const [expenseType, setExpenseType] = useState("");
+  const [expensePaymentMethod, setExpensePaymentMethod] = useState("");
+  const [expensePaymentMethods, setExpensePaymentMethods] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState("");
@@ -902,7 +914,6 @@ export default function OwnerReportsPage() {
       branchId: branchId || undefined,
       from,
       to,
-      type: expenseType || undefined,
     };
   }, [branchId, from, to]);
 
@@ -916,6 +927,32 @@ export default function OwnerReportsPage() {
       setBranches([]);
     } finally {
       setBranchesLoading(false);
+    }
+  }
+
+  async function loadExpensePaymentMethods() {
+    const fallback = [
+      { code: "CASH", displayName: "Efectivo" },
+      { code: "CARD", displayName: "Tarjeta" },
+      { code: "TRANSFER", displayName: "Transferencia" },
+      { code: "YAPE", displayName: "Yape" },
+      { code: "PLIN", displayName: "Plin" },
+    ];
+
+    try {
+      const data = await getOwnerPaymentMethods(branchId || undefined);
+      const methods = Array.isArray(data) && data.length ? data : fallback;
+      setExpensePaymentMethods(methods);
+      const selected = normalizeMethodCode(expensePaymentMethod);
+      if (selected && !methods.some((method) => normalizeMethodCode(method.code) === selected)) {
+        setExpensePaymentMethod("");
+      }
+    } catch {
+      setExpensePaymentMethods(fallback);
+      const selected = normalizeMethodCode(expensePaymentMethod);
+      if (selected && !fallback.some((method) => normalizeMethodCode(method.code) === selected)) {
+        setExpensePaymentMethod("");
+      }
     }
   }
 
@@ -975,7 +1012,7 @@ export default function OwnerReportsPage() {
         getTopServices(query),
         getPaymentSummary(query),
         loadBranchReportsForRange(),
-        getExpenseReport({ ...query, type: expenseType || undefined }),
+        getExpenseReport({ ...query, type: expenseType || undefined, paymentMethod: expensePaymentMethod || undefined }),
         getProductReport(query),
         getProfessionalPaymentReport({ ...query, barberUserId: paymentBarberId || undefined, status: paymentStatus || undefined }),
         getPeriodComparison(query),
@@ -1009,7 +1046,7 @@ export default function OwnerReportsPage() {
 
   async function loadExpenseReportOnly() {
     try {
-      const data = await getExpenseReport({ branchId: branchId || undefined, from, to, type: expenseType || undefined });
+      const data = await getExpenseReport({ branchId: branchId || undefined, from, to, type: expenseType || undefined, paymentMethod: expensePaymentMethod || undefined });
       setExpenseReport(data);
     } catch (error) {
       setErrorMsg(error.message || "No se pudo actualizar el detalle de gastos.");
@@ -1034,9 +1071,13 @@ export default function OwnerReportsPage() {
   }, [query, branchesLoading, branches]);
 
   useEffect(() => {
+    loadExpensePaymentMethods();
+  }, [branchId]);
+
+  useEffect(() => {
     if (!from || !to || branchesLoading) return;
     loadExpenseReportOnly();
-  }, [expenseType]);
+  }, [expenseType, expensePaymentMethod]);
   useEffect(() => {
     if (!from || !to || branchesLoading) return;
     loadProfessionalPaymentsOnly();
@@ -1329,11 +1370,14 @@ export default function OwnerReportsPage() {
 
           <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)] sm:rounded-[30px] sm:p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><h3 className="text-xl font-black text-neutral-950">Gastos detallados</h3><p className="mt-1 text-sm text-neutral-500">Operación, adelantos y pagos profesionales del rango.</p></div>
-              <ExpenseTypePicker value={expenseType} onChange={setExpenseType} /></div>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <ExpenseTypePicker value={expenseType} onChange={setExpenseType} />
+                <PremiumReportPicker label="Método" value={expensePaymentMethod} onChange={setExpensePaymentMethod} options={[{ value: "", label: "Todos los métodos", icon: "✦" }, ...expensePaymentMethods.map((method) => ({ value: normalizeMethodCode(method.code), label: method.displayName || method.label || method.code, icon: "$" }))]} />
+              </div></div>
             <div className="mt-4 grid gap-3 sm:grid-cols-4"><StatCard label="Total" value={formatMoney(expenseReport?.total)} tone="red" /><StatCard label="Movimientos" value={n(expenseReport?.count)} /><StatCard label="Operativos" value={formatMoney(expenseReport?.totalsByType?.EXPENSE)} /><StatCard label="Pagos + adelantos" value={formatMoney(n(expenseReport?.totalsByType?.ADVANCE_BARBER) + n(expenseReport?.totalsByType?.PAYMENT_BARBER))} /></div>
-            <div className="mt-5 max-h-[360px] overflow-auto rounded-2xl border border-neutral-200"><table className="w-full min-w-[760px] text-left text-sm"><thead className="sticky top-0 bg-neutral-50 text-xs font-black uppercase text-neutral-400"><tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Concepto</th><th className="px-4 py-3">Sede / profesional</th><th className="px-4 py-3 text-right">Monto</th></tr></thead><tbody className="divide-y divide-neutral-100">
-              {(expenseReport?.items || []).map((item) => <tr key={item.id}><td className="px-4 py-3 font-bold">{String(item.date || "").slice(0, 10)}</td><td className="px-4 py-3 font-black text-amber-700">{expenseTypeLabel(item.type)}</td><td className="px-4 py-3">{item.concept}</td><td className="px-4 py-3">{item.branchName}{item.professional ? ` · ${item.professional}` : ""}</td><td className="px-4 py-3 text-right font-black">{formatMoney(item.amount)}</td></tr>)}
-              {(expenseReport?.items || []).length === 0 && <tr><td colSpan="5" className="px-4 py-8 text-center font-bold text-neutral-400">Sin gastos para estos filtros.</td></tr>}
+            <div className="mt-5 max-h-[360px] overflow-auto rounded-2xl border border-neutral-200"><table className="w-full min-w-[880px] text-left text-sm"><thead className="sticky top-0 bg-neutral-50 text-xs font-black uppercase text-neutral-400"><tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Concepto</th><th className="px-4 py-3">Método</th><th className="px-4 py-3">Sede / profesional</th><th className="px-4 py-3 text-right">Monto</th></tr></thead><tbody className="divide-y divide-neutral-100">
+              {(expenseReport?.items || []).map((item) => <tr key={item.id}><td className="px-4 py-3 font-bold">{String(item.date || "").slice(0, 10)}</td><td className="px-4 py-3 font-black text-amber-700">{expenseTypeLabel(item.type)}</td><td className="px-4 py-3">{item.concept}</td><td className="px-4 py-3 font-bold text-blue-700">{expensePaymentMethods.find((method) => normalizeMethodCode(method.code) === normalizeMethodCode(item.paymentMethod))?.displayName || methodLabel(item.paymentMethod)}</td><td className="px-4 py-3">{item.branchName}{item.professional ? ` · ${item.professional}` : ""}</td><td className="px-4 py-3 text-right font-black">{formatMoney(item.amount)}</td></tr>)}
+              {(expenseReport?.items || []).length === 0 && <tr><td colSpan="6" className="px-4 py-8 text-center font-bold text-neutral-400">Sin gastos para estos filtros.</td></tr>}
             </tbody></table></div>
           </section>
                     <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)] sm:rounded-[30px] sm:p-5"><h3 className="text-xl font-black text-neutral-950">Comparativo por periodos</h3><p className="mt-1 text-sm text-neutral-500">{periodComparison?.currentFrom} → {periodComparison?.currentTo} frente a {periodComparison?.previousFrom} → {periodComparison?.previousTo}</p><div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{[["Ventas","sales"],["Gastos","expenses"],["Utilidad","profit"],["Ticket promedio","averageTicket"],["Pagos profesionales","professionalPayments"]].map(([label,key]) => { const metric=periodComparison?.metrics?.[key] || {}; const up=n(metric.difference)>=0; return <div key={key} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4"><p className="text-xs font-black uppercase text-neutral-400">{label}</p><p className="mt-2 text-xl font-black text-neutral-950">{formatMoney(metric.current)}</p><p className="mt-1 text-xs font-bold text-neutral-500">Anterior: {formatMoney(metric.previous)}</p><span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-black ${up ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-700"}`}>{up ? "↑" : "↓"} {Math.abs(n(metric.percentage)).toFixed(1)}%</span></div>; })}</div></section>
