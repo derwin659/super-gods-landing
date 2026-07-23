@@ -727,3 +727,27 @@ export async function getOwnerPaymentMethods(branchId) {
     }))
     .filter((item) => item.code && item.active);
 }
+
+export async function getCashSaleDetail({ saleId }) {
+  return apiRequest(`/api/owner/cash-sales/${saleId}`);
+}
+
+export async function registerReceiptEvent({ branchId, saleId, action, success, printerName, message = null }) {
+  return apiRequest(
+    `/api/owner/cash-sales/${saleId}/print-event${toQuery({ branchId })}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ action, success, printerName, message }),
+    }
+  );
+}
+
+export async function registerDrawerEvent({ branchId, saleId, action, success, printerName, message = null }) {
+  return apiRequest(
+    `/api/owner/cash-sales/${saleId}/drawer-event${toQuery({ branchId })}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ action, success, printerName, message }),
+    }
+  );
+}

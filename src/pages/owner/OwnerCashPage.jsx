@@ -46,6 +46,7 @@ import { getBusinessLabels, readBusinessLabels } from '../../utils/businessLabel
 import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 import { exportCashHistoryExcel, exportCashHistoryPdf } from '../../utils/cashHistoryExport';
+import { autoPrintApprovedSale } from '../../services/qzPrinterService';
 
 function useAllowedServicesForBarber({ barberId, branchId, setSelectedServiceId }) {
   const [allowedServiceIds, setAllowedServiceIds] = useState(null);
@@ -3525,6 +3526,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
         })),
       });
 
+      await autoPrintApprovedSale(createdSale, { branchId: branch.id });
       clearAttendAppointmentFromStorage();
       offerCustomerWhatsappFollowUp(
         saleWithWhatsappFallback(createdSale, {
@@ -4303,6 +4305,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         })),
       });
 
+      await autoPrintApprovedSale(createdSale, { branchId: branch.id });
       offerCustomerWhatsappFollowUp(
         saleWithWhatsappFallback(createdSale, {
           customerName:
@@ -6314,6 +6317,7 @@ export default function OwnerCashPage() {
         saleId,
       });
 
+      await autoPrintApprovedSale(approvedSale, { branchId: selectedBranch.id });
       offerCustomerWhatsappFollowUp(saleWithWhatsappFallback(approvedSale, sale), {
         canOpenWhatsapp: currentRole === 'OWNER',
       });

@@ -10,6 +10,7 @@ import {
     Megaphone,
     MessageCircle,
     Package,
+    Printer,
     ReceiptText,
     Scissors,
     Settings2,
@@ -253,6 +254,16 @@ import {
             onClick={() => navigate('/owner/caja')}
           />
   
+
+          <ConfigTile
+            icon={Printer}
+            title="Impresora y gaveta"
+            subtitle="Configura tickets térmicos, impresión automática y apertura de gaveta."
+            badge="Caja"
+            tone="blue"
+            onClick={() => navigate('/owner/impresora-gaveta')}
+          />
+
           <ConfigTile
             icon={CalendarDays}
             title="Agenda"
