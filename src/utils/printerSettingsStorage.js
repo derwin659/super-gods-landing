@@ -8,7 +8,12 @@ export const DEFAULT_PRINTER_SETTINGS = {
   autoOpenDrawer: true,
   drawerPaymentMethods: ['CASH'],
   drawerPulse: 'EPSON',
-  printLogo: false,
+  printLogo: true,
+  showPoints: true,
+  showAppQr: true,
+  appQrImageUrl: '/super-gods-app-qr.png',
+  appQrUrl: 'https://www.supergodsapp.com/',
+  appQrCaption: 'Descarga la app Super Gods',
   footer: 'Gracias por su visita',
   disclaimer: 'No es comprobante de pago',
 };
