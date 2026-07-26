@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { premiumConfirm } from '../../components/PremiumUi';
+import { readBusinessLabels } from '../../utils/businessLabels';
 import {
   createOwnerReward,
   deleteOwnerReward,
@@ -477,6 +478,7 @@ function RewardCard({ reward, onEdit, onToggle, onDelete }) {
 }
 
 export default function OwnerRewardsPage() {
+  const labels = readBusinessLabels();
   const [rewards, setRewards] = useState([]);
   const [onlyActive, setOnlyActive] = useState(false);
   const [search, setSearch] = useState('');
@@ -591,7 +593,7 @@ export default function OwnerRewardsPage() {
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">
               Crea premios que tus clientes podrán canjear con sus puntos para
-              volver más seguido a tu barbería.
+              volver más seguido a tu {labels.businessSingular}.
             </p>
           </div>
 

@@ -37,6 +37,7 @@ import {
 } from '../../api/ownerSubscriptionApi';
 import { getOwnerLoyaltySettings } from '../../api/ownerLoyaltySettingsApi';
 import { useAuth } from '../../context/AuthContext';
+import { useBusinessLabels } from '../../hooks/useBusinessLabels';
 import GoogleLogo from '../../components/GoogleLogo';
 import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
 import { saveTenantMoneySettings } from '../../utils/tenantMoney';
@@ -372,6 +373,23 @@ function findNavItemByPath(pathname) {
     .find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
 }
 
+function contextualizeNavItem(item, labels) {
+  if (!item) return item;
+
+  if (item.to === '/owner/barberos') {
+    return { ...item, label: labels.professionalsDisplay };
+  }
+
+  if (item.to === '/owner/servicios') {
+    return {
+      ...item,
+      description: labels.serviceReference === 'corte' ? 'Cortes y precios' : 'Servicios y precios',
+    };
+  }
+
+  return item;
+}
+
 const starterActions = [
   {
     to: '/owner/caja',
@@ -533,22 +551,25 @@ function PremiumNavItem({ item, closeMenu }) {
 }
 
 function SidebarContent({ session, permissions, subscription, handleLogout, closeMenu }) {
+  const labels = useBusinessLabels();
   const visibleGroups = useMemo(() => {
     return navGroups
       .map((group) => ({
         ...group,
-        items: group.items.filter((item) => (
-          canSeeItem(item, session, permissions) && canUseFeature(item, subscription)
-        )),
+        items: group.items
+          .filter((item) => (
+            canSeeItem(item, session, permissions) && canUseFeature(item, subscription)
+          ))
+          .map((item) => contextualizeNavItem(item, labels)),
       }))
       .filter((group) => group.items.length > 0);
-  }, [session, permissions, subscription]);
+  }, [session, permissions, subscription, labels]);
 
   const visibleStarterActions = useMemo(() => {
     return starterActions.filter((item) => (
       canSeeItem(item, session, permissions) && canUseFeature(item, subscription)
     ));
-  }, [session, permissions, subscription]);
+  }, [session, permissions, subscription, labels]);
 
   return (
     <div className="flex h-full flex-col overflow-y-auto px-4 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-amber-300/70 hover:scrollbar-thumb-amber-400">
@@ -587,11 +608,11 @@ function SidebarContent({ session, permissions, subscription, handleLogout, clos
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-700">
               <Crown size={14} strokeWidth={3} />
-              Barbería activa
+              {labels.businessDisplay} · Activo
             </div>
 
             <div className="mt-2 truncate text-[21px] font-black tracking-tight text-neutral-950">
-              {session?.tenantName || 'Mi barbería'}
+              {session?.tenantName || 'Mi ' + labels.businessSingular}
             </div>
 
             <div className="mt-2 flex items-center gap-2 text-xs font-black text-slate-600">
@@ -688,6 +709,7 @@ export default function OwnerLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { session, signOut } = useAuth();
+  const labels = useBusinessLabels();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [permissions, setPermissions] = useState(null);
   const [loadingPermissions, setLoadingPermissions] = useState(true);
@@ -854,7 +876,7 @@ export default function OwnerLayout() {
     setMobileMenuOpen(false);
   }
 
-  const currentItem = findNavItemByPath(location.pathname);
+  const currentItem = contextualizeNavItem(findNavItemByPath(location.pathname), labels);
   const subscriptionBlocksCurrent =
     currentItem &&
     currentItem.to !== '/owner/plan-pagos' &&

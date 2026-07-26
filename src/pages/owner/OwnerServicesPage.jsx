@@ -10,6 +10,7 @@ import {
   uploadOwnerServiceImage,
 } from '../../api/ownerServicesApi';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
+import { readBusinessLabels } from '../../utils/businessLabels';
 
 function formatMoney(value) {
   return formatTenantMoney(value);
@@ -668,6 +669,7 @@ function DeleteServiceModal({ service, onClose, onDeleted }) {
 }
 
 export default function OwnerServicesPage() {
+  const labels = readBusinessLabels();
   const [services, setServices] = useState([]);
   const [onlyActive, setOnlyActive] = useState(false);
   const [search, setSearch] = useState('');
@@ -763,7 +765,7 @@ export default function OwnerServicesPage() {
             </div>
 
             <h2 className="mt-5 text-4xl font-black tracking-tight">
-              Servicios de la barbería
+              Servicios de tu {labels.businessSingular}
             </h2>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">

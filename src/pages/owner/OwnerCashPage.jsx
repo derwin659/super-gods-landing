@@ -536,11 +536,12 @@ function PaymentMethodCard({ method }) {
 }
 
 function movementTypeLabel(type) {
+  const businessLabels = readBusinessLabels();
   const labels = {
     INCOME: 'Ingreso',
     EXPENSE: 'Gasto',
-    ADVANCE_BARBER: 'Adelanto barbero',
-    PAYMENT_BARBER: 'Pago barbero',
+    ADVANCE_BARBER: 'Adelanto ' + businessLabels.professionalSingular,
+    PAYMENT_BARBER: 'Pago ' + businessLabels.professionalSingular,
     PAYMENT_METHOD_TRANSFER: 'Traslado entre métodos',
   };
 
@@ -912,7 +913,7 @@ function itemSubtotal(item) {
 function EmptyCard({ title, text, action }) {
   return <PremiumEmptyState title={title} message={text} action={action} />;
 }
-function CashNegativeAlert({ expected, cashSalesTotal, expense }) {
+function CashNegativeAlert({ expected, cashSalesTotal, expense, labels = readBusinessLabels() }) {
     if (Number(expected || 0) >= 0) return null;
   
     return (
@@ -929,7 +930,7 @@ function CashNegativeAlert({ expected, cashSalesTotal, expense }) {
   
             <p className="mt-2 max-w-3xl text-sm leading-6 text-red-700">
               Esto pasa cuando las salidas registradas superan el efectivo disponible.
-              Revisa si hubo pagos a barberos, adelantos o gastos registrados con un
+              Revisa si hubo pagos a {labels.professionalsPlural}, adelantos o gastos registrados con un
               método incorrecto.
             </p>
           </div>
@@ -1439,7 +1440,7 @@ function ReconciliationModal({ branch, cashRegister, canManageFund = false, onCl
     </ModalShell>
   );
 }
-function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, initialMovement = null, canManageFund = false, onClose, onSaved }) {
+function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, initialMovement = null, canManageFund = false, labels = readBusinessLabels(), onClose, onSaved }) {
   const isEditing = Boolean(initialMovement?.id);
   const [type, setType] = useState(initialMovement?.type || 'EXPENSE');
   const [amount, setAmount] = useState(initialMovement?.amount ? String(initialMovement.amount) : '');
@@ -1487,12 +1488,12 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
       'Otros',
     ],
     ADVANCE_BARBER: [
-      'Adelanto a barbero',
+      'Adelanto a ' + labels.professionalSingular,
       'Préstamo del día',
       'Liquidación parcial',
     ],
     PAYMENT_BARBER: [
-      'Pago a barbero manual',
+      'Pago a ' + labels.professionalSingular + ' manual',
       'Pago de porcentaje',
       'Pago de comisión',
     ],
@@ -1582,7 +1583,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
     }
 
     if (needsBarber && !selectedBarberId) {
-      setErrorMsg('Selecciona el barbero relacionado.');
+      setErrorMsg('Selecciona el ' + labels.professionalSingular + ' relacionado.');
       return;
     }
 
@@ -1645,8 +1646,8 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
           options={[
             { value: 'INCOME', label: 'Ingresar dinero / ajuste a favor' },
             { value: 'EXPENSE', label: 'Sacar dinero / registrar gasto' },
-            { value: 'ADVANCE_BARBER', label: 'Adelanto a barbero' },
-            { value: 'PAYMENT_BARBER', label: 'Pago a barbero manual' },
+            { value: 'ADVANCE_BARBER', label: 'Adelanto a ' + labels.professionalSingular },
+            { value: 'PAYMENT_BARBER', label: 'Pago a ' + labels.professionalSingular + ' manual' },
             { value: 'PAYMENT_METHOD_TRANSFER', label: 'Trasladar dinero entre métodos' },
           ]}
         />
@@ -1681,19 +1682,19 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
           <>
             {loadingBarbers ? (
               <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
-                Cargando barberos...
+                Cargando {labels.professionalsPlural}...
               </div>
             ) : barbers.length === 0 ? (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm font-bold text-red-700">
-                No se encontraron barberos activos para esta sede.
+                No se encontraron {labels.professionalsPlural} activos para esta sede.
               </div>
             ) : (
               <SelectField
-                label="Barbero relacionado"
+                label={labels.professionalDisplay + " relacionado"}
                 value={selectedBarberId}
                 onChange={setSelectedBarberId}
                 options={[
-                  { value: '', label: 'Selecciona un barbero' },
+                  { value: '', label: 'Selecciona un ' + labels.professionalSingular },
                   ...barbers.map((barber) => ({
                     value: String(barber.id),
                     label: barber.name,
@@ -1745,7 +1746,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
             : type === 'INCOME'
               ? 'Este ingreso se sumará al esperado de caja solo si el método es efectivo.'
               : needsBarber
-                ? 'Este movimiento quedará relacionado al barbero seleccionado.'
+                ? 'Este movimiento quedará relacionado al ' + labels.professionalSingular + ' seleccionado.'
                 : 'Solo los movimientos en efectivo afectarán el esperado de caja.'}
         </div>
 
@@ -1946,7 +1947,7 @@ function FundMovementModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, o
   );
 }
 
-function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, canManageFund = false, onClose, onSaved }) {
+function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METHODS, canManageFund = false, labels = readBusinessLabels(), onClose, onSaved }) {
   const today = new Date();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(today.getDate() - 6);
@@ -1990,7 +1991,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
         const data = await getCashBarbers(branch.id);
         setBarbers(data.filter((item) => item.id > 0));
       } catch (error) {
-        setErrorMsg(error.message || 'No se pudieron cargar los barberos.');
+        setErrorMsg(error.message || 'No se pudieron cargar los ' + labels.professionalsPlural + '.');
       } finally {
         setLoadingBarbers(false);
       }
@@ -2028,7 +2029,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
       resetPaymentRows(pending > 0 ? pending : 0);
     } catch (error) {
       setPreview(null);
-      setErrorMsg(error.message || 'No se pudo calcular el pago del barbero.');
+      setErrorMsg(error.message || 'No se pudo calcular el pago del ' + labels.professionalSingular + '.');
     } finally {
       setLoadingPreview(false);
     }
@@ -2109,7 +2110,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
     setErrorMsg('');
 
     if (!selectedBarberId) {
-      setErrorMsg('Selecciona un barbero.');
+      setErrorMsg('Selecciona un ' + labels.professionalSingular + '.');
       return;
     }
 
@@ -2179,26 +2180,26 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
 
       onSaved();
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudo registrar el pago al barbero.');
+      setErrorMsg(error.message || 'No se pudo registrar el pago al ' + labels.professionalSingular + '.');
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <ModalShell title="Pagar barbero" subtitle={branch?.name || 'Sede'} onClose={onClose}>
+    <ModalShell title={'Pagar ' + labels.professionalSingular} subtitle={branch?.name || 'Sede'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {loadingBarbers ? (
           <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
-            Cargando barberos...
+            Cargando {labels.professionalsPlural}...
           </div>
         ) : (
           <SelectField
-            label="Barbero"
+            label={labels.professionalDisplay}
             value={selectedBarberId}
             onChange={handleBarberChange}
             options={[
-              { value: '', label: 'Selecciona un barbero' },
+              { value: '', label: 'Selecciona un ' + labels.professionalSingular },
               ...barbers.map((barber) => ({
                 value: String(barber.id),
                 label: barber.name,
@@ -2257,7 +2258,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
             </div>
 
             <div className="mt-3 text-xl font-black text-neutral-950">
-              {preview.barberName || 'Barbero'}
+              {preview.barberName || labels.professionalDisplay}
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -2359,7 +2360,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
           label="Observación"
           value={note}
           onChange={setNote}
-          placeholder="Ej. Pago semanal del barbero"
+          placeholder={`Ej. Pago semanal del ${labels.professionalSingular}`}
         />
 
         {errorMsg && <ErrorBox message={errorMsg} />}
@@ -2635,7 +2636,7 @@ function DetailMetric({ label, value, tone = 'default', helper }) {
   );
 }
 
-function SaleDetailModal({ sale, onClose }) {
+function SaleDetailModal({ sale, onClose, labels = readBusinessLabels() }) {
   const payments = salePaymentsOf(sale);
   const items = saleItemsOf(sale);
   const subtotal = Number(sale?.subtotal ?? 0);
@@ -2657,7 +2658,7 @@ function SaleDetailModal({ sale, onClose }) {
         <div className="rounded-[28px] border border-neutral-200 bg-[linear-gradient(135deg,#F8FAFC_0%,#FFFFFF_70%)] p-5">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <DetailMetric label="Cliente" value={sale?.customerName || 'Cliente ocasional'} helper={sale?.customerId ? `ID cliente: ${sale.customerId}` : 'Sin cliente registrado'} />
-            <DetailMetric label="Barbero" value={saleBarberName(sale)} helper="Principal o primer item" />
+            <DetailMetric label={labels.professionalDisplay} value={saleBarberName(sale)} helper="Principal o primer item" />
             <DetailMetric label="Fecha" value={formatDateTime(saleDateOf(sale))} helper="Fecha de venta" />
             <DetailMetric label="Método" value={methodLabel(sale?.metodoPago)} helper={payments.length > 1 ? 'Pago mixto' : 'Pago único'} tone={payments.length > 1 ? 'gold' : 'default'} />
           </div>
@@ -2693,7 +2694,7 @@ function SaleDetailModal({ sale, onClose }) {
                           {saleItemName(item)}
                         </div>
                         <div className="mt-1 text-xs font-bold text-neutral-500">
-                          {saleItemTypeLabel(item)} · Barbero: {saleItemBarberName(item)}
+                          {saleItemTypeLabel(item)} · {labels.professionalDisplay}: {saleItemBarberName(item)}
                         </div>
                       </div>
 
@@ -2928,7 +2929,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
             value={auditReason}
             onChange={(event) => setAuditReason(event.target.value)}
             rows={3}
-            placeholder="Ej. Correccion de barbero, valor o metodo de pago."
+            placeholder="Ej. Corrección de profesional, valor o método de pago."
             className="w-full rounded-3xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm font-bold text-neutral-900 outline-none transition focus:border-amber-400 focus:bg-white"
           />
         </div>
@@ -3094,7 +3095,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
 }
 
 
-function AppointmentSaleBanner({ appointment, isOpen, onOpenSale, onDismiss }) {
+function AppointmentSaleBanner({ appointment, isOpen, onOpenSale, onDismiss, labels = readBusinessLabels() }) {
   if (!appointment) return null;
 
   return (
@@ -3117,7 +3118,7 @@ function AppointmentSaleBanner({ appointment, isOpen, onOpenSale, onDismiss }) {
               <span>•</span>
               <span>Servicio: {appointment.serviceName || 'Servicio'}</span>
               <span>•</span>
-              <span>Barbero: {appointment.barberName || 'Barbero'}</span>
+              <span>{labels.professionalDisplay}: {appointment.barberName || labels.professionalDisplay}</span>
               {appointment.hora && (
                 <>
                   <span>•</span>
@@ -3291,7 +3292,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
           setCashReceived(String(servicePriceOf(initialService).toFixed(2)));
         }
       } catch (error) {
-        setErrorMsg(error.message || 'No se pudieron cargar servicios y barberos.');
+        setErrorMsg(error.message || 'No se pudieron cargar servicios y ' + labels.professionalsPlural + '.');
       } finally {
         setLoading(false);
       }
@@ -3398,7 +3399,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
     }
 
     if (!barber) {
-      setErrorMsg('Selecciona el barbero que realizó el servicio.');
+      setErrorMsg('Selecciona el ' + labels.professionalSingular + ' que realizó el servicio.');
       return;
     }
 
@@ -3512,7 +3513,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
             : paymentPayloads,
         cutType: hasHaircut ? 'Corte registrado en agenda web' : null,
         cutDetail: hasHaircut
-          ? `${appointment.serviceName || items.find((item) => item.type === 'service')?.name || 'Servicio de corte'} · ${appointment.barberName || items.find((item) => item.type === 'service')?.barberName || 'Barbero'}`
+          ? `${appointment.serviceName || items.find((item) => item.type === 'service')?.name || (labels.serviceReference === 'corte' ? 'Servicio de corte' : 'Servicio')} · ${appointment.barberName || items.find((item) => item.type === 'service')?.barberName || labels.professionalDisplay}`
           : null,
         cutObservations: hasHaircut
           ? `Atención finalizada desde agenda web${appointment.appointmentId ? ` · Cita #${appointment.appointmentId}` : ''}`
@@ -3563,7 +3564,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
     <ModalShell title="Cobrar cita" subtitle={branch?.name || 'Sede'} onClose={onClose}>
       {loading ? (
         <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
-          Cargando servicios y barberos...
+          Cargando servicios y {labels.professionalsPlural}...
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -3575,7 +3576,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
               {appointment.customerName || 'Cliente'} · #{appointment.appointmentId}
             </div>
             <div className="mt-2 text-sm font-bold text-neutral-600">
-              Servicio inicial: {appointment.serviceName || 'Servicio'} · Barbero: {appointment.barberName || 'Barbero'}
+              Servicio inicial: {appointment.serviceName || 'Servicio'} · {labels.professionalDisplay}: {appointment.barberName || labels.professionalDisplay}
             </div>
           </div>
 
@@ -3792,7 +3793,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                       <div>
                         <div className="font-black text-neutral-950">{item.name}</div>
                         <div className="mt-1 text-xs font-bold text-neutral-500">
-                          {item.type === 'service' ? `Servicio · Barbero: ${item.barberName || '-'}` : `Producto${item.barberName ? ` · Barbero: ${item.barberName}` : ''}`}
+                          {item.type === 'service' ? `Servicio · ${labels.professionalDisplay}: ${item.barberName || '-'}` : `Producto${item.barberName ? ` · ${labels.professionalDisplay}: ${item.barberName}` : ''}`}
                         </div>
                       </div>
 
@@ -4331,7 +4332,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     <ModalShell title="Nueva venta" subtitle={branch?.name || 'Sede'} onClose={onClose}>
       {loading ? (
         <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
-          Cargando servicios, productos y barberos...
+          Cargando servicios, productos y {labels.professionalsPlural}...
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -4462,14 +4463,14 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                 </div>
 
                 <SelectField
-                  label="Barbero"
+                  label={labels.professionalDisplay}
                   value={selectedBarberId}
                   onChange={(value) => {
                     setSelectedBarberId(value);
                     setSelectedHelperBarberIds((prev) => prev.filter((id) => id !== String(value)));
                   }}
                   options={[
-                    { value: '', label: 'Selecciona barbero' },
+                    { value: '', label: 'Selecciona ' + labels.professionalSingular },
                     ...barbers.map((barber) => ({
                       value: String(barber.id),
                       label: barber.name,
@@ -4802,8 +4803,8 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                         <div className="font-black text-neutral-950">{item.name}</div>
                         <div className="mt-1 text-xs font-bold text-neutral-500">
                           {item.type === 'service'
-                            ? `Servicio · Barbero: ${item.barberName || '-'}`
-                            : `Producto${item.barberName ? ` · Barbero: ${item.barberName}` : ''}`}
+                            ? `Servicio · ${labels.professionalDisplay}: ${item.barberName || '-'}`
+                            : `Producto${item.barberName ? ` · ${labels.professionalDisplay}: ${item.barberName}` : ''}`}
                         </div>
                       </div>
 
@@ -5112,7 +5113,7 @@ function HistoryPaymentPill({ label, value }) {
   );
 }
 
-function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, session = null, canManageFund = false, onClose }) {
+function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, session = null, canManageFund = false, labels = readBusinessLabels(), onClose }) {
   const [sales, setSales] = useState([]);
   const [movements, setMovements] = useState(Array.isArray(cash?.movements) ? cash.movements : []);
   const [editingSale, setEditingSale] = useState(null);
@@ -5313,7 +5314,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
               <thead className="bg-neutral-950 text-white">
                 <tr>
                   <th className="px-4 py-3 font-black">Cliente</th>
-                  <th className="px-4 py-3 font-black">Barbero</th>
+                  <th className="px-4 py-3 font-black">{labels.professionalDisplay}</th>
                   <th className="px-4 py-3 font-black">Metodo</th>
                   <th className="px-4 py-3 font-black">Total</th>
                   <th className="px-4 py-3 font-black">Fecha</th>
@@ -5410,7 +5411,7 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
                         </div>
                         {movement.barberUserName && (
                           <div className="mt-1 text-xs font-bold text-amber-700">
-                            Barbero: {movement.barberUserName}
+                            {labels.professionalDisplay}: {movement.barberUserName}
                           </div>
                         )}
                         {movement.note && (
@@ -6644,7 +6645,7 @@ export default function OwnerCashPage() {
                   onClick={() => setShowBarberPaymentModal(true)}
                   className="rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-neutral-950 shadow-[0_16px_35px_rgba(16,185,129,0.18)] transition hover:scale-[1.02]"
                 >
-                  Pagar barbero
+                  Pagar {labels.professionalSingular}
                 </button>
 
                 <button
@@ -6776,7 +6777,7 @@ export default function OwnerCashPage() {
                   Dinero esperado por método de pago
                 </h3>
                 <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-500">
-                  El efectivo incluye apertura, ventas en efectivo, ingresos, gastos, pagos a barberos y traslados.
+                  El efectivo incluye apertura, ventas en efectivo, ingresos, gastos, pagos a {labels.professionalsPlural} y traslados.
                   Los métodos digitales muestran el saldo disponible después de movimientos.
                 </p>
               </div>
@@ -6838,7 +6839,7 @@ export default function OwnerCashPage() {
                     {formatMoney(cashExpense)}
                   </div>
                   <div className="mt-1 text-xs text-red-500">
-                    Gastos, adelantos, pagos de barbero y salidas registradas.
+                    Gastos, adelantos, pagos de {labels.professionalSingular} y salidas registradas.
                   </div>
                 </div>
 

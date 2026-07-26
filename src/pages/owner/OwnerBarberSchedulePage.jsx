@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PremiumErrorState, premiumConfirm } from '../../components/PremiumUi';
+import { useBusinessLabels } from '../../hooks/useBusinessLabels';
 
 import { getOwnerBranches } from '../../api/ownerBranchesApi';
 import { getOwnerBarbers } from '../../api/ownerBarbersApi';
@@ -43,7 +44,7 @@ function getBarberId(barber) {
 }
 
 function barberName(barber) {
-  return `${barber?.nombre || ''} ${barber?.apellido || ''}`.trim() || 'Barbero';
+  return `${barber?.nombre || ''} ${barber?.apellido || ''}`.trim() || 'Profesional';
 }
 
 function getBranchId(branch) {
@@ -170,6 +171,7 @@ function ScheduleDayRow({ day, onChange }) {
 }
 
 export default function OwnerBarberSchedulePage() {
+  const labels = useBusinessLabels();
   const [branches, setBranches] = useState([]);
   const [barbers, setBarbers] = useState([]);
 
@@ -243,7 +245,7 @@ export default function OwnerBarberSchedulePage() {
       const firstBarberId = getBarberId(list[0]);
       setBarberId(firstBarberId ? String(firstBarberId) : '');
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudieron cargar los barberos.');
+      setErrorMsg(error.message || 'No se pudieron cargar los ' + labels.professionalsPlural + '.');
       setBarbers([]);
       setBarberId('');
     }
@@ -295,7 +297,7 @@ export default function OwnerBarberSchedulePage() {
 
       setBlocks(Array.isArray(blockData) ? blockData : []);
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudo cargar el horario del barbero.');
+      setErrorMsg(error.message || 'No se pudo cargar el horario del ' + labels.professionalSingular + '.');
       setDays(defaultDays());
       setBlocks([]);
     } finally {
@@ -323,7 +325,7 @@ export default function OwnerBarberSchedulePage() {
 
   async function handleSaveSchedule() {
     if (!branchId || !barberId) {
-      setErrorMsg('Selecciona una sede y un barbero.');
+      setErrorMsg('Selecciona una sede y un ' + labels.professionalSingular + '.');
       return;
     }
 
@@ -364,7 +366,7 @@ export default function OwnerBarberSchedulePage() {
 
   async function handleCreateBlock() {
     if (!branchId || !barberId) {
-      setErrorMsg('Selecciona una sede y un barbero.');
+      setErrorMsg('Selecciona una sede y un ' + labels.professionalSingular + '.');
       return;
     }
 
@@ -433,7 +435,7 @@ export default function OwnerBarberSchedulePage() {
   ];
 
   const barberOptions = [
-    { value: '', label: 'Selecciona un barbero' },
+    { value: '', label: 'Selecciona un ' + labels.professionalSingular },
     ...barbers.map((barber) => ({
       value: String(getBarberId(barber)),
       label: barberName(barber),
@@ -452,7 +454,7 @@ export default function OwnerBarberSchedulePage() {
             </div>
 
             <h2 className="mt-5 text-4xl font-black tracking-tight">
-              Disponibilidad de barberos
+              Disponibilidad de {labels.professionalsPlural}
             </h2>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">
@@ -481,7 +483,7 @@ export default function OwnerBarberSchedulePage() {
         />
 
         <StatCard
-          title="Barbero"
+          title={labels.professionalDisplay}
           value={selectedBarber ? barberName(selectedBarber) : '-'}
           helper="Profesional seleccionado"
           tone="gold"
@@ -512,7 +514,7 @@ export default function OwnerBarberSchedulePage() {
           />
 
           <SelectField
-            label="Barbero"
+            label={labels.professionalDisplay}
             value={barberId}
             onChange={setBarberId}
             options={barberOptions}
@@ -534,11 +536,11 @@ export default function OwnerBarberSchedulePage() {
           </div>
 
           <h3 className="mt-4 text-xl font-black text-neutral-950">
-            Selecciona una sede y un barbero
+            Selecciona una sede y un {labels.professionalSingular}
           </h3>
 
           <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-neutral-500">
-            Necesitamos saber a qué sede pertenece el barbero para cargar y guardar su horario.
+            Necesitamos saber a qué sede pertenece el {labels.professionalSingular} para cargar y guardar su horario.
           </p>
         </div>
       ) : (
@@ -550,7 +552,7 @@ export default function OwnerBarberSchedulePage() {
                   Horario semanal
                 </h3>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Activa los días que trabaja el barbero y define su rango de atención.
+                  Activa los días que trabaja el {labels.professionalSingular} y define su rango de atención.
                 </p>
               </div>
 
@@ -582,7 +584,7 @@ export default function OwnerBarberSchedulePage() {
               </h3>
 
               <p className="mt-1 text-sm leading-6 text-neutral-500">
-                Bloquea un día completo o un rango de horas específico para este barbero.
+                Bloquea un día completo o un rango de horas específico para este {labels.professionalSingular}.
               </p>
 
               <div className="mt-5 space-y-4">
@@ -659,7 +661,7 @@ export default function OwnerBarberSchedulePage() {
               </h3>
 
               <p className="mt-1 text-sm leading-6 text-neutral-500">
-                Fechas u horarios donde este barbero no estará disponible.
+                Fechas u horarios donde este {labels.professionalSingular} no estará disponible.
               </p>
 
               <div className="mt-5 space-y-3">

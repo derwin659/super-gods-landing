@@ -24,6 +24,7 @@ import { getGoogleLinkStatus } from '../../api/ownerSecurityApi';
 import GoogleLogo from '../../components/GoogleLogo';
 import { useAuth } from '../../context/AuthContext';
 import { formatTenantMoney } from '../../utils/tenantMoney';
+import { readBusinessLabels } from '../../utils/businessLabels';
 
 function formatMoney(value) {
   return formatTenantMoney(value);
@@ -393,6 +394,7 @@ function OnboardingChecklist({
   totalAppointments,
   totalSales,
 }) {
+  const labels = readBusinessLabels();
   const servicesCount = firstPositiveNumber(
     dashboard?.servicesCount,
     dashboard?.activeServices,
@@ -426,7 +428,7 @@ function OnboardingChecklist({
     },
     {
       title: 'Invita profesionales',
-      text: 'Crea barberos, estilistas o administradores para operar la agenda.',
+      text: 'Crea ' + labels.professionalsPlural + ' o administradores para operar la agenda.',
       to: '/owner/barberos',
       label: 'Equipo',
       icon: UserRoundPlus,
@@ -695,6 +697,7 @@ function AppointmentList({ appointments }) {
 
 export default function OwnerDashboardPage() {
   const { session } = useAuth();
+  const labels = readBusinessLabels();
 
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -809,7 +812,7 @@ export default function OwnerDashboardPage() {
             </div>
 
             <h2 className="mt-5 text-4xl font-black tracking-tight">
-              {session?.tenantName || 'Tu barbería'}
+              {session?.tenantName || 'Tu ' + labels.businessSingular}
             </h2>
 
             <p className="mt-3 max-w-2xl text-sm leading-7 text-white/65">
@@ -895,7 +898,7 @@ export default function OwnerDashboardPage() {
             />
 
             <MetricCard
-              title="Barberos activos"
+              title={labels.professionalsDisplay + " activos"}
               value={activeBarbers}
               helper="Equipo disponible"
             />
@@ -1076,7 +1079,7 @@ export default function OwnerDashboardPage() {
                   title="Analizar reportes"
                   label="Reportes"
                   to="/owner/reportes"
-                  text="Visualiza ventas por sede, barbero, método de pago y rentabilidad."
+                  text={`Visualiza ventas por sede, ${labels.professionalSingular}, método de pago y rentabilidad.`}
                 />
               </div>
             </div>

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { isGoogleLinkConfigured, startGoogleAccountLink } from '../../api/authApi';
 import { changeMyPassword, getGoogleLinkStatus } from '../../api/ownerSecurityApi';
 import { useAuth } from '../../context/AuthContext';
+import { readBusinessLabels } from '../../utils/businessLabels';
 import GoogleLogo from '../../components/GoogleLogo';
 
 function AccountInfoCard({ label, value, icon }) {
@@ -62,6 +63,7 @@ function PasswordField({
 }
 
 export default function OwnerSecurityPage() {
+  const labels = readBusinessLabels();
   const navigate = useNavigate();
   const location = useLocation();
   const { session, signOut } = useAuth();
@@ -251,8 +253,8 @@ export default function OwnerSecurityPage() {
         <AccountInfoCard icon="🛡️" label="Rol" value={roleLabel} />
         <AccountInfoCard
           icon="🏪"
-          label="Barbería / Sede"
-          value={`${session?.tenantName || 'Mi barbería'}${
+          label={`${labels.businessDisplay} / Sede`}
+          value={`${session?.tenantName || 'Mi ' + labels.businessSingular}${
             session?.branchName ? ` · ${session.branchName}` : ''
           }`}
         />

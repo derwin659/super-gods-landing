@@ -20,6 +20,7 @@ import {
 } from '../../api/ownerCustomersApi';
 import { getOwnerBranches } from '../../api/ownerBranchesApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
+import { readBusinessLabels } from '../../utils/businessLabels';
 import { exportCustomerReportExcel, exportCustomerReportPdf } from '../../utils/customerReportExport';
 
 function formatMoney(value) {
@@ -70,14 +71,14 @@ function CustomerAvatar({ customer, size = 'h-14 w-14' }) {
   );
 }
 
-function BarberHistoryAvatar({ photoUrl, name }) {
+function BarberHistoryAvatar({ photoUrl, name, labels = readBusinessLabels() }) {
   const cleanUrl = String(photoUrl || '').trim();
 
   if (cleanUrl) {
     return (
       <img
         src={cleanUrl}
-        alt={name || 'Barbero'}
+        alt={name || labels.professionalDisplay}
         className="h-14 w-14 rounded-2xl border border-amber-100 object-cover shadow-sm"
         onError={(event) => {
           event.currentTarget.style.display = 'none';
@@ -88,7 +89,7 @@ function BarberHistoryAvatar({ photoUrl, name }) {
 
   return (
     <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-lg font-black text-amber-700">
-      {initials(name || 'Barbero')}
+      {initials(name || labels.professionalDisplay)}
     </div>
   );
 }
@@ -180,6 +181,7 @@ function TextAreaField({ label, value, onChange, placeholder, rows = 3 }) {
 }
 
 function CustomerFormModal({ customer, onClose, onSaved }) {
+  const labels = readBusinessLabels();
   const isEdit = Boolean(customer?.id);
 
   const [nombres, setNombres] = useState(customer?.nombres || customer?.nombreCompleto || '');
@@ -295,7 +297,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
               <div className="mt-1 text-xs font-bold text-neutral-500">Datos internos para personalizar la atencion.</div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <InputField label="Barbero favorito" value={favoriteBarberName} onChange={setFavoriteBarberName} placeholder="Ej. Luis" />
+              <InputField label={labels.professionalDisplay + " favorito"} value={favoriteBarberName} onChange={setFavoriteBarberName} placeholder="Ej. Luis" />
               <label className="block">
                 <span className="text-sm font-black text-neutral-700">Canal favorito</span>
                 <select value={preferredContactChannel} onChange={(event) => setPreferredContactChannel(event.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition focus:border-amber-400">
@@ -505,7 +507,7 @@ function mostCommonValue(values, fallback = '-') {
   values
     .map((value) => String(value || '').trim())
     .filter(Boolean)
-    .filter((value) => !['Sin asignar', 'Sin barbero', 'Sin sede', 'Servicio'].includes(value))
+    .filter((value) => !['Sin asignar', 'Sin barbero', 'Sin profesional', 'Sin sede', 'Servicio'].includes(value))
     .forEach((value) => counts.set(value, (counts.get(value) || 0) + 1));
 
   let best = fallback;
@@ -577,6 +579,7 @@ function CustomerDetailModal({
   followUpSaving = false,
   consentSaving = false,
 }) {
+  const labels = readBusinessLabels();
   const pointsAvailable =
     loyalty?.puntosDisponibles ?? detail?.puntosDisponibles ?? customer?.puntosDisponibles ?? 0;
 
@@ -718,7 +721,7 @@ function CustomerDetailModal({
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-amber-700">Premium</span>
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <InsightTile label="Barbero favorito" value={profileInsights.favoriteBarber} />
+                    <InsightTile label={labels.professionalDisplay + " favorito"} value={profileInsights.favoriteBarber} />
                     <InsightTile label="Servicio preferido" value={profileInsights.preferredService} />
                     <InsightTile label="Sede habitual" value={profileInsights.usualBranch} />
                     <InsightTile label="Ticket promedio" value={formatMoney(profileInsights.averageTicket)} />
@@ -832,7 +835,7 @@ function CustomerDetailModal({
                 </div>
 
                 <div>
-                  <div className="text-sm font-black text-neutral-500">Último barbero</div>
+                  <div className="text-sm font-black text-neutral-500">Último {labels.professionalSingular}</div>
                   <div className="mt-1 text-lg font-black text-neutral-950">
                     {detail?.ultimoBarbero || customer?.ultimoBarbero || history?.[0]?.barbero || '-'}
                   </div>
@@ -939,6 +942,7 @@ function InsightTile({ label, value }) {
   );
 }
 function CustomerCard({ customer, onOpen, onWhatsapp }) {
+  const labels = readBusinessLabels();
   return (
     <article
       onClick={() => onOpen(customer)}
@@ -991,7 +995,7 @@ function CustomerCard({ customer, onOpen, onWhatsapp }) {
           {customer.ultimoServicio || 'Sin datos'}
         </div>
         <div className="text-sm font-bold text-neutral-500">
-          {customer.ultimoBarbero || 'Sin barbero'} · {prettyDate(customer.ultimaVisita)}
+          {customer.ultimoBarbero || 'Sin ' + labels.professionalSingular} · {prettyDate(customer.ultimaVisita)}
         </div>
       </div>
 

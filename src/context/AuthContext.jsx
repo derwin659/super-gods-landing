@@ -152,7 +152,7 @@ import {
         });
 
         if (allowedAccesses.length === 0) {
-          throw new Error('Este usuario no tiene barberías asignadas.');
+          throw new Error('Este usuario no tiene negocios asignados.');
         }
 
         if (!access && allowedAccesses.length > 1) {

@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Image, Loader2, Scissors, UploadCloud } from 'lucide-react';
 import { getOwnerTenantBranding, uploadOwnerTenantLogo } from '../../api/ownerTenantBrandingApi';
+import { readBusinessLabels } from '../../utils/businessLabels';
 
 function clean(value) {
   return String(value || '').trim();
 }
 
 export default function OwnerBrandingPage() {
+  const labels = readBusinessLabels();
   const [branding, setBranding] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -171,7 +173,7 @@ export default function OwnerBrandingPage() {
                 <div className="flex gap-3">
                   <Image className="mt-0.5 shrink-0 text-blue-700" size={20} />
                   <p className="text-sm font-bold leading-6 text-blue-900">
-                    Para cambiar la foto grande de portada en reservas, entra a Configuracion {'>'} Sedes y sube una imagen real de la barberia.
+                    Para cambiar la foto grande de portada en reservas, entra a Configuración {'>'} Sedes y sube una imagen real de tu {labels.businessSingular}.
                   </p>
                 </div>
               </div>

@@ -16,7 +16,7 @@ export default function AdminDashboardPage() {
 
         <p className="mt-2 max-w-2xl text-white/60">
           Este panel web permitirá al admin revisar caja, agenda y reportes según
-          sus permisos dentro de la barbería.
+          sus permisos dentro del negocio.
         </p>
       </section>
 

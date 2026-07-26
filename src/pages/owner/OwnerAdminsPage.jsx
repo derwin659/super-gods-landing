@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { premiumConfirm } from '../../components/PremiumUi';
+import { useBusinessLabels } from '../../hooks/useBusinessLabels';
 import {
   ADMIN_PERMISSION_GROUPS,
   CONFIG_CHILD_PERMISSIONS,
@@ -157,6 +158,7 @@ function StickyFormActions({ errorMsg, saving, editing }) {
 }
 
 function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
+  const labels = useBusinessLabels();
   const editing = Boolean(admin?.id);
 
   const [mode, setMode] = useState('new');
@@ -225,7 +227,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
     }
 
     if (usingBarber && !selectedBarberId) {
-      setErrorMsg('Selecciona un barbero para darle acceso administrativo.');
+      setErrorMsg('Selecciona un ' + labels.professionalSingular + ' para darle acceso administrativo.');
       return;
     }
 
@@ -330,7 +332,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
                   : 'text-neutral-500 hover:text-neutral-950'
               }`}
             >
-              Usar barbero existente
+              Usar {labels.professionalSingular} existente
             </button>
           </div>
         )}
@@ -338,11 +340,11 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
         {usingBarber && (
           <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-4">
             <SelectField
-              label="Barbero existente"
+              label={labels.professionalDisplay + " existente"}
               value={selectedBarberId}
               onChange={handleSelectBarber}
               options={[
-                { value: '', label: 'Seleccionar barbero' },
+                { value: '', label: 'Seleccionar ' + labels.professionalSingular },
                 ...barbers.map((barber) => ({
                   value: String(barber.id),
                   label: `${barber.fullName} · ${barber.email || 'sin email'}`,
@@ -360,7 +362,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           <InputField label="Apellido" value={apellido} onChange={setApellido} placeholder="Opcional" autoComplete="family-name" disabled={usingBarber} />
         </div>
 
-        <InputField label="Email" value={email} onChange={setEmail} placeholder="admin@barberia.com" type="email" autoComplete="email" inputMode="email" disabled={editing || usingBarber} />
+        <InputField label="Email" value={email} onChange={setEmail} placeholder="admin@negocio.com" type="email" autoComplete="email" inputMode="email" disabled={editing || usingBarber} />
 
         <InputField label="Teléfono" value={phone} onChange={setPhone} placeholder="987654321" disabled={usingBarber} />
 
@@ -395,7 +397,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
             <span>
               <span className="block text-sm font-black text-neutral-900">Tambien atiende/vende con esta misma cuenta</span>
               <span className="mt-1 block text-xs font-semibold leading-5 text-neutral-500">
-                Aparecera como profesional en ventas, agenda y pagos sin crear otra cuenta de barbero.
+                Aparecerá como profesional en ventas, agenda y pagos sin crear otra cuenta de {labels.professionalSingular}.
               </span>
             </span>
           </label>
@@ -620,6 +622,8 @@ function PermissionsModal({ admin, onClose, onSaved }) {
 }
 
 function AdminCard({ admin, branchName, onEdit, onPermissions, onPassword, onToggleStatus, onConvertToBarber }) {
+  const labels = useBusinessLabels();
+
   return (
     <div className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.045)]">
       <div className="flex items-start gap-4">
@@ -664,7 +668,7 @@ function AdminCard({ admin, branchName, onEdit, onPermissions, onPassword, onTog
           Clave
         </button>
         <button type="button" onClick={onConvertToBarber} className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-black text-neutral-700 hover:bg-neutral-100">
-          A barbero
+          A {labels.professionalSingular}
         </button>
       </div>
 
@@ -684,6 +688,7 @@ function AdminCard({ admin, branchName, onEdit, onPermissions, onPassword, onTog
 }
 
 export default function OwnerAdminsPage() {
+  const labels = useBusinessLabels();
   const [users, setUsers] = useState([]);
   const [branches, setBranches] = useState([]);
 
@@ -784,7 +789,7 @@ export default function OwnerAdminsPage() {
     }
 
     const ok = await premiumConfirm(
-      `¿Deseas quitar el acceso de administrador a ${admin.fullName} y dejarlo como barbero?`
+      `¿Deseas quitar el acceso de administrador a ${admin.fullName} y dejarlo como ${labels.professionalSingular}?`
     );
 
     if (!ok) return;
@@ -795,10 +800,10 @@ export default function OwnerAdminsPage() {
         targetRole: 'BARBER',
         branchId,
       });
-      setSuccessMsg('Usuario convertido a barbero.');
+      setSuccessMsg('Usuario convertido a ' + labels.professionalSingular + '.');
       loadData();
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudo convertir a barbero.');
+      setErrorMsg(error.message || 'No se pudo convertir a ' + labels.professionalSingular + '.');
     }
   }
 
@@ -844,7 +849,7 @@ export default function OwnerAdminsPage() {
 
       <section className="grid gap-5 md:grid-cols-3">
         <StatCard title="Accesos internos" value={admins.length} icon="👮" tone="gold" />
-        <StatCard title="Barberos disponibles" value={barbers.length} icon="💈" tone="blue" />
+        <StatCard title={labels.professionalsDisplay + " disponibles"} value={barbers.length} icon="💈" tone="blue" />
         <StatCard title="Usuarios internos" value={users.length} icon="👥" tone="green" />
       </section>
 
@@ -869,7 +874,7 @@ export default function OwnerAdminsPage() {
             Aún no tienes administradores
           </div>
           <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-neutral-500">
-            Puedes crear uno desde cero o convertir un barbero existente en administrador.
+            Puedes crear uno desde cero o convertir un {labels.professionalSingular} existente en administrador.
           </p>
           <button
             type="button"

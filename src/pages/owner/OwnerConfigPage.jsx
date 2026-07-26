@@ -23,6 +23,7 @@ import {
     UsersRound,
   } from 'lucide-react';
   import { useNavigate } from 'react-router-dom';
+  import { useBusinessLabels } from '../../hooks/useBusinessLabels';
   
   function ConfigTile({
     icon,
@@ -177,6 +178,7 @@ import {
   
   export default function OwnerConfigPage() {
     const navigate = useNavigate();
+    const labels = useBusinessLabels();
   
     return (
       <div className="space-y-7">
@@ -190,7 +192,7 @@ import {
               </div>
   
               <h2 className="mt-5 text-4xl font-black tracking-tight">
-                Control central de tu barbería
+                Control central de tu {labels.businessSingular}
               </h2>
   
               <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">
@@ -202,7 +204,7 @@ import {
               <SetupStep
                 done
                 title="Operación activa"
-                text="Servicios, caja, agenda, clientes, sedes y barberos conectados."
+                text={`Servicios, caja, agenda, clientes, sedes y ${labels.professionalsPlural} conectados.`}
               />
               <SetupStep
                 done
@@ -239,7 +241,7 @@ import {
           <ConfigTile
             icon={Package}
             title="Productos"
-            subtitle="Controla productos, stock, imágenes y comisiones para barberos."
+            subtitle={`Controla productos, stock, imágenes y comisiones para ${labels.professionalsPlural}.`}
             badge="Ventas"
             tone="green"
             onClick={() => navigate('/owner/productos')}
@@ -248,7 +250,7 @@ import {
           <ConfigTile
             icon={Banknote}
             title="Caja"
-            subtitle="Abre, cierra, registra gastos, ingresos, ventas y pagos a barberos."
+            subtitle={`Abre, cierra, registra gastos, ingresos, ventas y pagos a ${labels.professionalsPlural}.`}
             badge="Caja"
             tone="gold"
             onClick={() => navigate('/owner/caja')}
@@ -285,7 +287,7 @@ import {
           <ConfigTile
             icon={ChartNoAxesCombined}
             title="Reportes"
-            subtitle="Analiza rentabilidad, barberos, métodos de pago, sedes y servicios top."
+            subtitle={`Analiza rentabilidad, ${labels.professionalsPlural}, métodos de pago, sedes y servicios top.`}
             badge="Pro"
             tone="gold"
             onClick={() => navigate('/owner/reportes')}
@@ -294,7 +296,7 @@ import {
   
         <SectionCard
           title="Estructura y equipo"
-          subtitle="Define cómo opera tu negocio: sedes, barberos, horarios, reservas y permisos."
+          subtitle={`Define cómo opera tu negocio: sedes, ${labels.professionalsPlural}, horarios, reservas y permisos.`}
         >
           <ConfigTile
             icon={Image}
@@ -316,8 +318,8 @@ import {
   
           <ConfigTile
             icon={ShieldCheck}
-            title="Barberos"
-            subtitle="Crear barberos, asignarlos a sedes, subir foto y activar/desactivar."
+            title={labels.professionalsDisplay}
+            subtitle={`Crear ${labels.professionalsPlural}, asignarlos a sedes, subir foto y activar/desactivar.`}
             badge="MVP"
             tone="default"
             onClick={() => navigate('/owner/barberos')}
@@ -325,8 +327,8 @@ import {
   
           <ConfigTile
             icon={Clock3}
-            title="Horarios de barberos"
-            subtitle="Definir días de trabajo, horas disponibles y bloqueos por barbero."
+            title={`Horarios de ${labels.professionalsPlural}`}
+            subtitle={`Definir días de trabajo, horas disponibles y bloqueos por ${labels.professionalSingular}.`}
             badge="Agenda"
             tone="green"
             onClick={() => navigate('/owner/horarios')}

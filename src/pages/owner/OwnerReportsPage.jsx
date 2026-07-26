@@ -31,6 +31,7 @@ import {
   getTopServices,
 } from '../../api/ownerReportsApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
+import { readBusinessLabels } from '../../utils/businessLabels';
 import { exportOwnerReportsExcel, exportOwnerReportsPdf } from '../../utils/ownerReportsExport';
 
 function toDateInputValue(date = new Date()) {
@@ -187,10 +188,11 @@ function courtesyValueOf(item = {}) {
 }
 
 function buildCourtesyReportSummary({ salesReport, paymentSummary, profitability, barbers, branchReports }) {
+  const labels = readBusinessLabels();
   const barbersWithCourtesy = (Array.isArray(barbers) ? barbers : [])
     .map((barber) => ({
       barberId: barber.barberId,
-      barberName: barber.barberName || 'Barbero',
+      barberName: barber.barberName || labels.professionalDisplay,
       count: courtesyCountOf(barber),
       referenceValue: courtesyValueOf(barber),
     }))
@@ -576,7 +578,7 @@ function ExpenseDetailModal({ item, methods, onClose }) {
     </div>
   );
 }
-function BarberDetailModal({ barber, loading, errorMsg, items, onClose }) {
+function BarberDetailModal({ barber, loading, errorMsg, items, onClose, labels = readBusinessLabels() }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/60 px-4 py-8 backdrop-blur-sm">
       <div className="max-h-[92vh] w-full max-w-5xl overflow-auto rounded-[34px] border border-white/10 bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.35)]">
@@ -586,10 +588,10 @@ function BarberDetailModal({ barber, loading, errorMsg, items, onClose }) {
               Detalle de producción
             </div>
             <h2 className="mt-1 text-2xl font-black text-neutral-950">
-              {barber?.barberName || 'Barbero'}
+              {barber?.barberName || labels.professionalDisplay}
             </h2>
             <p className="mt-1 text-sm text-neutral-500">
-              Ventas realizadas por este barbero dentro del rango seleccionado.
+              Ventas realizadas por este {labels.professionalSingular} dentro del rango seleccionado.
             </p>
           </div>
 
@@ -612,7 +614,7 @@ function BarberDetailModal({ barber, loading, errorMsg, items, onClose }) {
 
         {!loading && !errorMsg && items.length === 0 && (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center text-sm font-bold text-neutral-500">
-            No hay ventas para este barbero en el rango seleccionado.
+            No hay ventas para este {labels.professionalSingular} en el rango seleccionado.
           </div>
         )}
 
@@ -673,7 +675,7 @@ function BarberDetailModal({ barber, loading, errorMsg, items, onClose }) {
 }
 
 
-function BranchComparisonSection({ branchReports, loading, onOpenDetail }) {
+function BranchComparisonSection({ branchReports, loading, onOpenDetail, labels = readBusinessLabels() }) {
   const orderedReports = [...branchReports].sort((a, b) => n(b.totalSales) - n(a.totalSales));
   const totalSales = orderedReports.reduce((sum, item) => sum + n(item.totalSales), 0);
   const totalCount = orderedReports.reduce((sum, item) => sum + n(item.totalSalesCount), 0);
@@ -689,7 +691,7 @@ function BranchComparisonSection({ branchReports, loading, onOpenDetail }) {
             Comparativo por sede
           </h3>
           <p className="mt-1 text-sm text-neutral-500">
-            Compara ventas, ticket promedio, barberos activos y desempeño por sucursal.
+            Compara ventas, ticket promedio, {labels.professionalsPlural} activos y desempeño por sucursal.
           </p>
         </div>
 
@@ -750,7 +752,7 @@ function BranchComparisonSection({ branchReports, loading, onOpenDetail }) {
                   </div>
 
                   <div className="rounded-2xl bg-white p-4 shadow-sm">
-                    <div className="text-xs font-bold text-neutral-500">Barberos</div>
+                    <div className="text-xs font-bold text-neutral-500">{labels.professionalsDisplay}</div>
                     <div className="mt-1 text-lg font-black text-neutral-950">{n(branch.activeBarbers)}</div>
                   </div>
                 </div>
@@ -771,7 +773,7 @@ function BranchComparisonSection({ branchReports, loading, onOpenDetail }) {
   );
 }
 
-function BranchDetailModal({ branch, onClose }) {
+function BranchDetailModal({ branch, onClose, labels = readBusinessLabels() }) {
   const payment = branch?.paymentSummary || {};
   const paymentRows = [
     ['Efectivo', payment.cash],
@@ -797,7 +799,7 @@ function BranchDetailModal({ branch, onClose }) {
               {branch?.branchName || 'Sede'}
             </h2>
             <p className="mt-1 text-sm text-neutral-500">
-              Ventas, métodos de pago, barberos y servicios dentro del rango seleccionado.
+              Ventas, métodos de pago, {labels.professionalsPlural} y servicios dentro del rango seleccionado.
             </p>
           </div>
 
@@ -813,7 +815,7 @@ function BranchDetailModal({ branch, onClose }) {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatCard title="Ventas" value={formatMoney(branch?.totalSales)} helper={`${n(branch?.totalSalesCount)} ventas`} tone="dark" />
           <StatCard title="Ticket promedio" value={formatMoney(branch?.averageTicket)} helper="Promedio por venta" />
-          <StatCard title="Barberos activos" value={n(branch?.activeBarbers)} helper="Con producción" tone="gold" />
+          <StatCard title={labels.professionalsDisplay + " activos"} value={n(branch?.activeBarbers)} helper="Con producción" tone="gold" />
           <StatCard title="Total métodos" value={formatMoney(payment.total)} helper="Pagos registrados" tone="green" />
         </div>
 
@@ -855,7 +857,7 @@ function BranchDetailModal({ branch, onClose }) {
         <div className="mt-5 grid gap-5 xl:grid-cols-2">
           <div className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white">
             <div className="border-b border-neutral-100 p-5">
-              <h3 className="text-lg font-black text-neutral-950">Barberos de la sede</h3>
+              <h3 className="text-lg font-black text-neutral-950">{labels.professionalsDisplay} de la sede</h3>
               <p className="mt-1 text-sm text-neutral-500">Producción por profesional.</p>
             </div>
 
@@ -863,7 +865,7 @@ function BranchDetailModal({ branch, onClose }) {
               <table className="w-full min-w-[560px] text-left text-sm">
                 <thead className="bg-neutral-50 text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
                   <tr>
-                    <th className="px-4 py-4">Barbero</th>
+                    <th className="px-4 py-4">{labels.professionalDisplay}</th>
                     <th className="px-4 py-4 text-right">Ventas</th>
                     <th className="px-4 py-4 text-right">Servicios</th>
                     <th className="px-4 py-4 text-right">Promedio</th>
@@ -871,11 +873,11 @@ function BranchDetailModal({ branch, onClose }) {
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
                   {barbers.length === 0 ? (
-                    <tr><td colSpan="4" className="px-4 py-8 text-center font-bold text-neutral-400">Sin barberos en este rango.</td></tr>
+                    <tr><td colSpan="4" className="px-4 py-8 text-center font-bold text-neutral-400">Sin {labels.professionalsPlural} en este rango.</td></tr>
                   ) : (
                     barbers.map((barber) => (
                       <tr key={barber.barberId || barber.barberName}>
-                        <td className="px-4 py-4 font-black text-neutral-950">{barber.barberName || 'Barbero'}</td>
+                        <td className="px-4 py-4 font-black text-neutral-950">{barber.barberName || labels.professionalDisplay}</td>
                         <td className="px-4 py-4 text-right font-black text-neutral-950">{formatMoney(barber.totalSales)}</td>
                         <td className="px-4 py-4 text-right font-bold text-neutral-600">{n(barber.salesCount)}</td>
                         <td className="px-4 py-4 text-right font-bold text-neutral-600">{formatMoney(barber.averageTicket)}</td>
@@ -925,6 +927,7 @@ function BranchDetailModal({ branch, onClose }) {
 }
 
 export default function OwnerReportsPage() {
+  const labels = readBusinessLabels();
   const [branches, setBranches] = useState([]);
   const [branchId, setBranchId] = useState('');
   const [from, setFrom] = useState(defaultFromDate());
@@ -1158,7 +1161,7 @@ export default function OwnerReportsPage() {
 
   const barberChartData = useMemo(() => {
     return barbersWithPercent.slice(0, 8).map((item) => ({
-      name: item.barberName || 'Barbero',
+      name: item.barberName || labels.professionalDisplay,
       ventas: n(item.totalSales),
       porcentaje: Number(item.percentage.toFixed(1)),
     }));
@@ -1203,10 +1206,10 @@ export default function OwnerReportsPage() {
 
     if (topBarber) {
         items.push(
-            `Top barbero: ${topBarber.barberName || 'Barbero'} · ${formatMoney(topBarber.totalSales)} · ${formatPercent(topBarber.percentage)}`
+            `${labels.professionalDisplay} top: ${topBarber.barberName || labels.professionalDisplay} · ${formatMoney(topBarber.totalSales)} · ${formatPercent(topBarber.percentage)}`
           );
     } else {
-      items.push('Todavía no hay producción por barbero en el rango seleccionado.');
+      items.push('Todavía no hay producción por ' + labels.professionalSingular + ' en el rango seleccionado.');
     }
 
     items.push(
@@ -1244,7 +1247,7 @@ export default function OwnerReportsPage() {
 
       setBarberDetail(Array.isArray(data) ? data : []);
     } catch (error) {
-      setBarberDetailError(error.message || 'No se pudo cargar el detalle del barbero.');
+      setBarberDetailError(error.message || 'No se pudo cargar el detalle del ' + labels.professionalSingular + '.');
     } finally {
       setBarberDetailLoading(false);
     }
@@ -1281,12 +1284,12 @@ export default function OwnerReportsPage() {
             </div>
 
             <h2 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">
-              Rentabilidad, barberos y métodos de pago
+              Rentabilidad, {labels.professionalsPlural} y métodos de pago
             </h2>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">
-              Analiza cuánto vendió la barbería, cuánto quedó como utilidad,
-              qué barbero produjo más y cómo se repartieron los pagos por método.
+              Analiza cuánto vendió el {labels.businessSingular}, cuánto quedó como utilidad,
+              qué {labels.professionalSingular} produjo más y cómo se repartieron los pagos por método.
             </p>
           </div>
 
@@ -1383,7 +1386,7 @@ export default function OwnerReportsPage() {
             />
 
             <StatCard
-              title="Barberos activos"
+              title={labels.professionalsDisplay + " activos"}
               value={n(salesReport?.activeBarbers)}
               helper="Con ventas en el rango"
             />
@@ -1497,12 +1500,12 @@ export default function OwnerReportsPage() {
             </ChartCard>
 
             <ChartCard
-              title="Producción por barbero"
-              subtitle="Ranking de barberos por ventas y porcentaje de participación."
+              title={`Producción por ${labels.professionalSingular}`}
+              subtitle={`Ranking de ${labels.professionalsPlural} por ventas y porcentaje de participación.`}
             >
               {barberChartData.length === 0 ? (
                 <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-neutral-300 text-sm font-bold text-neutral-400">
-                  Sin barberos para graficar.
+                  Sin {labels.professionalsPlural} para graficar.
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -1581,7 +1584,7 @@ export default function OwnerReportsPage() {
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <h3 className="text-xl font-black text-neutral-950">
-                  Ranking de barberos
+                  Ranking de {labels.professionalsPlural}
                 </h3>
                 <p className="mt-1 text-sm text-neutral-500">
                   Producción, ticket promedio y porcentaje del total vendido.
@@ -1589,7 +1592,7 @@ export default function OwnerReportsPage() {
               </div>
 
               <div className="rounded-2xl bg-neutral-100 px-4 py-3 text-sm font-black text-neutral-700">
-                Total barberos: {barbersWithPercent.length}
+                Total {labels.professionalsPlural}: {barbersWithPercent.length}
               </div>
             </div>
 
@@ -1597,7 +1600,7 @@ export default function OwnerReportsPage() {
               <table className="w-full min-w-[860px] text-left text-sm">
                 <thead className="bg-neutral-50 text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
                   <tr>
-                    <th className="px-4 py-4">Barbero</th>
+                    <th className="px-4 py-4">{labels.professionalDisplay}</th>
                     <th className="px-4 py-4 text-right">Ventas</th>
                     <th className="px-4 py-4 text-right">Servicios</th>
                     <th className="px-4 py-4 text-right">Promedio</th>
@@ -1610,7 +1613,7 @@ export default function OwnerReportsPage() {
                   {barbersWithPercent.length === 0 ? (
                     <tr>
                       <td colSpan="6" className="px-4 py-8 text-center font-bold text-neutral-400">
-                        No hay ventas por barbero en este rango.
+                        No hay ventas por {labels.professionalSingular} en este rango.
                       </td>
                     </tr>
                   ) : (
@@ -1623,7 +1626,7 @@ export default function OwnerReportsPage() {
                             </div>
                             <div>
                               <div className="font-black text-neutral-950">
-                                {barber.barberName || 'Barbero'}
+                                {barber.barberName || labels.professionalDisplay}
                               </div>
                               <div className="text-xs font-bold text-neutral-400">
                                 ID {barber.barberId || '-'}

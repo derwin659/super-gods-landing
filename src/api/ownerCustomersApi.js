@@ -118,7 +118,7 @@ function normalizeHistoryItemDetail(raw = {}) {
     cantidad: toNumber(raw.cantidad ?? raw.quantity, 1),
     precioUnitario: toNumber(raw.precioUnitario ?? raw.unitPrice ?? raw.price),
     subtotal: toNumber(raw.subtotal ?? raw.total ?? raw.amount),
-    barbero: text(raw.barbero ?? raw.barberName ?? raw.barber ?? 'Sin asignar'),
+    barbero: text(raw.barbero ?? raw.barberName ?? raw.barber ?? 'Sin profesional asignado'),
     barberPhotoUrl: text(
       raw.barberPhotoUrl ??
         raw.barberoFotoUrl ??
@@ -143,7 +143,7 @@ function normalizeHistoryItem(raw = {}) {
     id: toNumber(raw.id ?? raw.historyId ?? raw.saleId ?? raw.appointmentId),
     fecha: text(raw.fecha ?? raw.date ?? raw.createdAt ?? raw.fechaCreacion ?? ''),
     servicio: text(raw.servicio ?? raw.serviceName ?? raw.service ?? raw.corte ?? 'Servicio'),
-    barbero: text(raw.barbero ?? raw.barberName ?? raw.barber ?? 'Sin asignar'),
+    barbero: text(raw.barbero ?? raw.barberName ?? raw.barber ?? 'Sin profesional asignado'),
     barberPhotoUrl: text(
       raw.barberPhotoUrl ??
         raw.barberoFotoUrl ??
@@ -542,7 +542,7 @@ function normalizeInactiveCustomer(raw = {}) {
   export function buildCustomerWhatsappUrl({
     telefono,
     nombre,
-    businessName = 'tu barbería',
+    businessName = 'tu negocio',
     message = '',
   }) {
     const cleanPhone = String(telefono || '').replace(/[^0-9]/g, '');

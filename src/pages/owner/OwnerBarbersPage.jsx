@@ -23,6 +23,7 @@ import {
 } from '../../api/ownerBarbersApi';
 import { getOwnerServices } from '../../api/ownerServicesApi';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
+import { useBusinessLabels } from '../../hooks/useBusinessLabels';
 
 function formatMoney(value) {
   return formatTenantMoney(value);
@@ -37,7 +38,7 @@ function getBarberId(item) {
 }
 
 function fullName(item) {
-  return `${item?.nombre || ''} ${item?.apellido || ''}`.trim() || 'Barbero';
+  return `${item?.nombre || ''} ${item?.apellido || ''}`.trim() || 'Profesional';
 }
 
 function initials(item) {
@@ -239,6 +240,7 @@ function BarberAvatar({ barber }) {
 
 function BarberFormModal({ barber, branches, onClose, onSaved }) {
   const isEdit = Boolean(getBarberId(barber));
+  const labels = useBusinessLabels();
 
   const [nombre, setNombre] = useState(barber?.nombre || '');
   const [apellido, setApellido] = useState(barber?.apellido || '');
@@ -345,12 +347,12 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
     setErrorMsg('');
 
     if (!nombre.trim()) {
-      setErrorMsg('Ingresa el nombre del barbero.');
+      setErrorMsg('Ingresa el nombre del ' + labels.professionalSingular + '.');
       return;
     }
 
     if (!apellido.trim()) {
-      setErrorMsg('Ingresa el apellido del barbero.');
+      setErrorMsg('Ingresa el apellido del ' + labels.professionalSingular + '.');
       return;
     }
 
@@ -467,7 +469,7 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
 
       onSaved(saved);
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudo guardar el barbero.');
+      setErrorMsg(error.message || 'No se pudo guardar el ' + labels.professionalSingular + '.');
     } finally {
       setSaving(false);
     }
@@ -475,7 +477,7 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
 
   return (
     <ModalShell
-      title={isEdit ? 'Editar barbero' : 'Nuevo barbero'}
+      title={isEdit ? 'Editar ' + labels.professionalSingular : 'Nuevo ' + labels.professionalSingular}
       subtitle="Equipo"
       onClose={onClose}
       maxWidth="max-w-5xl"
@@ -565,7 +567,7 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
                     label="Correo"
                     value={email}
                     onChange={setEmail}
-                    placeholder="barbero@email.com"
+                    placeholder="profesional@email.com"
                     type="email"
                   />
 
@@ -787,7 +789,7 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
             ? 'Guardando...'
             : isEdit
               ? 'Guardar cambios'
-              : 'Crear barbero'}
+              : 'Crear ' + labels.professionalSingular}
         </button>
       </form>
     </ModalShell>
@@ -796,10 +798,11 @@ function BarberFormModal({ barber, branches, onClose, onSaved }) {
 
 function ToggleConfirmModal({ barber, onCancel, onConfirm, saving }) {
   const active = barber?.activo !== false;
+  const labels = useBusinessLabels();
 
   return (
     <ModalShell
-      title={active ? 'Desactivar barbero' : 'Activar barbero'}
+      title={active ? 'Desactivar ' + labels.professionalSingular : 'Activar ' + labels.professionalSingular}
       subtitle="Confirmación"
       onClose={onCancel}
       maxWidth="max-w-xl"
@@ -815,7 +818,7 @@ function ToggleConfirmModal({ barber, onCancel, onConfirm, saving }) {
           </div>
 
           <h3 className="mt-3 text-xl font-black text-neutral-950">
-            {active ? 'Este barbero dejará de operar' : 'Este barbero volverá a operar'}
+            {active ? 'Este ' + labels.professionalSingular + ' dejará de operar' : 'Este ' + labels.professionalSingular + ' volverá a operar'}
           </h3>
 
           <p className="mt-2 text-sm leading-6 text-neutral-600">
@@ -856,6 +859,7 @@ function ToggleConfirmModal({ barber, onCancel, onConfirm, saving }) {
 }
 
 function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCommissions, onDelete }) {
+  const labels = useBusinessLabels();
   const active = barber.activo !== false;
 
   return (
@@ -864,7 +868,7 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCom
     }`}>
       {!active && (
         <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700">
-          Barbero inactivo: no aparecerá para nuevas operaciones.
+          {labels.professionalDisplay} inactivo: no aparecerá para nuevas operaciones.
         </div>
       )}
 
@@ -1139,6 +1143,7 @@ function DeleteBarberModal({ barber, onClose, onDeleted }) {
 function Metric({ label, value }) { return <div className="rounded-2xl border border-neutral-200 bg-white p-4"><div className="text-[10px] font-black uppercase tracking-wider text-neutral-400">{label}</div><div className="mt-2 text-2xl font-black text-neutral-950">{Number(value || 0)}</div></div>; }
 
 export default function OwnerBarbersPage() {
+  const labels = useBusinessLabels();
   const [barbers, setBarbers] = useState([]);
   const [services, setServices] = useState([]);
   const [serviceBarber, setServiceBarber] = useState(null);
@@ -1182,7 +1187,7 @@ export default function OwnerBarbersPage() {
         setOwnerProfessionalBranchIds((ownerProfile.branches || []).map((item) => String(item.id)));
       }
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudieron cargar los barberos.');
+      setErrorMsg(error.message || 'No se pudieron cargar los ' + labels.professionalsPlural + '.');
       setBarbers([]);
     } finally {
       setLoading(false);
@@ -1276,7 +1281,7 @@ export default function OwnerBarbersPage() {
       setToggleBarber(null);
       await loadAll();
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudo cambiar el estado del barbero.');
+      setErrorMsg(error.message || 'No se pudo cambiar el estado del ' + labels.professionalSingular + '.');
     } finally {
       setToggleSaving(false);
     }
@@ -1310,7 +1315,7 @@ export default function OwnerBarbersPage() {
             </div>
 
             <h2 className="mt-5 text-4xl font-black tracking-tight">
-              Barberos de la barbería
+              {labels.professionalsDisplay} · {labels.businessDisplay}
             </h2>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">
@@ -1324,7 +1329,7 @@ export default function OwnerBarbersPage() {
             onClick={() => setShowCreate(true)}
             className="rounded-2xl bg-amber-400 px-5 py-4 text-sm font-black text-neutral-950 transition hover:scale-[1.01]"
           >
-            Nuevo barbero
+            Nuevo {labels.professionalSingular}
           </button>
         </div>
       </section>
@@ -1387,7 +1392,7 @@ export default function OwnerBarbersPage() {
       <section className="rounded-[30px] border border-neutral-200 bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.045)]">
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto_auto] lg:items-end">
           <label className="block">
-            <span className="text-sm font-black text-neutral-700">Buscar barbero</span>
+            <span className="text-sm font-black text-neutral-700">Buscar {labels.professionalSingular}</span>
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -1445,13 +1450,13 @@ export default function OwnerBarbersPage() {
 
           <h3 className="mt-4 text-xl font-black text-neutral-950">
             {barbers.length === 0
-              ? 'Aún no tienes barberos'
+              ? 'Aún no tienes ' + labels.professionalsPlural
               : 'No encontramos resultados'}
           </h3>
 
           <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-neutral-500">
             {barbers.length === 0
-              ? 'Crea tu primer barbero para usar agenda, caja, ventas y reportes.'
+              ? 'Crea tu primer ' + labels.professionalSingular + ' para usar agenda, caja, ventas y reportes.'
               : 'Prueba cambiando el texto de búsqueda, sede o filtro de inactivos.'}
           </p>
 
@@ -1461,7 +1466,7 @@ export default function OwnerBarbersPage() {
               onClick={() => setShowCreate(true)}
               className="mt-5 rounded-2xl bg-neutral-950 px-5 py-4 text-sm font-black text-white"
             >
-              Crear barbero
+              Crear {labels.professionalSingular}
             </button>
           )}
         </div>

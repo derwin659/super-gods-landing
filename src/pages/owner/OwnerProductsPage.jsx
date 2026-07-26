@@ -11,6 +11,7 @@ import {
   uploadOwnerProductImage,
 } from '../../api/ownerProductsApi';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
+import { readBusinessLabels } from '../../utils/businessLabels';
 
 function formatMoney(value) {
   return formatTenantMoney(value);
@@ -170,6 +171,7 @@ function ProductAvatar({ product }) {
 }
 
 function ProductFormModal({ branch, product, onClose, onSaved }) {
+  const labels = readBusinessLabels();
   const isEdit = Boolean(product?.id);
 
   const [nombre, setNombre] = useState(product?.nombre || '');
@@ -285,7 +287,7 @@ function ProductFormModal({ branch, product, onClose, onSaved }) {
               <InputField label="SKU" value={sku} onChange={setSku} placeholder="Código interno opcional" />
               <InputField label="Precio compra" value={precioCompra} onChange={setPrecioCompra} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
               <InputField label="Precio venta" value={precioVenta} onChange={setPrecioVenta} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
-              <InputField label="Comisión barbero" value={barberCommissionAmount} onChange={setBarberCommissionAmount} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
+              <InputField label={`Comisión ${labels.professionalSingular}`} value={barberCommissionAmount} onChange={setBarberCommissionAmount} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
               <InputField label="Stock actual" value={stockActual} onChange={setStockActual} type="number" />
               <InputField label="Stock mínimo" value={stockMinimo} onChange={setStockMinimo} type="number" />
             </div>

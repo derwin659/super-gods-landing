@@ -128,7 +128,7 @@ export const ADMIN_PERMISSION_GROUPS = [
     subtitle: 'Controla qué opciones del negocio puede administrar.',
     permissions: [
       ['Acceder a configuración', 'CONFIG_ACCESS'],
-      ['Gestionar barberos', 'CONFIG_BARBERS'],
+      ['Gestionar profesionales', 'CONFIG_BARBERS'],
       ['Gestionar servicios', 'CONFIG_SERVICES'],
       ['Gestionar productos', 'CONFIG_PRODUCTS'],
       ['Gestionar sedes', 'CONFIG_BRANCHES'],
@@ -159,7 +159,7 @@ export const ADMIN_PERMISSION_GROUPS = [
     permissions: [
       ['Ver reportes', 'REPORTS_ACCESS'],
       ['Ver rentabilidad', 'REPORTS_PROFITABILITY'],
-      ['Ver pagos de barberos', 'REPORTS_BARBER_PAYMENTS'],
+      ['Ver pagos de profesionales', 'REPORTS_BARBER_PAYMENTS'],
     ],
   },
   {

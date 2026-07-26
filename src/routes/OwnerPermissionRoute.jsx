@@ -95,7 +95,7 @@ function NoPermission() {
       </h2>
 
       <p className="mt-3 max-w-2xl text-sm font-bold leading-7 text-neutral-500">
-        Esta sección está limitada por el dueño de la barbería. Si necesitas acceso, solicita que te activen el permiso correspondiente desde Configuración → Administradores.
+        Esta sección está limitada por el dueño del negocio. Si necesitas acceso, solicita que te activen el permiso correspondiente desde Configuración → Administradores.
       </p>
 
       <a

@@ -20,6 +20,7 @@ import {
 import { getOwnerProductOrders } from '../../api/ownerProductOrdersApi';
 import { getBarberServiceAssignment } from '../../api/ownerBarbersApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
+import { useBusinessLabels } from '../../hooks/useBusinessLabels';
 
 function toDateInputValue(date) {
   const yyyy = date.getFullYear();
@@ -386,6 +387,7 @@ function AppointmentCard({
   onNoShow,
   onAttend,
 }) {
+  const labels = useBusinessLabels();
   const styles = statusClasses(item);
   const pendingDeposit = statusCode(item) === 'PENDING_DEPOSIT';
   const approvedDeposit = statusCode(item) === 'DEPOSIT_OK';
@@ -426,7 +428,7 @@ function AppointmentCard({
           <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <InfoLine label="Servicio" value={item.servicio} />
             <InfoLine label="Precio" value={formatMoney(item.totalAmount || item.remainingAmount || item.depositAmount || 0)} />
-            <InfoLine label="Barbero" value={item.barbero} />
+            <InfoLine label={labels.professionalDisplay} value={item.barbero} />
             <InfoLine label="Teléfono" value={item.telefono || '-'} />
             <InfoLine label="Sede" value={item.branchId ? `ID ${item.branchId}` : '-'} />
           </div>
@@ -663,6 +665,7 @@ function AppointmentFormModal({
   onClose,
   onSaved,
 }) {
+  const labels = useBusinessLabels();
   const isEdit = Boolean(appointment?.appointmentId);
 
   const [barbers, setBarbers] = useState([]);
@@ -924,7 +927,7 @@ function AppointmentFormModal({
     }
 
     if (!barberUserId) {
-      setErrorMsg('Selecciona un barbero.');
+      setErrorMsg('Selecciona un ' + labels.professionalSingular + '.');
       return;
     }
 
@@ -1135,7 +1138,7 @@ function AppointmentFormModal({
 
             <div className="rounded-[26px] border border-neutral-200 bg-white p-5">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-600">
-                Servicio y barbero
+                Servicio y {labels.professionalSingular}
               </div>
 
               <div className="mt-4 grid gap-4">
@@ -1176,12 +1179,12 @@ function AppointmentFormModal({
 
                 <div>
                   <div className="mb-3 text-sm font-black text-neutral-700">
-                    Barbero
+                    {labels.professionalDisplay}
                   </div>
 
                   {visibleBarbers.length === 0 ? (
                     <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
-                      No hay barberos disponibles para esta sede.
+                      No hay {labels.professionalsPlural} disponibles para esta sede.
                     </div>
                   ) : (
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -1190,7 +1193,7 @@ function AppointmentFormModal({
                           key={barber.id}
                           selected={String(barber.id) === String(barberUserId)}
                           title={barber.name}
-                          subtitle="Barbero disponible"
+                          subtitle={labels.professionalDisplay + " disponible"}
                           imageUrl={barber.imageUrl}
                           icon="💈"
                           onClick={() => {
@@ -1237,7 +1240,7 @@ function AppointmentFormModal({
                   </div>
                 ) : !serviceId || !barberUserId ? (
                   <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
-                    Selecciona servicio y barbero para ver horarios.
+                    Selecciona servicio y {labels.professionalSingular} para ver horarios.
                   </div>
                 ) : slots.length === 0 ? (
                   <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">

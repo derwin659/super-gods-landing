@@ -102,7 +102,7 @@ export function normalizeAgendaItem(raw = {}) {
             : '',
     servicio: String(raw.servicio ?? raw.serviceName ?? 'Servicio'),
     serviceName: String(raw.serviceName ?? raw.servicio ?? 'Servicio'),
-    barbero: String(raw.barbero ?? raw.barberName ?? 'Sin asignar'),
+    barbero: String(raw.barbero ?? raw.barberName ?? 'Sin profesional asignado'),
     barberName: String(raw.barberName ?? raw.barbero ?? 'Sin asignar'),
     estado: String(raw.estado ?? 'RESERVADO'),
 
@@ -271,7 +271,7 @@ export async function getAgendaBarbers(branchId) {
           item.fullName ??
           item.nombreCompleto ??
           item.displayName ??
-          'Barbero'
+          'Profesional'
       ),
       imageUrl: String(
         item.photoUrl ??

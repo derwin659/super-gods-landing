@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   Banknote,
@@ -30,6 +30,7 @@ import {
   statusLabel,
 } from '../../api/ownerSubscriptionApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
+import { readBusinessLabels } from '../../utils/businessLabels';
 import { openPaddleCheckout } from '../../utils/paddleCheckout';
 
 const PLAN_OPTIONS = [
@@ -38,7 +39,7 @@ const PLAN_OPTIONS = [
     name: 'Starter',
     price: 49.90,
     badge: '1 sede',
-    description: 'Para barberias pequenas que quieren ordenar reservas, caja, clientes y equipo.',
+    description: 'Para negocios pequeños que quieren ordenar reservas, caja, clientes y equipo.',
     limits: '1 sede · 5 profesionales · 1 admin',
     features: ['Reservas online', 'Caja basica', 'Clientes e historial', 'Puntos y premios basicos'],
     icon: Store,
@@ -265,6 +266,7 @@ function BillingButton({ option, selected, onSelect }) {
 }
 
 export default function OwnerSubscriptionPage() {
+  const labels = readBusinessLabels();
   const [subscription, setSubscription] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState('GROWTH');
   const [selectedBilling, setSelectedBilling] = useState('MONTHLY');
@@ -528,7 +530,7 @@ export default function OwnerSubscriptionPage() {
               icon={Building2}
               label="Uso"
               value={`${subscription?.usedBranches ?? 0}/${subscription?.maxBranches ?? 0} sedes`}
-              helper={`${subscription?.usedBarbers ?? 0}/${subscription?.maxBarbers ?? 0} barberos · ${subscription?.usedAdmins ?? 0}/${subscription?.maxAdmins ?? 0} admins`}
+              helper={`${subscription?.usedBarbers ?? 0}/${subscription?.maxBarbers ?? 0} ${labels.professionalsPlural} · ${subscription?.usedAdmins ?? 0}/${subscription?.maxAdmins ?? 0} admins`}
               tone="neutral"
             />
           </section>

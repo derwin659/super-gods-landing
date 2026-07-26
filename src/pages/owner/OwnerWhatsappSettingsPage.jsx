@@ -167,7 +167,7 @@ export default function OwnerWhatsappSettingsPage() {
     if (!settings) return '';
 
     const lines = [
-      'Hola Nicolas, gracias por tu visita a Barberia Paradise.',
+      'Hola Nicolas, gracias por tu visita a nuestro negocio.',
       '',
       'Ganaste +150 puntos por tu compra.',
       'Ahora tienes 420 puntos disponibles.',
@@ -312,7 +312,7 @@ export default function OwnerWhatsappSettingsPage() {
                     <input
                       value={settings?.senderLabel || ''}
                       onChange={(event) => updateField('senderLabel', event.target.value)}
-                      placeholder="Barberia Paradise"
+                      placeholder="Nombre del negocio"
                       className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-bold text-neutral-950 outline-none focus:border-neutral-950"
                     />
                   </label>

@@ -342,7 +342,7 @@ export async function getCashBarbers(branchId) {
           item.name ??
           item.fullName ??
           item.nombreCompleto ??
-          'Barbero'
+          'Profesional'
       ),
     }));
   } catch (firstError) {
@@ -358,7 +358,7 @@ export async function getCashBarbers(branchId) {
             item.name ??
             item.fullName ??
             item.nombreCompleto ??
-            'Barbero'
+            'Profesional'
         ),
       }));
     } catch {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { premiumConfirm } from '../../components/PremiumUi';
+import { readBusinessLabels } from '../../utils/businessLabels';
 import {
   createOwnerBranch,
   deleteOwnerBranchImage,
@@ -123,6 +124,7 @@ function BranchImage({ branch }) {
 }
 
 function BranchFormModal({ branch, onClose, onSaved }) {
+  const labels = readBusinessLabels();
   const isEdit = Boolean(getBranchId(branch));
 
   const [nombre, setNombre] = useState(branchName(branch) === 'Sede' ? '' : branchName(branch));
@@ -341,7 +343,7 @@ function BranchFormModal({ branch, onClose, onSaved }) {
                   <InputField label="Ciudad" value={ciudad} onChange={setCiudad} placeholder="Ej. Lima" />
                   <InputField label="Latitud" value={latitude} onChange={setLatitude} placeholder="Ej. -12.0464" type="number" />
                   <InputField label="Longitud" value={longitude} onChange={setLongitude} placeholder="Ej. -77.0428" type="number" />
-                  <InputField label="Descripcion publica" value={publicDescription} onChange={setPublicDescription} placeholder="Ej. Barberia premium cerca al parque" />
+                  <InputField label="Descripcion publica" value={publicDescription} onChange={setPublicDescription} placeholder={`Ej. ${labels.businessDisplay} premium cerca al parque`} />
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <button type="button" onClick={() => setPublicVisible((prev) => !prev)} className={`rounded-2xl px-4 py-3 text-sm font-black ${publicVisible ? 'bg-emerald-500 text-white' : 'bg-white text-neutral-700 border border-neutral-200'}`}>
@@ -577,6 +579,7 @@ function BranchCard({ branch, onEdit, onToggle, onDeleteImage, onPreview }) {
 }
 
 export default function OwnerBranchesPage() {
+  const labels = readBusinessLabels();
   const [branches, setBranches] = useState([]);
   const [showInactive, setShowInactive] = useState(true);
   const [search, setSearch] = useState('');
@@ -705,8 +708,8 @@ export default function OwnerBranchesPage() {
             </h2>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">
-              Crea, edita y controla las sedes de la barbería. Cada sede puede
-              tener caja, agenda, barberos, productos y reportes propios.
+              Crea, edita y controla las sedes de tu {labels.businessSingular}. Cada sede puede
+              tener caja, agenda, {labels.professionalsPlural}, productos y reportes propios.
             </p>
           </div>
 
@@ -810,7 +813,7 @@ export default function OwnerBranchesPage() {
 
           <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-neutral-500">
             {branches.length === 0
-              ? 'Crea tu primera sede para operar caja, agenda, barberos y productos.'
+              ? 'Crea tu primera sede para operar caja, agenda, ' + labels.professionalsPlural + ' y productos.'
               : 'Prueba cambiando el texto de búsqueda o el filtro de sedes activas.'}
           </p>
 
