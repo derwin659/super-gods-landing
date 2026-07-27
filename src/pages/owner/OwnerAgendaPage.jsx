@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PremiumButton, PremiumEmptyState, PremiumErrorState, premiumConfirm, premiumPrompt } from '../../components/PremiumUi';
 import { Package } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   cancelOwnerAppointment,
   markOwnerAppointmentNoShow,
@@ -1391,9 +1391,16 @@ function AppointmentFormModal({
 
 export default function OwnerAgendaPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedAppointmentId = String(searchParams.get('appointmentId') || '').trim();
+  const requestedBranchId = String(searchParams.get('branchId') || '').trim();
+  const requestedDate = String(searchParams.get('date') || '').trim();
+  const initialDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
+    ? requestedDate
+    : toDateInputValue(new Date());
   const [branches, setBranches] = useState([]);
-  const [selectedBranchId, setSelectedBranchId] = useState('');
-  const [selectedDate, setSelectedDate] = useState(toDateInputValue(new Date()));
+  const [selectedBranchId, setSelectedBranchId] = useState(requestedBranchId);
+  const [selectedDate, setSelectedDate] = useState(initialDate);
   const weekDates = useMemo(() => {
     const base = new Date(`${selectedDate}T12:00:00`);
     const mondayOffset = (base.getDay() + 6) % 7;
@@ -1642,6 +1649,16 @@ export default function OwnerAgendaPage() {
     }
   }, [selectedBranchId, selectedDate]);
 
+  useEffect(() => {
+    if (!requestedAppointmentId || items.length === 0) return;
+    const target = document.getElementById(`appointment-${requestedAppointmentId}`);
+    if (!target) return;
+    const timer = window.setTimeout(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [items, requestedAppointmentId]);
+
   return (
     <div className="space-y-7">
       <section className="relative overflow-hidden rounded-[34px] border border-amber-400/15 bg-[linear-gradient(135deg,#090909_0%,#15110A_42%,#101827_100%)] p-6 text-white shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
@@ -1764,22 +1781,30 @@ export default function OwnerAgendaPage() {
         <EmptyCard onCreate={openCreateAppointment} />
       ) : (
         <section className="space-y-4">
-          {items.map((item) => (
-            <AppointmentCard
-              key={item.appointmentId}
-              item={item}
-              onEdit={openEditAppointment}
-              onCancel={handleCancelAppointment}
-              onNoShow={handleNoShowAppointment}
-              onAttend={handleAttendAppointment}
-              onApproveDeposit={(agendaItem) =>
-                handleValidateDeposit(agendaItem, true)
-              }
-              onRejectDeposit={(agendaItem) =>
-                handleValidateDeposit(agendaItem, false)
-              }
-            />
-          ))}
+          {items.map((item) => {
+            const highlighted = String(item.appointmentId) === requestedAppointmentId;
+            return (
+              <div
+                id={`appointment-${item.appointmentId}`}
+                key={item.appointmentId}
+                className={highlighted ? 'rounded-[32px] ring-4 ring-emerald-400 ring-offset-4 transition' : ''}
+              >
+                <AppointmentCard
+                  item={item}
+                  onEdit={openEditAppointment}
+                  onCancel={handleCancelAppointment}
+                  onNoShow={handleNoShowAppointment}
+                  onAttend={handleAttendAppointment}
+                  onApproveDeposit={(agendaItem) =>
+                    handleValidateDeposit(agendaItem, true)
+                  }
+                  onRejectDeposit={(agendaItem) =>
+                    handleValidateDeposit(agendaItem, false)
+                  }
+                />
+              </div>
+            );
+          })}
         </section>
       )}
 

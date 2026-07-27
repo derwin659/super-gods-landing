@@ -198,6 +198,27 @@ export default function OwnerWhatsappSettingsPage() {
     return lines.join('\n');
   }, [settings]);
 
+  const bookingAlertPreview = useMemo(
+    () =>
+      [
+        'Nueva reserva #1842',
+        'Cliente: Andrea Torres',
+        'WhatsApp: +51 987 654 321',
+        'Negocio: Barberia Gods',
+        'Sede: GODS 2',
+        'Servicio: Corte clasico',
+        'Profesional: Carlos Ramos',
+        'Fecha: 26/07/2026',
+        'Horario: 17:30 - 18:15',
+        'Estado: RESERVADO',
+        'Adelanto: No requerido',
+        'Total: 35.00',
+        'Origen: Cliente',
+        'Agenda: https://www.supergodsapp.com/owner/agenda',
+        'Contactar: https://wa.me/51987654321',
+      ].join('\n'),
+    []
+  );
   return (
     <div className="space-y-6">
       <section className="relative overflow-hidden rounded-[34px] border border-emerald-400/15 bg-[linear-gradient(135deg,#07110E_0%,#101827_58%,#07110E_100%)] p-6 text-white shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
@@ -215,7 +236,8 @@ export default function OwnerWhatsappSettingsPage() {
             </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <StatPill label="Nuevas reservas" value={settings?.ownerBookingAlertEnabled ? 'WhatsApp activo' : 'Pausado'} />
             <StatPill label="Post-venta" value={settings?.postSaleMessageEnabled ? 'Activo' : 'Pausado'} />
             <StatPill label="App" value={settings?.includeAppDownloadLink ? 'Incluida' : 'Oculta'} />
             <StatPill label="Reservas" value={settings?.includeBookingLink ? 'Incluidas' : 'Ocultas'} />
@@ -319,6 +341,47 @@ export default function OwnerWhatsappSettingsPage() {
                 </div>
               </div>
 
+              <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/60 p-5 shadow-[0_12px_28px_rgba(16,185,129,0.08)]">
+                <div className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+                  Alertas operativas de reservas
+                </div>
+                <p className="mt-2 text-sm font-semibold leading-6 text-emerald-950/65">
+                  Se envian al telefono guardado en el perfil del owner desde el proveedor oficial conectado. El mensaje incluye todos los datos y un enlace para contactar al cliente.
+                </p>
+              </div>
+
+              <ToggleRow
+                icon={BellRing}
+                title="Avisarme nuevas reservas por WhatsApp"
+                text="Envia un aviso inmediato cuando el cliente reserva desde la app, web publica, enlace o QR. PUSH e IN_APP permanecen como respaldo."
+                checked={!!settings?.ownerBookingAlertEnabled}
+                onChange={(value) => updateField('ownerBookingAlertEnabled', value)}
+                badge="Recomendado"
+              />
+
+              <ToggleRow
+                icon={UserRoundSearch}
+                title="Avisar tambien a administradores"
+                text="Incluye a los administradores activos de la sede donde se realizo la reserva."
+                checked={!!settings?.ownerBookingAlertIncludeAdmins}
+                onChange={(value) => updateField('ownerBookingAlertIncludeAdmins', value)}
+              />
+
+              <ToggleRow
+                icon={CalendarCheck}
+                title="Avisar al profesional asignado"
+                text="Envia el mismo aviso operativo al telefono del profesional seleccionado."
+                checked={!!settings?.ownerBookingAlertIncludeProfessional}
+                onChange={(value) => updateField('ownerBookingAlertIncludeProfessional', value)}
+              />
+
+              <ToggleRow
+                icon={BellRing}
+                title="Incluir citas creadas por el equipo"
+                text="Por defecto solo avisa reservas hechas por clientes para evitar mensajes innecesarios."
+                checked={!!settings?.ownerBookingAlertIncludeStaffCreated}
+                onChange={(value) => updateField('ownerBookingAlertIncludeStaffCreated', value)}
+              />
               <ToggleRow
                 icon={MessageCircle}
                 title="Mensaje al finalizar una venta"
@@ -385,6 +448,26 @@ export default function OwnerWhatsappSettingsPage() {
             </div>
 
             <aside className="space-y-4">
+              <div className="rounded-[30px] border border-emerald-200 bg-white p-5 shadow-[0_14px_38px_rgba(16,185,129,0.08)]">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-emerald-600 text-white">
+                    <BellRing size={21} />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">
+                      Vista previa
+                    </div>
+                    <h3 className="text-lg font-black text-neutral-950">Aviso de nueva reserva</h3>
+                  </div>
+                </div>
+
+                <pre className="mt-4 max-h-[520px] overflow-auto whitespace-pre-wrap rounded-[22px] border border-emerald-100 bg-emerald-50/60 p-4 text-sm font-semibold leading-6 text-neutral-700">
+                  {settings?.ownerBookingAlertEnabled
+                    ? bookingAlertPreview
+                    : 'Activa el aviso para recibir nuevas reservas en el WhatsApp del owner.'}
+                </pre>
+              </div>
+
               <div className="rounded-[30px] border border-neutral-200 bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.05)]">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-neutral-950 text-white">
