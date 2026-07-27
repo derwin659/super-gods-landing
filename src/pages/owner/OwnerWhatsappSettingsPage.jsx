@@ -3,21 +3,26 @@ import OwnerCampaignOperationsPanel from './OwnerCampaignOperationsPanel';
 import {
   BellRing,
   CalendarCheck,
+  KeyRound,
   MessageCircle,
   RotateCcw,
   Save,
   Send,
+  ShieldCheck,
   Smartphone,
   UserRoundSearch,
 } from 'lucide-react';
 import {
+  getOwnerWhatsappRecipientVerification,
   getOwnerWhatsappSettings,
+  requestOwnerWhatsappRecipientVerification,
   updateOwnerWhatsappSettings,
+  verifyOwnerWhatsappRecipient,
 } from '../../api/ownerWhatsappSettingsApi';
 
-function ToggleRow({ icon: Icon, title, text, checked, onChange, badge }) {
+function ToggleRow({ icon: Icon, title, text, checked, onChange, badge, disabled = false }) {
   return (
-    <label className="group flex cursor-pointer items-start gap-4 rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(15,23,42,0.08)]">
+    <label className={`group flex items-start gap-4 rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)] transition ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(15,23,42,0.08)]'}`}>
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
         <Icon size={22} strokeWidth={2.4} />
       </div>
@@ -50,7 +55,8 @@ function ToggleRow({ icon: Icon, title, text, checked, onChange, badge }) {
         type="checkbox"
         className="sr-only"
         checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
+        disabled={disabled}
+        onChange={(event) => !disabled && onChange(event.target.checked)}
       />
     </label>
   );
@@ -76,42 +82,17 @@ function ErrorBox({ message }) {
   );
 }
 
-function providerLabel(value) {
-  switch (String(value || '').toUpperCase()) {
-    case 'META_CLOUD':
-      return 'Meta Cloud API';
-    case 'TWILIO':
-      return 'Twilio WhatsApp';
-    case 'BAILEYS':
-      return 'QR / sesion del negocio';
-    case 'MOCK':
-      return 'Simulador interno';
-    default:
-      return 'Manual con WhatsApp del equipo';
-  }
-}
-
-function statusLabel(value) {
-  switch (String(value || '').toUpperCase()) {
-    case 'CONNECTED':
-      return 'Conectado';
-    case 'PENDING':
-      return 'Pendiente';
-    case 'PAUSED':
-      return 'Pausado';
-    case 'ERROR':
-      return 'Con error';
-    default:
-      return 'No conectado';
-  }
-}
-
 export default function OwnerWhatsappSettingsPage() {
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [verification, setVerification] = useState(null);
+  const [verificationPhone, setVerificationPhone] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [requestingCode, setRequestingCode] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -120,8 +101,15 @@ export default function OwnerWhatsappSettingsPage() {
       setLoading(true);
       setErrorMsg('');
       try {
-        const data = await getOwnerWhatsappSettings();
-        if (active) setSettings(data);
+        const [data, recipientVerification] = await Promise.all([
+          getOwnerWhatsappSettings(),
+          getOwnerWhatsappRecipientVerification(),
+        ]);
+        if (active) {
+          setSettings(data);
+          setVerification(recipientVerification);
+          setVerificationPhone(recipientVerification.pendingPhone || recipientVerification.phone || '');
+        }
       } catch (error) {
         if (active) setErrorMsg(error.message || 'No se pudo cargar la configuracion de WhatsApp.');
       } finally {
@@ -144,6 +132,51 @@ export default function OwnerWhatsappSettingsPage() {
     setSuccessMsg('');
   }
 
+  async function handleRequestVerification() {
+    const phone = verificationPhone.trim();
+    if (!phone) {
+      setErrorMsg('Ingresa el WhatsApp que recibira las alertas.');
+      return;
+    }
+
+    setRequestingCode(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const data = await requestOwnerWhatsappRecipientVerification(phone);
+      setVerification(data);
+      setVerificationPhone(data.pendingPhone || phone);
+      setVerificationCode('');
+      setSuccessMsg(`Codigo enviado por ${data.centralSenderLabel} a ${data.maskedPendingPhone}.`);
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo enviar el codigo de verificacion.');
+    } finally {
+      setRequestingCode(false);
+    }
+  }
+
+  async function handleVerifyRecipient() {
+    const code = verificationCode.trim();
+    if (!/^\d{6}$/.test(code)) {
+      setErrorMsg('Ingresa el codigo de 6 digitos.');
+      return;
+    }
+
+    setVerifyingCode(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const data = await verifyOwnerWhatsappRecipient(code);
+      setVerification(data);
+      setVerificationPhone(data.phone || '');
+      setVerificationCode('');
+      setSuccessMsg('WhatsApp verificado. Ya puedes recibir alertas de reservas.');
+    } catch (error) {
+      setErrorMsg(error.message || 'No se pudo verificar el codigo.');
+    } finally {
+      setVerifyingCode(false);
+    }
+  }
   async function handleSubmit(event) {
     event.preventDefault();
     if (!settings) return;
@@ -219,6 +252,10 @@ export default function OwnerWhatsappSettingsPage() {
       ].join('\n'),
     []
   );
+
+  const recipientReady = !!verification?.verified && !!verification?.centralNotificationsEnabled;
+  const centralReady = !!verification?.centralNotificationsEnabled;
+
   return (
     <div className="space-y-6">
       <section className="relative overflow-hidden rounded-[34px] border border-emerald-400/15 bg-[linear-gradient(135deg,#07110E_0%,#101827_58%,#07110E_100%)] p-6 text-white shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
@@ -237,7 +274,7 @@ export default function OwnerWhatsappSettingsPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <StatPill label="Nuevas reservas" value={settings?.ownerBookingAlertEnabled ? 'WhatsApp activo' : 'Pausado'} />
+            <StatPill label="Nuevas reservas" value={recipientReady && settings?.ownerBookingAlertEnabled ? 'WhatsApp activo' : verification?.verified ? 'Listo para activar' : 'Verifica numero'} />
             <StatPill label="Post-venta" value={settings?.postSaleMessageEnabled ? 'Activo' : 'Pausado'} />
             <StatPill label="App" value={settings?.includeAppDownloadLink ? 'Incluida' : 'Oculta'} />
             <StatPill label="Reservas" value={settings?.includeBookingLink ? 'Incluidas' : 'Ocultas'} />
@@ -261,92 +298,123 @@ export default function OwnerWhatsappSettingsPage() {
         ) : (
           <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
             <div className="space-y-4">
-              <div className="rounded-[26px] border border-neutral-200 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <div className="text-xs font-black uppercase tracking-[0.18em] text-emerald-600">
-                      Conexion WhatsApp
+              <div className="overflow-hidden rounded-[28px] border border-amber-300/60 bg-[linear-gradient(135deg,#111827_0%,#172033_58%,#291E0A_100%)] text-white shadow-[0_18px_44px_rgba(15,23,42,0.18)]">
+                <div className="p-5 sm:p-6">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-300 text-neutral-950 shadow-lg shadow-amber-950/20">
+                        <ShieldCheck size={24} strokeWidth={2.5} />
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-300">Receptor seguro</div>
+                        <h2 className="mt-1 text-2xl font-black">{verification?.centralSenderLabel || 'GODS Notificaciones'}</h2>
+                        <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/60">
+                          GODS envia la alerta desde su numero oficial. Tu solo verificas el WhatsApp donde deseas recibir cada nueva reserva.
+                        </p>
+                      </div>
                     </div>
-                    <h2 className="mt-1 text-2xl font-black text-neutral-950">
-                      {providerLabel(settings?.provider)}
-                    </h2>
-                    <p className="mt-1 text-sm font-semibold text-neutral-500">
-                      {settings?.connected
-                        ? 'Los envios automaticos pueden usar el proveedor conectado.'
-                        : 'Por ahora el equipo envia manualmente desde el enlace de WhatsApp.'}
-                    </p>
+                    <span className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em] ${verification?.verified ? 'bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/30' : 'bg-amber-300/15 text-amber-200 ring-1 ring-amber-300/30'}`}>
+                      {verification?.verified ? 'Numero verificado' : 'Verificacion pendiente'}
+                    </span>
                   </div>
 
-                  <span
-                    className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em] ${
-                      settings?.connected
-                        ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
-                        : 'bg-amber-50 text-amber-700 ring-1 ring-amber-100'
-                    }`}
-                  >
-                    {statusLabel(settings?.connectionStatus)}
-                  </span>
-                </div>
+                  {!centralReady && (
+                    <div className="mt-5 rounded-2xl border border-amber-300/25 bg-amber-300/10 px-4 py-3 text-sm font-bold text-amber-100">
+                      El administrador de GODS debe terminar de configurar Twilio o Meta en Railway antes de enviar codigos.
+                    </div>
+                  )}
 
-                <div className="mt-5 grid gap-3 md:grid-cols-2">
-                  <label className="block">
-                    <span className="text-sm font-black text-neutral-700">Proveedor</span>
-                    <select
-                      value={settings?.provider || 'MANUAL'}
-                      onChange={(event) => updateField('provider', event.target.value)}
-                      className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-bold text-neutral-950 outline-none focus:border-neutral-950"
+                  <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto]">
+                    <label className="block">
+                      <span className="text-xs font-black uppercase tracking-[0.16em] text-white/45">WhatsApp receptor</span>
+                      <input
+                        value={verificationPhone}
+                        onChange={(event) => setVerificationPhone(event.target.value)}
+                        placeholder="+51987654321"
+                        inputMode="tel"
+                        className="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-4 text-base font-black text-white outline-none placeholder:text-white/25 focus:border-amber-300"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRequestVerification}
+                      disabled={!centralReady || requestingCode || verifyingCode}
+                      className="self-end rounded-2xl bg-amber-300 px-5 py-4 text-sm font-black text-neutral-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-45"
                     >
-                      <option value="MANUAL">Manual</option>
-                      <option value="MOCK">Simulador interno</option>
-                      <option value="META_CLOUD">Meta Cloud API</option>
-                      <option value="TWILIO">Twilio</option>
-                      <option value="BAILEYS">QR / sesion</option>
-                    </select>
-                  </label>
+                      {requestingCode ? 'Enviando...' : verification?.verified ? 'Verificar otro numero' : 'Enviar codigo'}
+                    </button>
+                  </div>
 
-                  <label className="block">
-                    <span className="text-sm font-black text-neutral-700">Estado</span>
-                    <select
-                      value={settings?.connectionStatus || 'NOT_CONNECTED'}
-                      onChange={(event) => updateField('connectionStatus', event.target.value)}
-                      className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-bold text-neutral-950 outline-none focus:border-neutral-950"
-                    >
-                      <option value="NOT_CONNECTED">No conectado</option>
-                      <option value="PENDING">Pendiente</option>
-                      <option value="CONNECTED">Conectado</option>
-                      <option value="PAUSED">Pausado</option>
-                      <option value="ERROR">Con error</option>
-                    </select>
-                  </label>
+                  {verification?.verificationPending && (
+                    <div className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 md:grid-cols-[1fr_auto]">
+                      <label className="block">
+                        <span className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-white/45">
+                          <KeyRound size={15} /> Codigo recibido en {verification.maskedPendingPhone}
+                        </span>
+                        <input
+                          value={verificationCode}
+                          onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="000000"
+                          inputMode="numeric"
+                          maxLength={6}
+                          className="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-4 text-center text-xl font-black tracking-[0.35em] text-white outline-none placeholder:text-white/20 focus:border-emerald-300"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleVerifyRecipient}
+                        disabled={verifyingCode || verificationCode.length !== 6}
+                        className="self-end rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-emerald-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        {verifyingCode ? 'Validando...' : 'Confirmar numero'}
+                      </button>
+                    </div>
+                  )}
 
-                  <label className="block">
-                    <span className="text-sm font-black text-neutral-700">Numero remitente</span>
-                    <input
-                      value={settings?.senderPhone || ''}
-                      onChange={(event) => updateField('senderPhone', event.target.value)}
-                      placeholder="+51958062847"
-                      className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-bold text-neutral-950 outline-none focus:border-neutral-950"
-                    />
-                  </label>
-
-                  <label className="block">
-                    <span className="text-sm font-black text-neutral-700">Nombre visible</span>
-                    <input
-                      value={settings?.senderLabel || ''}
-                      onChange={(event) => updateField('senderLabel', event.target.value)}
-                      placeholder="Nombre del negocio"
-                      className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-bold text-neutral-950 outline-none focus:border-neutral-950"
-                    />
-                  </label>
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-white/55">
+                    <span className="rounded-full bg-white/[0.07] px-3 py-2">Codigo protegido</span>
+                    <span className="rounded-full bg-white/[0.07] px-3 py-2">Vence en 10 minutos</span>
+                    <span className="rounded-full bg-white/[0.07] px-3 py-2">Maximo 5 intentos</span>
+                    {verification?.verified && (
+                      <span className="rounded-full bg-emerald-400/10 px-3 py-2 text-emerald-300">Recibiras en {verification.maskedPhone}</span>
+                    )}
+                  </div>
                 </div>
               </div>
-
+              <div className="overflow-hidden rounded-[26px] border border-violet-200 bg-[linear-gradient(135deg,#FAF7FF_0%,#FFFFFF_55%,#FFF8E7_100%)] p-5 shadow-[0_12px_28px_rgba(76,29,149,0.06)]">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 ring-1 ring-violet-200">
+                      <Smartphone size={23} strokeWidth={2.4} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-black uppercase tracking-[0.18em] text-violet-600">
+                        Proxima mejora Growth / VIP
+                      </div>
+                      <h2 className="mt-1 text-2xl font-black text-neutral-950">
+                        Conecta el WhatsApp de tu negocio
+                      </h2>
+                      <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-neutral-500">
+                        Cada negocio podra usar su propio remitente con una conexion guiada y segura. Mientras tanto, las reservas salen desde GODS Notificaciones.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-violet-100 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-violet-700 ring-1 ring-violet-200">
+                    Proximamente
+                  </span>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-neutral-600">
+                  <span className="rounded-full bg-white px-3 py-2 ring-1 ring-neutral-200">Remitente propio</span>
+                  <span className="rounded-full bg-white px-3 py-2 ring-1 ring-neutral-200">Plantillas del negocio</span>
+                  <span className="rounded-full bg-white px-3 py-2 ring-1 ring-neutral-200">Fallback GODS</span>
+                </div>
+              </div>
               <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/60 p-5 shadow-[0_12px_28px_rgba(16,185,129,0.08)]">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
                   Alertas operativas de reservas
                 </div>
                 <p className="mt-2 text-sm font-semibold leading-6 text-emerald-950/65">
-                  Se envian al telefono guardado en el perfil del owner desde el proveedor oficial conectado. El mensaje incluye todos los datos y un enlace para contactar al cliente.
+                  Se envian desde GODS Notificaciones unicamente a destinatarios que verificaron su numero. El mensaje incluye todos los datos y un enlace para contactar al cliente.
                 </p>
               </div>
 
@@ -356,7 +424,8 @@ export default function OwnerWhatsappSettingsPage() {
                 text="Envia un aviso inmediato cuando el cliente reserva desde la app, web publica, enlace o QR. PUSH e IN_APP permanecen como respaldo."
                 checked={!!settings?.ownerBookingAlertEnabled}
                 onChange={(value) => updateField('ownerBookingAlertEnabled', value)}
-                badge="Recomendado"
+                badge={recipientReady ? 'Recomendado' : 'Verifica tu numero'}
+                disabled={!recipientReady}
               />
 
               <ToggleRow
