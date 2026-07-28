@@ -3,7 +3,6 @@ import OwnerCampaignOperationsPanel from './OwnerCampaignOperationsPanel';
 import {
   BellRing,
   CalendarCheck,
-  KeyRound,
   MessageCircle,
   RotateCcw,
   Save,
@@ -17,7 +16,6 @@ import {
   getOwnerWhatsappSettings,
   requestOwnerWhatsappRecipientVerification,
   updateOwnerWhatsappSettings,
-  verifyOwnerWhatsappRecipient,
 } from '../../api/ownerWhatsappSettingsApi';
 
 function ToggleRow({ icon: Icon, title, text, checked, onChange, badge, disabled = false }) {
@@ -90,9 +88,8 @@ export default function OwnerWhatsappSettingsPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [verification, setVerification] = useState(null);
   const [verificationPhone, setVerificationPhone] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
   const [requestingCode, setRequestingCode] = useState(false);
-  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [checkingVerification, setCheckingVerification] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -139,6 +136,7 @@ export default function OwnerWhatsappSettingsPage() {
       return;
     }
 
+    const popup = window.open('about:blank', '_blank');
     setRequestingCode(true);
     setErrorMsg('');
     setSuccessMsg('');
@@ -146,37 +144,54 @@ export default function OwnerWhatsappSettingsPage() {
       const data = await requestOwnerWhatsappRecipientVerification(phone);
       setVerification(data);
       setVerificationPhone(data.pendingPhone || phone);
-      setVerificationCode('');
-      setSuccessMsg(`Codigo enviado por ${data.centralSenderLabel} a ${data.maskedPendingPhone}.`);
+      if (!data.verificationUrl) {
+        throw new Error('El servidor no devolvio el enlace seguro de WhatsApp.');
+      }
+      if (popup) {
+        popup.opener = null;
+        popup.location.replace(data.verificationUrl);
+      } else {
+        window.location.assign(data.verificationUrl);
+      }
+      setSuccessMsg('WhatsApp abierto. Envia el mensaje sin modificarlo y vuelve para comprobar.');
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudo enviar el codigo de verificacion.');
+      if (popup) popup.close();
+      setErrorMsg(error.message || 'No se pudo generar el enlace de verificacion.');
     } finally {
       setRequestingCode(false);
     }
   }
 
-  async function handleVerifyRecipient() {
-    const code = verificationCode.trim();
-    if (!/^\d{6}$/.test(code)) {
-      setErrorMsg('Ingresa el codigo de 6 digitos.');
-      return;
-    }
-
-    setVerifyingCode(true);
+  async function handleCheckVerification() {
+    setCheckingVerification(true);
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const data = await verifyOwnerWhatsappRecipient(code);
-      setVerification(data);
-      setVerificationPhone(data.phone || '');
-      setVerificationCode('');
-      setSuccessMsg('WhatsApp verificado. Ya puedes recibir alertas de reservas.');
+      const data = await getOwnerWhatsappRecipientVerification();
+      setVerification((current) =>
+        data.verified
+          ? data
+          : {
+              ...data,
+              verificationUrl:
+                data.verificationUrl || current?.verificationUrl || '',
+              verificationMessage:
+                data.verificationMessage || current?.verificationMessage || '',
+            }
+      );
+      setVerificationPhone(data.pendingPhone || data.phone || verificationPhone);
+      setSuccessMsg(
+        data.verified
+          ? 'WhatsApp verificado. Ya puedes activar las alertas de reservas.'
+          : 'Aun no recibimos el mensaje. Envialo desde el numero registrado y vuelve a comprobar.'
+      );
     } catch (error) {
-      setErrorMsg(error.message || 'No se pudo verificar el codigo.');
+      setErrorMsg(error.message || 'No se pudo comprobar la verificacion.');
     } finally {
-      setVerifyingCode(false);
+      setCheckingVerification(false);
     }
   }
+
   async function handleSubmit(event) {
     event.preventDefault();
     if (!settings) return;
@@ -320,7 +335,7 @@ export default function OwnerWhatsappSettingsPage() {
 
                   {!centralReady && (
                     <div className="mt-5 rounded-2xl border border-amber-300/25 bg-amber-300/10 px-4 py-3 text-sm font-bold text-amber-100">
-                      El administrador de GODS debe terminar de configurar Twilio o Meta en Railway antes de enviar codigos.
+                      GODS debe terminar de configurar el webhook entrante de Twilio antes de verificar numeros.
                     </div>
                   )}
 
@@ -338,41 +353,55 @@ export default function OwnerWhatsappSettingsPage() {
                     <button
                       type="button"
                       onClick={handleRequestVerification}
-                      disabled={!centralReady || requestingCode || verifyingCode}
+                      disabled={!centralReady || requestingCode || checkingVerification}
                       className="self-end rounded-2xl bg-amber-300 px-5 py-4 text-sm font-black text-neutral-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-45"
                     >
-                      {requestingCode ? 'Enviando...' : verification?.verified ? 'Verificar otro numero' : 'Enviar codigo'}
+                      {requestingCode ? 'Preparando...' : verification?.verified ? 'Verificar otro numero' : 'Abrir WhatsApp y verificar'}
                     </button>
                   </div>
 
                   {verification?.verificationPending && (
-                    <div className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 md:grid-cols-[1fr_auto]">
-                      <label className="block">
-                        <span className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-white/45">
-                          <KeyRound size={15} /> Codigo recibido en {verification.maskedPendingPhone}
-                        </span>
-                        <input
-                          value={verificationCode}
-                          onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                          placeholder="000000"
-                          inputMode="numeric"
-                          maxLength={6}
-                          className="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-4 text-center text-xl font-black tracking-[0.35em] text-white outline-none placeholder:text-white/20 focus:border-emerald-300"
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleVerifyRecipient}
-                        disabled={verifyingCode || verificationCode.length !== 6}
-                        className="self-end rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-emerald-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-45"
-                      >
-                        {verifyingCode ? 'Validando...' : 'Confirmar numero'}
-                      </button>
+                    <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+                      <div className="flex items-start gap-3">
+                        <MessageCircle size={20} className="mt-0.5 shrink-0 text-emerald-300" />
+                        <div>
+                          <div className="text-sm font-black text-white">
+                            Envia el mensaje desde {verification.maskedPendingPhone}
+                          </div>
+                          <p className="mt-1 text-xs font-semibold leading-5 text-white/55">
+                            WhatsApp se abre con un mensaje seguro. Envia el texto sin modificarlo; asi GODS confirma que el numero realmente te pertenece.
+                          </p>
+                          {verification.verificationMessage && (
+                            <code className="mt-3 block rounded-xl bg-white/[0.07] px-3 py-2 text-xs font-black text-amber-200">
+                              {verification.verificationMessage}
+                            </code>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {verification.verificationUrl && (
+                          <button
+                            type="button"
+                            onClick={() => window.open(verification.verificationUrl, '_blank', 'noopener,noreferrer')}
+                            className="rounded-xl bg-white/10 px-4 py-3 text-xs font-black text-white transition hover:bg-white/15"
+                          >
+                            Abrir WhatsApp de nuevo
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleCheckVerification}
+                          disabled={checkingVerification}
+                          className="rounded-xl bg-emerald-400 px-4 py-3 text-xs font-black text-emerald-950 transition hover:bg-emerald-300 disabled:opacity-45"
+                        >
+                          {checkingVerification ? 'Comprobando...' : 'Ya envie el mensaje · Comprobar'}
+                        </button>
+                      </div>
                     </div>
                   )}
 
                   <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-white/55">
-                    <span className="rounded-full bg-white/[0.07] px-3 py-2">Codigo protegido</span>
+                    <span className="rounded-full bg-white/[0.07] px-3 py-2">Verificacion desde tu WhatsApp</span>
                     <span className="rounded-full bg-white/[0.07] px-3 py-2">Vence en 10 minutos</span>
                     <span className="rounded-full bg-white/[0.07] px-3 py-2">Maximo 5 intentos</span>
                     {verification?.verified && (

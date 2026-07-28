@@ -60,6 +60,9 @@ function normalizeVerification(raw = {}) {
     centralNotificationsEnabled: toBoolean(raw.centralNotificationsEnabled, false),
     centralProvider: String(raw.centralProvider || 'TWILIO'),
     centralSenderLabel: String(raw.centralSenderLabel || 'GODS Notificaciones'),
+    verificationMode: String(raw.verificationMode || 'INBOUND_WHATSAPP'),
+    verificationMessage: String(raw.verificationMessage || ''),
+    verificationUrl: String(raw.verificationUrl || ''),
   };
 }
 
