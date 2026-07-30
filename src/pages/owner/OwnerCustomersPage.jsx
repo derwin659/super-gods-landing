@@ -22,6 +22,8 @@ import { getOwnerBranches } from '../../api/ownerBranchesApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
 import { readBusinessLabels } from '../../utils/businessLabels';
 import { exportCustomerReportExcel, exportCustomerReportPdf } from '../../utils/customerReportExport';
+import { parsePhoneValue } from '../../utils/internationalPhone';
+import InternationalPhoneField from '../../components/InternationalPhoneField';
 
 function formatMoney(value) {
   return formatTenantMoney(value);
@@ -187,6 +189,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
   const [nombres, setNombres] = useState(customer?.nombres || customer?.nombreCompleto || '');
   const [apellidos, setApellidos] = useState(customer?.apellidos || '');
   const [telefono, setTelefono] = useState(customer?.telefono || '');
+  const [phoneValid, setPhoneValid] = useState(() => parsePhoneValue(customer?.telefono || '').isValid);
   const [email, setEmail] = useState(customer?.email || '');
   const [customerNotes, setCustomerNotes] = useState(customer?.customerNotes || '');
   const [preferredServices, setPreferredServices] = useState(customer?.preferredServices || '');
@@ -206,10 +209,8 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
       return;
     }
 
-    const cleanPhone = String(telefono || '').replace(/[^0-9]/g, '');
-
-    if (cleanPhone.length < 6) {
-      setErrorMsg('Ingresa un teléfono válido.');
+    if (!phoneValid || !telefono) {
+      setErrorMsg('Revisa el país y escribe un WhatsApp válido.');
       return;
     }
 
@@ -221,7 +222,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
             customerId: customer.id,
             nombres,
             apellidos,
-            telefono: cleanPhone,
+            telefono,
             email,
             customerNotes,
             preferredServices,
@@ -232,7 +233,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
         : await createOwnerCustomer({
             nombres,
             apellidos,
-            telefono: cleanPhone,
+            telefono,
             email,
             customerNotes,
             preferredServices,
@@ -275,11 +276,14 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
           />
         </div>
 
-        <InputField
-          label="Teléfono"
+        <InternationalPhoneField
+          label="WhatsApp del cliente"
           value={telefono}
-          onChange={setTelefono}
-          placeholder="Ej. 987654321"
+          onChange={(e164, meta) => {
+            setTelefono(e164);
+            setPhoneValid(meta.isValid);
+          }}
+          helperText="Selecciona el país. Se guardará con su prefijo internacional."
         />
 
         <InputField
@@ -1544,6 +1548,8 @@ export default function OwnerCustomersPage() {
   const [customers, setCustomers] = useState([]);
   const [totalCustomers, setTotalCustomers] = useState(null);
   const [query, setQuery] = useState('');
+  const [queryMode, setQueryMode] = useState('name');
+  const [queryPhoneValid, setQueryPhoneValid] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -1588,7 +1594,9 @@ export default function OwnerCustomersPage() {
     return customers.filter((item) => String(item.telefono || '').trim()).length;
   }, [customers]);
 
-  const cleanQuery = query.trim();
+  const cleanQuery = queryMode === 'phone' && !queryPhoneValid
+    ? ''
+    : query.trim();
   const isSearching = cleanQuery.length > 0;
 
   async function loadCustomers(nextQuery = query, { refreshTotal = false } = {}) {
@@ -1846,11 +1854,12 @@ export default function OwnerCustomersPage() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      if (queryMode === 'phone' && !queryPhoneValid && query) return;
       loadCustomers(query);
     }, 300);
 
     return () => window.clearTimeout(timer);
-  }, [query]);
+  }, [query, queryMode, queryPhoneValid]);
 
   useEffect(() => {
     if (!isSearching || loading) return;
@@ -1953,12 +1962,53 @@ export default function OwnerCustomersPage() {
             </p>
           </div>
 
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar por nombre o teléfono"
-            className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-400 xl:max-w-md"
-          />
+          <div className="w-full xl:max-w-lg">
+            <div className="mb-2 grid grid-cols-2 gap-2 rounded-2xl bg-neutral-100 p-1.5">
+              {[
+                ['name', 'Por nombre'],
+                ['phone', 'Por WhatsApp'],
+              ].map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => {
+                    setQueryMode(mode);
+                    setQuery('');
+                    setQueryPhoneValid(false);
+                  }}
+                  className={`rounded-xl px-3 py-2 text-xs font-black transition ${
+                    queryMode === mode
+                      ? 'bg-neutral-950 text-white shadow-sm'
+                      : 'text-neutral-500 hover:bg-white'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {queryMode === 'phone' ? (
+              <InternationalPhoneField
+                label=""
+                value={query}
+                compact
+                onChange={(e164, meta) => {
+                  setQuery(e164);
+                  setQueryPhoneValid(meta.isValid);
+                }}
+                helperText={query && !queryPhoneValid
+                  ? 'Completa el número para iniciar la búsqueda.'
+                  : 'Busca con el prefijo correcto, incluso si el cliente es extranjero.'}
+              />
+            ) : (
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Nombre o apellido"
+                className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-400"
+              />
+            )}
+          </div>
         </div>
 
         {isSearching && (

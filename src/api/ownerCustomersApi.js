@@ -1,4 +1,5 @@
 import { apiRequest, getApiBaseUrl, getToken } from './apiClient';
+import { normalizePhoneE164, whatsappPhoneDigits } from '../utils/internationalPhone';
 
 function toQuery(params = {}) {
   const search = new URLSearchParams();
@@ -325,7 +326,7 @@ export async function createOwnerCustomer({
         apellidos && String(apellidos).trim()
           ? String(apellidos).trim()
           : null,
-      telefono: String(telefono || '').replace(/[^0-9]/g, ''),
+      telefono: normalizePhoneE164(telefono),
       email:
         email && String(email).trim()
           ? String(email).trim()
@@ -353,7 +354,7 @@ export async function updateOwnerCustomer({
     apellidos,
     telefono:
       telefono !== null && telefono !== undefined
-        ? String(telefono).replace(/[^0-9]/g, '')
+        ? normalizePhoneE164(telefono)
         : null,
     email,
     customerNotes,
@@ -545,13 +546,8 @@ function normalizeInactiveCustomer(raw = {}) {
     businessName = 'tu negocio',
     message = '',
   }) {
-    const cleanPhone = String(telefono || '').replace(/[^0-9]/g, '');
-  
-    if (!cleanPhone) return '';
-  
-    const phoneWithCountry = cleanPhone.startsWith('51')
-      ? cleanPhone
-      : `51${cleanPhone}`;
+    const phoneWithCountry = whatsappPhoneDigits(telefono);
+    if (!phoneWithCountry) return '';
   
     const text = encodeURIComponent(
       message ||

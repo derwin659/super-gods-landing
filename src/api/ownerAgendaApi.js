@@ -1,4 +1,5 @@
 import { apiRequest } from './apiClient';
+import { normalizePhoneE164 } from '../utils/internationalPhone';
 
 function toQuery(params = {}) {
   const search = new URLSearchParams();
@@ -367,7 +368,7 @@ export async function createQuickAgendaCustomer({
         apellidos && String(apellidos).trim()
           ? String(apellidos).trim()
           : null,
-      telefono: String(telefono || '').replace(/[^0-9]/g, ''),
+      telefono: normalizePhoneE164(telefono),
     }),
   });
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PremiumButton, PremiumEmptyState, PremiumErrorState, premiumConfirm, premiumPrompt } from '../../components/PremiumUi';
+import InternationalPhoneField from '../../components/InternationalPhoneField';
 import { Package } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -679,6 +680,8 @@ function AppointmentFormModal({
   const [customerSearch, setCustomerSearch] = useState(
     appointment?.cliente || ''
   );
+  const [customerSearchMode, setCustomerSearchMode] = useState('name');
+  const [customerSearchPhoneValid, setCustomerSearchPhoneValid] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(
     appointment?.customerId
       ? {
@@ -692,6 +695,7 @@ function AppointmentFormModal({
   const [quickName, setQuickName] = useState('');
   const [quickLastName, setQuickLastName] = useState('');
   const [quickPhone, setQuickPhone] = useState('');
+  const [quickPhoneValid, setQuickPhoneValid] = useState(false);
 
   const [serviceId, setServiceId] = useState(
     appointment?.serviceId ? String(appointment.serviceId) : ''
@@ -849,6 +853,12 @@ function AppointmentFormModal({
       setSelectedCustomer(null);
     }
 
+    if (customerSearchMode === 'phone' && !customerSearchPhoneValid) {
+      setCustomers([]);
+      setSearchingCustomers(false);
+      return;
+    }
+
     if (q.length < 2) {
       setCustomers([]);
       setSearchingCustomers(false);
@@ -875,7 +885,7 @@ function AppointmentFormModal({
       alive = false;
       window.clearTimeout(timer);
     };
-  }, [customerSearch]);
+  }, [customerSearch, customerSearchMode, customerSearchPhoneValid, selectedCustomer]);
 
   async function handleCreateCustomer() {
     if (!quickName.trim()) {
@@ -883,8 +893,8 @@ function AppointmentFormModal({
       return;
     }
 
-    const phone = quickPhone.replace(/[^0-9]/g, '');
-    if (phone.length < 6) {
+    const phone = quickPhone.trim();
+    if (!quickPhoneValid || !phone) {
       setErrorMsg('Ingresa un teléfono válido.');
       return;
     }
@@ -905,6 +915,7 @@ function AppointmentFormModal({
       setQuickName('');
       setQuickLastName('');
       setQuickPhone('');
+      setQuickPhoneValid(false);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo crear el cliente.');
     } finally {
@@ -1005,13 +1016,58 @@ function AppointmentFormModal({
                 Cliente
               </div>
 
-              <div className="mt-4">
-                <InputField
-                  label="Buscar cliente"
-                  value={customerSearch}
-                  onChange={setCustomerSearch}
-                  placeholder="Nombre o teléfono"
-                />
+              <div className="mt-4 space-y-3">
+                <div className="grid grid-cols-2 gap-2 rounded-2xl bg-neutral-100 p-1.5">
+                  {[
+                    ['name', 'Por nombre'],
+                    ['phone', 'Por WhatsApp'],
+                  ].map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => {
+                        setCustomerSearchMode(mode);
+                        setCustomerSearch('');
+                        setCustomerSearchPhoneValid(false);
+                        setSelectedCustomer(null);
+                        setCustomers([]);
+                      }}
+                      className={`rounded-xl px-3 py-2 text-xs font-black transition ${
+                        customerSearchMode === mode
+                          ? 'bg-neutral-950 text-white'
+                          : 'text-neutral-500 hover:bg-white'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {customerSearchMode === 'phone' ? (
+                  <InternationalPhoneField
+                    label="WhatsApp para buscar"
+                    value={customerSearch}
+                    compact
+                    onChange={(e164, meta) => {
+                      setCustomerSearch(e164);
+                      setCustomerSearchPhoneValid(meta.isValid);
+                      if (meta.isValid) {
+                        setQuickPhone(e164);
+                        setQuickPhoneValid(true);
+                      }
+                    }}
+                    helperText={customerSearch && !customerSearchPhoneValid
+                      ? 'Completa el número para buscar.'
+                      : 'Usa el país donde está registrado el WhatsApp.'}
+                  />
+                ) : (
+                  <InputField
+                    label="Buscar cliente"
+                    value={customerSearch}
+                    onChange={setCustomerSearch}
+                    placeholder="Nombre o apellido"
+                  />
+                )}
               </div>
 
               {searchingCustomers && (
@@ -1047,6 +1103,8 @@ function AppointmentFormModal({
                     type="button"
                     onClick={() => {
                       setSelectedCustomer(null);
+                      setCustomerSearchMode('name');
+                      setCustomerSearchPhoneValid(false);
                       setCustomerSearch('');
                     }}
                     className="mt-3 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-black text-emerald-700"
@@ -1064,6 +1122,8 @@ function AppointmentFormModal({
                       type="button"
                       onClick={() => {
                         setSelectedCustomer(customer);
+                        setCustomerSearchMode('name');
+                        setCustomerSearchPhoneValid(false);
                         setCustomerSearch(customer.name);
                         setCustomers([]);
                       }}
@@ -1114,11 +1174,15 @@ function AppointmentFormModal({
                   </div>
 
                   <div className="mt-3">
-                    <InputField
-                      label="Teléfono"
+                    <InternationalPhoneField
+                      label="WhatsApp del cliente"
                       value={quickPhone}
-                      onChange={setQuickPhone}
-                      placeholder="Ej. 987654321"
+                      compact
+                      onChange={(e164, meta) => {
+                        setQuickPhone(e164);
+                        setQuickPhoneValid(meta.isValid);
+                      }}
+                      helperText="Se guardará con bandera y prefijo internacional."
                     />
                   </div>
 
