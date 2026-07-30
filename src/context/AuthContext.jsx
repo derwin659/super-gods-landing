@@ -8,6 +8,7 @@ import {
   } from 'react';
   
   import { loginBasic, loginFinal } from '../api/authApi';
+  import { applyRegionalSession } from '../i18n/I18nProvider';
   
   const AuthContext = createContext(null);
   
@@ -23,6 +24,11 @@ import {
     branchName: 'BRANCH_NAME',
     businessType: 'BUSINESS_TYPE',
     isOwner: 'IS_OWNER',
+    locale: 'LOCALE',
+    tenantLocale: 'TENANT_LOCALE',
+    timezone: 'TIMEZONE',
+    currency: 'CURRENCY',
+    country: 'COUNTRY',
   };
   
   function readSession() {
@@ -43,6 +49,11 @@ import {
       branchName: localStorage.getItem(SESSION_KEYS.branchName),
       businessType: localStorage.getItem(SESSION_KEYS.businessType),
       isOwner: localStorage.getItem(SESSION_KEYS.isOwner) === 'true',
+      locale: localStorage.getItem(SESSION_KEYS.locale),
+      tenantLocale: localStorage.getItem(SESSION_KEYS.tenantLocale),
+      timezone: localStorage.getItem(SESSION_KEYS.timezone),
+      currency: localStorage.getItem(SESSION_KEYS.currency),
+      country: localStorage.getItem(SESSION_KEYS.country),
     };
   }
   
@@ -100,6 +111,18 @@ import {
     } else {
       localStorage.removeItem(SESSION_KEYS.businessType);
     }
+
+    const regionalValues = {
+      locale: finalRes.locale,
+      tenantLocale: finalRes.tenantLocale,
+      timezone: finalRes.timezone,
+      currency: finalRes.currency,
+      country: finalRes.country,
+    };
+    Object.entries(regionalValues).forEach(([key, value]) => {
+      if (value) localStorage.setItem(SESSION_KEYS[key], String(value));
+    });
+    applyRegionalSession(finalRes);
   
     return readSession();
   }

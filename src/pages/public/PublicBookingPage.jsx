@@ -28,6 +28,8 @@ import {
   getPublicBookingLinkInfo,
   getPublicBookingProducts,
 } from '../../api/publicBookingApi';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
+import { useI18n } from '../../i18n/I18nProvider';
 
 const DEFAULT_LOGO = '/logo-super-gods.png';
 
@@ -198,6 +200,7 @@ function fullCustomerName(data) {
 export default function PublicBookingPage() {
   const { codigoNegocio = '' } = useParams();
   const [searchParams] = useSearchParams();
+  const { t } = useI18n();
 
   const branchIdFromUrl = searchParams.get('branchId');
   const barberIdFromUrl = searchParams.get('barberId');
@@ -758,28 +761,31 @@ export default function PublicBookingPage() {
             <div className="flex items-start justify-between gap-4">
               <BrandLogo src={businessLogo} name={businessName} />
 
+              <div className="flex flex-col items-end gap-2 md:flex-row">
+                <LanguageSwitcher compact sync={false} />
               <div className="hidden rounded-2xl border border-white/20 bg-white/15 px-4 py-3 backdrop-blur md:block">
                 <div className="flex items-center gap-2 text-sm font-black text-emerald-100">
                   <ShieldCheck size={18} />
-                  {isWalkInMode ? 'Atencion en local' : 'Reserva segura'}
+                  {isWalkInMode ? t('inStoreService') : t('secureBooking')}
                 </div>
                 <p className="mt-1 text-xs font-semibold text-white/75">
-                  Confirmación directa con el negocio.
+                  {t('directConfirmation')}
                 </p>
+              </div>
               </div>
             </div>
 
             <div className="mt-12 max-w-4xl md:mt-16">
               <p className="text-xs font-black uppercase tracking-[0.28em] text-amber-200">
-                {isWalkInMode ? 'QR del local' : 'Reserva online'}
+                {isWalkInMode ? t('storeQr') : t('onlineBooking')}
               </p>
               <h1 className="mt-3 text-4xl font-black leading-none md:text-6xl">
                 {businessName}
               </h1>
               <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-white/85 md:text-lg">
                 {isWalkInMode
-                  ? 'Separa productos, registra tus datos o solicita atencion desde tu telefono para que el negocio te atienda en caja.'
-                  : 'Elige sede, profesional, servicio y horario. Tu cita queda lista en segundos.'}
+                  ? t('walkInHero')
+                  : t('bookingHero')}
               </p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -844,7 +850,7 @@ export default function PublicBookingPage() {
               onClick={() => stepsRef.current?.scrollBy({ left: stepsRef.current.clientWidth, behavior: 'smooth' })}
               className="flex h-11 items-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black text-white transition hover:bg-blue-900"
             >
-              Siguiente paso <ChevronRight size={18} />
+              {t('nextStep')} <ChevronRight size={18} />
             </button>
           </div>
         </div>
@@ -856,8 +862,8 @@ export default function PublicBookingPage() {
           >
             <PremiumSection
               number="1"
-              title="Elige sede"
-              subtitle={forcedBranch ? 'Este link ya tiene una sede seleccionada.' : 'Selecciona dónde quieres atenderte.'}
+              title={t('chooseBranch')}
+              subtitle={forcedBranch ? 'Este link ya tiene una sede seleccionada.' : t('chooseBranchDescription')}
               icon={Store}
             >
               <div className="grid gap-3 md:grid-cols-2">
@@ -891,8 +897,8 @@ export default function PublicBookingPage() {
 
             <PremiumSection
               number="2"
-              title="Elige profesional"
-              subtitle={forcedBarber ? 'Este link ya pertenece a un profesional.' : 'Puedes elegir un profesional o dejarlo sin seleccionar.'}
+              title={t('chooseProfessional')}
+              subtitle={forcedBarber ? 'Este link ya pertenece a un profesional.' : t('chooseProfessionalDescription')}
               icon={UserRound}
             >
               <div className="grid gap-3 md:grid-cols-2">
@@ -908,8 +914,8 @@ export default function PublicBookingPage() {
                   >
                     <ImageThumb fallbackIcon={Sparkles} />
                     <div>
-                      <p className="text-base font-black">Cualquier profesional</p>
-                      <p className="mt-1 text-xs font-bold text-slate-500">Asignamos uno disponible.</p>
+                      <p className="text-base font-black">{t('anyProfessional')}</p>
+                      <p className="mt-1 text-xs font-bold text-slate-500">{t('availableProfessional')}</p>
                     </div>
                   </SelectableCard>
                 ) : null}
@@ -937,14 +943,14 @@ export default function PublicBookingPage() {
 
             <PremiumSection
               number="3"
-              title={isWalkInMode ? 'Elige servicios (opcional)' : 'Elige servicios'}
+              title={isWalkInMode ? t('chooseServicesOptional') : t('chooseServices')}
               subtitle={isWalkInMode ? 'Puedes seleccionar uno o varios servicios, o continuar solo con productos.' : 'Selecciona uno o varios servicios para calcular duración y precio.'}
               icon={Scissors}
             >
               <div className="mb-4 space-y-3">
                 <label className="block">
                   <span className="mb-2 block text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                    Buscar servicio
+                    {t('searchService')}
                   </span>
                   <input
                     type="search"
@@ -1073,14 +1079,14 @@ export default function PublicBookingPage() {
             ) : (
             <PremiumSection
               number="4"
-              title="Fecha y hora"
-              subtitle={isWalkInMode ? 'Elige una hora para que el negocio te ubique en agenda.' : 'Selecciona un horario disponible.'}
+              title={t('dateAndTime')}
+              subtitle={isWalkInMode ? 'Elige una hora para que el negocio te ubique en agenda.' : t('availableTimes')}
               icon={CalendarDays}
             >
               <div className="grid gap-4 md:grid-cols-[260px_1fr]">
                 <label className="block">
                   <span className="mb-2 block text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                    Fecha
+                    {t('date')}
                   </span>
                   <input
                     type="date"
@@ -1094,16 +1100,16 @@ export default function PublicBookingPage() {
                 <div>
                   <div className="mb-2 flex items-center gap-2 text-sm font-black text-slate-700">
                     <Clock3 size={18} />
-                    Horarios disponibles
+                    {t('availableTimes')}
                   </div>
 
                   {availabilityLoading ? (
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-black text-slate-500">
-                      Buscando horarios...
+                      {t('searchingTimes')}
                     </div>
                   ) : slots.length === 0 ? (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-700">
-                      No hay horarios disponibles para esta selección.
+                      {t('noTimes')}
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
@@ -1130,25 +1136,25 @@ export default function PublicBookingPage() {
 
             <PremiumSection
               number="5"
-              title="Tus datos"
-              subtitle="Usaremos estos datos para registrar y confirmar tu cita."
+              title={t('yourData')}
+              subtitle={t('yourDataDescription')}
               icon={Phone}
             >
               <div className="grid gap-3 md:grid-cols-2">
                 <PremiumInput
-                  label="Nombre"
+                  label={t('name')}
                   value={customer.customerName}
                   onChange={(value) => updateCustomer('customerName', value)}
                   placeholder="Ej. Juan"
                 />
                 <PremiumInput
-                  label="Apellido"
+                  label={t('lastName')}
                   value={customer.customerLastName}
                   onChange={(value) => updateCustomer('customerLastName', value)}
                   placeholder="Opcional"
                 />
                 <PremiumInput
-                  label="Teléfono"
+                  label={t('phone')}
                   value={customer.customerPhone}
                   onChange={(value) => updateCustomer('customerPhone', value)}
                   placeholder="Ej. 958000000"

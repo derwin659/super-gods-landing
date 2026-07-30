@@ -30,10 +30,13 @@ import {
 } from '../../api/authApi';
 import { useAuth } from '../../context/AuthContext';
 import GoogleLogo from '../../components/GoogleLogo';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
+import { useI18n } from '../../i18n/I18nProvider';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { signIn } = useAuth();
+  const { t } = useI18n();
 
   const [mode, setMode] = useState('OWNER');
   const [email, setEmail] = useState('');
@@ -133,6 +136,9 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#F5F7FB] text-[#0F172A]">
+      <div className="absolute right-5 top-5 z-20">
+        <LanguageSwitcher sync={false} />
+      </div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,#DCEBFF_0,transparent_34%),radial-gradient(circle_at_90%_0%,rgba(34,197,94,0.13),transparent_28%)]" />
       <div className="absolute left-[-120px] top-[22%] h-[280px] w-[280px] rounded-full bg-blue-200/30 blur-3xl" />
       <div className="absolute bottom-[-120px] right-[-120px] h-[320px] w-[320px] rounded-full bg-emerald-200/40 blur-3xl" />
@@ -145,7 +151,7 @@ export default function LoginPage() {
               className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-600 hover:text-blue-700"
             >
               <ArrowLeft size={17} strokeWidth={2.8} />
-              Volver a la web
+              {t('backToWeb')}
             </Link>
 
             <div className="mt-10 flex items-center gap-4">
@@ -215,7 +221,7 @@ export default function LoginPage() {
                   </div>
 
                   <h2 className="mt-5 text-3xl font-black tracking-[-0.04em]">
-                    Iniciar sesión
+                    {t('login')}
                   </h2>
 
                   <p className="mt-3 text-sm font-medium leading-6 text-blue-100">
@@ -248,7 +254,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
                 <label className="text-sm font-black text-slate-800">
-                  Correo electrónico
+                  {t('email')}
                 </label>
 
                 <div className="mt-2 flex rounded-2xl border border-slate-200 bg-white transition focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100">
@@ -271,7 +277,7 @@ export default function LoginPage() {
               <div>
                 <div className="flex items-center justify-between gap-3">
                   <label className="text-sm font-black text-slate-800">
-                    Contraseña
+                    {t('password')}
                   </label>
 
                   <button
@@ -357,7 +363,7 @@ export default function LoginPage() {
                 ) : (
                   <>
                     <LockKeyhole size={18} strokeWidth={2.7} />
-                    Ingresar al panel
+                    {t('enter')}
                   </>
                 )}
               </button>

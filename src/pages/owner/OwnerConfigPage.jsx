@@ -23,6 +23,7 @@ import {
     UsersRound,
   } from 'lucide-react';
   import { useNavigate } from 'react-router-dom';
+  import RegionalSettingsPanel from '../../components/RegionalSettingsPanel';
   import { useBusinessLabels } from '../../hooks/useBusinessLabels';
   
   function ConfigTile({
@@ -224,6 +225,8 @@ import {
             </div>
           </div>
         </section>
+
+        <RegionalSettingsPanel />
   
         <SectionCard
           title="Operación del negocio"

@@ -41,6 +41,8 @@ import { useBusinessLabels } from '../../hooks/useBusinessLabels';
 import GoogleLogo from '../../components/GoogleLogo';
 import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
 import { saveTenantMoneySettings } from '../../utils/tenantMoney';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
+import { useI18n } from '../../i18n/I18nProvider';
 
 const navGroups = [
   {
@@ -486,6 +488,7 @@ function SubscriptionBlockedView({ item, subscription, navigate }) {
 }
 
 function PremiumNavItem({ item, closeMenu }) {
+  const { t } = useI18n();
   return (
     <NavLink
       to={item.to}
@@ -524,14 +527,14 @@ function PremiumNavItem({ item, closeMenu }) {
                 isActive ? 'text-neutral-950' : 'text-slate-800 group-hover:text-neutral-950'
               }`}
             >
-              {item.label}
+              {t(item.label)}
             </div>
             <div
               className={`truncate text-[11px] font-extrabold leading-4 ${
                 isActive ? 'text-slate-600' : 'text-slate-400'
               }`}
             >
-              {item.description}
+              {t(item.description)}
             </div>
           </div>
 
@@ -551,6 +554,7 @@ function PremiumNavItem({ item, closeMenu }) {
 }
 
 function SidebarContent({ session, permissions, subscription, handleLogout, closeMenu }) {
+  const { t } = useI18n();
   const labels = useBusinessLabels();
   const visibleGroups = useMemo(() => {
     return navGroups
@@ -627,6 +631,9 @@ function SidebarContent({ session, permissions, subscription, handleLogout, clos
           </div>
         </div>
       </div>
+      <div className="mt-3 flex justify-end">
+        <LanguageSwitcher />
+      </div>
 
       {visibleStarterActions.length > 0 && (
         <section className="mt-4 rounded-[26px] border border-neutral-900 bg-neutral-950 p-3 text-white shadow-[0_18px_40px_rgba(15,23,42,0.16)]">
@@ -649,7 +656,7 @@ function SidebarContent({ session, permissions, subscription, handleLogout, clos
               >
                 <item.icon size={18} strokeWidth={2.7} />
                 <div className="mt-2 text-xs font-black leading-4">
-                  {item.label}
+                  {t(item.label)}
                 </div>
               </NavLink>
             ))}
@@ -663,10 +670,10 @@ function SidebarContent({ session, permissions, subscription, handleLogout, clos
             <div className="mb-2 flex items-center gap-3 px-2">
               <div>
                 <div className="text-[11px] font-black uppercase tracking-[0.20em] text-neutral-700">
-                  {group.title}
+                  {t(group.title)}
                 </div>
                 <div className="mt-0.5 text-[11px] font-black text-slate-400">
-                  {group.subtitle}
+                  {t(group.subtitle)}
                 </div>
               </div>
 
@@ -699,7 +706,7 @@ function SidebarContent({ session, permissions, subscription, handleLogout, clos
         className="mt-4 flex w-full shrink-0 items-center justify-center gap-2 rounded-[22px] border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.06)] transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
       >
         <LogOut size={17} strokeWidth={2.6} />
-        Cerrar sesión
+        {t('signOut')}
       </button>
     </div>
   );

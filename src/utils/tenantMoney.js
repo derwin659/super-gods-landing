@@ -1,3 +1,5 @@
+import { getAppLocale } from '../i18n/I18nProvider';
+
 const CURRENCY_KEY = 'TENANT_CURRENCY';
 const CURRENCY_SYMBOL_KEY = 'TENANT_CURRENCY_SYMBOL';
 
@@ -29,7 +31,7 @@ export function formatTenantMoney(value, currencyOverride = '') {
   const digits = zeroDecimalCurrencies.includes(currency) ? 0 : 2;
 
   try {
-    return new Intl.NumberFormat('es-PE', {
+    return new Intl.NumberFormat(getAppLocale(), {
       style: 'currency',
       currency,
       minimumFractionDigits: digits,
