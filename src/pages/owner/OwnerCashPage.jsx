@@ -15,6 +15,7 @@ import {
   getCashAudit,
   getCashHistory,
   getCashFundSummary,
+  getCashFundMovements,
   getCashProducts,
   getCashServices,
   getCashMovements,
@@ -5158,6 +5159,63 @@ function HistoryPaymentPill({ label, value }) {
   );
 }
 
+function FundHistorySection({ items = [] }) {
+  const totalIn = items.filter((item) => Number(item.signedAmount || 0) >= 0).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalOut = items.filter((item) => Number(item.signedAmount || 0) < 0).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const net = items.reduce((sum, item) => sum + Number(item.signedAmount || 0), 0);
+  const typeLabel = (type) => ({
+    CLOSING_DEPOSIT: 'Ingreso por cierre',
+    OPENING_WITHDRAWAL: 'Retiro para apertura',
+    MANUAL_DEPOSIT: 'Ingreso manual',
+    MANUAL_WITHDRAWAL: 'Retiro manual',
+    EXPENSE: 'Gasto desde fondo',
+    ADJUSTMENT_IN: 'Ajuste positivo',
+    ADJUSTMENT_OUT: 'Ajuste negativo',
+  }[String(type || '').toUpperCase()] || 'Movimiento de fondo');
+
+  return (
+    <section className="overflow-hidden rounded-[28px] border border-amber-400/20 bg-[linear-gradient(135deg,#111827_0%,#201A2C_100%)] p-5 text-white shadow-[0_18px_44px_rgba(15,23,42,0.14)]">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Fondo acumulado</div>
+          <h3 className="mt-1 text-xl font-black">Movimientos de gestión de fondos</h3>
+          <p className="mt-1 text-sm font-semibold text-slate-300">Ingresos y retiros separados de la caja del día.</p>
+        </div>
+        <span className="w-fit rounded-full bg-white/10 px-3 py-1.5 text-xs font-black">{items.length} movimientos</span>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ingresos</p><p className="mt-2 text-xl font-black text-emerald-300">{formatMoney(totalIn)}</p></div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Retiros</p><p className="mt-2 text-xl font-black text-red-300">{formatMoney(totalOut)}</p></div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Variación neta</p><p className={`mt-2 text-xl font-black ${net >= 0 ? 'text-amber-300' : 'text-red-300'}`}>{formatMoney(net)}</p></div>
+      </div>
+
+      <div className="mt-5 max-h-[360px] overflow-auto rounded-2xl border border-white/10">
+        <table className="w-full min-w-[860px] text-left text-sm">
+          <thead className="sticky top-0 bg-slate-950 text-[10px] font-black uppercase tracking-wider text-slate-400">
+            <tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Movimiento</th><th className="px-4 py-3">Método</th><th className="px-4 py-3">Responsable / caja</th><th className="px-4 py-3 text-right">Monto</th></tr>
+          </thead>
+          <tbody className="divide-y divide-white/10">
+            {items.map((item) => {
+              const income = Number(item.signedAmount || 0) >= 0;
+              return (
+                <tr key={item.id} className="align-top hover:bg-white/[0.04]">
+                  <td className="px-4 py-3 font-bold text-slate-300">{formatDateTime(item.movementDate || item.date)}</td>
+                  <td className="px-4 py-3"><p className="font-black">{item.concept || typeLabel(item.type)}</p><p className="mt-1 text-xs font-semibold text-slate-400">{typeLabel(item.type)}{item.note ? ` · ${item.note}` : ''}</p></td>
+                  <td className="px-4 py-3 font-bold text-blue-300">{methodLabel(item.paymentMethod)}</td>
+                  <td className="px-4 py-3"><p className="font-bold">{item.actorUserName || 'Sistema'}</p><p className="mt-1 text-xs text-slate-400">{item.cashRegisterId ? `Caja #${item.cashRegisterId}` : 'Sin caja relacionada'}</p></td>
+                  <td className={`px-4 py-3 text-right font-black ${income ? 'text-emerald-300' : 'text-red-300'}`}>{income ? '+' : '-'}{formatMoney(Math.abs(Number(item.amount || 0)))}</td>
+                </tr>
+              );
+            })}
+            {items.length === 0 && <tr><td colSpan="5" className="px-4 py-8 text-center font-bold text-slate-400">No hubo movimientos del fondo en este rango.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, session = null, canManageFund = false, labels = readBusinessLabels(), onClose }) {
   const [sales, setSales] = useState([]);
   const [movements, setMovements] = useState(Array.isArray(cash?.movements) ? cash.movements : []);
@@ -5585,6 +5643,7 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
   const [from, setFrom] = useState(toDateInputValue(fromDefault));
   const [to, setTo] = useState(toDateInputValue(today));
   const [items, setItems] = useState([]);
+  const [fundMovements, setFundMovements] = useState([]);
   const [selectedCash, setSelectedCash] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState('');
@@ -5595,13 +5654,15 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
     setErrorMsg('');
 
     try {
-      const data = await getCashHistory({
-        branchId: branch.id,
-        from,
-        to,
-      });
+      const [data, fundData] = await Promise.all([
+        getCashHistory({ branchId: branch.id, from, to }),
+        canManageFund
+          ? getCashFundMovements(branch.id, { from, to })
+          : Promise.resolve([]),
+      ]);
 
-      setItems(data);
+      setItems(Array.isArray(data) ? data : []);
+      setFundMovements(Array.isArray(fundData) ? fundData : []);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo cargar el historial.');
     } finally {
@@ -5624,7 +5685,7 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
         ]);
         return { cash, sales, movements };
       }));
-      const payload = { branch, items, details, from, to, formatDateTime, statusLabel: cashStatusLabel };
+      const payload = { branch, items, details, fundMovements, from, to, formatDateTime, statusLabel: cashStatusLabel };
       if (format === 'excel') exportCashHistoryExcel(payload);
       else await exportCashHistoryPdf(payload);
     } catch (error) {
@@ -5648,12 +5709,16 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
             >
               Buscar
             </button>
-            <button type="button" onClick={() => exportHistory('excel')} disabled={loading || items.length === 0 || Boolean(exporting)} className="self-end rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-black text-emerald-800 disabled:opacity-50">{exporting === 'excel' ? 'Generando...' : 'Excel'}</button>
-            <button type="button" onClick={() => exportHistory('pdf')} disabled={loading || items.length === 0 || Boolean(exporting)} className="self-end rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-black text-red-700 disabled:opacity-50">{exporting === 'pdf' ? 'Generando...' : 'PDF'}</button>
+            <button type="button" onClick={() => exportHistory('excel')} disabled={loading || (items.length === 0 && fundMovements.length === 0) || Boolean(exporting)} className="self-end rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-black text-emerald-800 disabled:opacity-50">{exporting === 'excel' ? 'Generando...' : 'Excel'}</button>
+            <button type="button" onClick={() => exportHistory('pdf')} disabled={loading || (items.length === 0 && fundMovements.length === 0) || Boolean(exporting)} className="self-end rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-black text-red-700 disabled:opacity-50">{exporting === 'pdf' ? 'Generando...' : 'PDF'}</button>
           </div>
 
           {!loading && !errorMsg && items.length > 0 && (
             <HistorySummaryCard items={items} paymentMethods={paymentMethods} />
+          )}
+
+          {!loading && !errorMsg && canManageFund && (
+            <FundHistorySection items={fundMovements} />
           )}
 
           {loading ? (

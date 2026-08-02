@@ -22,6 +22,7 @@ import {
   getBranchDetail,
   getDailySales,
   getExpenseReport,
+  getFundMovementReport,
   getProductReport,
   getProfessionalPaymentReport,
   getPeriodComparison,
@@ -926,6 +927,74 @@ function BranchDetailModal({ branch, onClose, labels = readBusinessLabels() }) {
   );
 }
 
+function FundMovementReportSection({ report }) {
+  const items = Array.isArray(report?.items) ? report.items : [];
+  const methods = Array.isArray(report?.paymentMethods) ? report.paymentMethods : [];
+  const typeLabel = (type) => ({
+    CLOSING_DEPOSIT: 'Ingreso por cierre',
+    OPENING_WITHDRAWAL: 'Retiro para apertura',
+    MANUAL_DEPOSIT: 'Ingreso manual',
+    MANUAL_WITHDRAWAL: 'Retiro manual',
+    EXPENSE: 'Gasto desde fondo',
+    ADJUSTMENT_IN: 'Ajuste positivo',
+    ADJUSTMENT_OUT: 'Ajuste negativo',
+  }[String(type || '').toUpperCase()] || 'Movimiento de fondo');
+
+  return (
+    <section className="overflow-hidden rounded-[26px] border border-amber-400/20 bg-[linear-gradient(135deg,#0F172A_0%,#211A2C_100%)] p-4 text-white shadow-[0_18px_46px_rgba(15,23,42,0.14)] sm:rounded-[30px] sm:p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Fondo acumulado</div>
+          <h3 className="mt-1 text-xl font-black">Movimientos de gestión de fondos</h3>
+          <p className="mt-1 text-sm font-semibold text-slate-300">Ingresos, retiros y variación del fondo sin mezclarlos con la caja diaria.</p>
+        </div>
+        <span className="w-fit rounded-full bg-white/10 px-3 py-1.5 text-xs font-black">{n(report?.count)} movimientos</span>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ingresos al fondo</p><p className="mt-2 text-2xl font-black text-emerald-300">{formatMoney(report?.totalIn)}</p></div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Retiros del fondo</p><p className="mt-2 text-2xl font-black text-red-300">{formatMoney(report?.totalOut)}</p></div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Variación neta</p><p className={`mt-2 text-2xl font-black ${n(report?.netMovement) >= 0 ? 'text-amber-300' : 'text-red-300'}`}>{formatMoney(report?.netMovement)}</p></div>
+      </div>
+
+      {methods.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {methods.map((method) => (
+            <span key={method.paymentMethod} className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-xs font-bold text-slate-200">
+              {methodLabel(method.paymentMethod)} · neto {formatMoney(method.netMovement)}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-5 max-h-[400px] overflow-auto rounded-2xl border border-white/10">
+        <table className="w-full min-w-[1050px] text-left text-sm">
+          <thead className="sticky top-0 bg-slate-950 text-[10px] font-black uppercase tracking-wider text-slate-400">
+            <tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Concepto</th><th className="px-4 py-3">Método</th><th className="px-4 py-3">Sede</th><th className="px-4 py-3">Responsable / caja</th><th className="px-4 py-3 text-right">Monto</th></tr>
+          </thead>
+          <tbody className="divide-y divide-white/10">
+            {items.map((item) => {
+              const income = n(item.signedAmount) >= 0;
+              return (
+                <tr key={item.id} className="align-top transition hover:bg-white/[0.04]">
+                  <td className="px-4 py-3 font-bold text-slate-300">{String(item.date || '').replace('T', ' ').slice(0, 16)}</td>
+                  <td className={`px-4 py-3 font-black ${income ? 'text-emerald-300' : 'text-red-300'}`}>{typeLabel(item.type)}</td>
+                  <td className="px-4 py-3"><p className="font-black">{item.concept || 'Movimiento de fondo'}</p>{item.note ? <p className="mt-1 max-w-xs whitespace-normal text-xs font-semibold text-slate-400">{item.note}</p> : null}</td>
+                  <td className="px-4 py-3 font-bold text-blue-300">{methodLabel(item.paymentMethod)}</td>
+                  <td className="px-4 py-3 font-bold">{item.branchName || 'Sede'}</td>
+                  <td className="px-4 py-3"><p className="font-bold">{item.actorUserName || 'Sistema'}</p><p className="mt-1 text-xs text-slate-400">{item.cashRegisterId ? `Caja #${item.cashRegisterId}` : 'Sin caja relacionada'}</p></td>
+                  <td className={`px-4 py-3 text-right font-black ${income ? 'text-emerald-300' : 'text-red-300'}`}>{income ? '+' : '-'}{formatMoney(Math.abs(n(item.amount)))}</td>
+                </tr>
+              );
+            })}
+            {items.length === 0 && <tr><td colSpan="7" className="px-4 py-9 text-center font-bold text-slate-400">No hubo movimientos del fondo en este rango.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export default function OwnerReportsPage() {
   const labels = readBusinessLabels();
   const [branches, setBranches] = useState([]);
@@ -941,6 +1010,7 @@ export default function OwnerReportsPage() {
   const [paymentSummary, setPaymentSummary] = useState(null);
   const [branchReports, setBranchReports] = useState([]);
   const [expenseReport, setExpenseReport] = useState(null);
+  const [fundMovementReport, setFundMovementReport] = useState(null);
   const [productReport, setProductReport] = useState(null);
   const [professionalPaymentReport, setProfessionalPaymentReport] = useState(null);
   const [periodComparison, setPeriodComparison] = useState(null);
@@ -1057,6 +1127,7 @@ export default function OwnerReportsPage() {
         productData,
         professionalPaymentData,
         periodComparisonData,
+        fundMovementData,
       ] = await Promise.all([
         getProfitabilityReport(query),
         getSalesReport(query),
@@ -1069,6 +1140,7 @@ export default function OwnerReportsPage() {
         getProductReport(query),
         getProfessionalPaymentReport({ ...query, barberUserId: paymentBarberId || undefined, status: paymentStatus || undefined }),
         getPeriodComparison(query),
+        getFundMovementReport(query),
       ]);
 
       setProfitability(profitabilityData);
@@ -1082,6 +1154,7 @@ export default function OwnerReportsPage() {
       setProductReport(productData);
       setProfessionalPaymentReport(professionalPaymentData);
       setPeriodComparison(periodComparisonData);
+      setFundMovementReport(fundMovementData);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudieron cargar los reportes.');
       setProfitability(null);
@@ -1092,6 +1165,7 @@ export default function OwnerReportsPage() {
       setPaymentSummary(null);
       setBranchReports([]);
       setExpenseReport(null);
+      setFundMovementReport(null);
     } finally {
       setLoading(false);
     }
@@ -1263,7 +1337,7 @@ export default function OwnerReportsPage() {
 
   const totalIncome = n(profitability?.totalSales) + n(profitability?.additionalIncome);
   async function exportReports(format) {
-    const payload = { from, to, branchName: branchOptions.find((option) => String(option.value) === String(branchId))?.label || "Todas las sedes", profitability, salesReport, barbers, productReport, expenseReport, professionalPaymentReport, periodComparison };
+    const payload = { from, to, branchName: branchOptions.find((option) => String(option.value) === String(branchId))?.label || "Todas las sedes", profitability, salesReport, barbers, productReport, expenseReport, fundMovementReport, professionalPaymentReport, periodComparison };
     setExporting(format);
     try { if (format === "pdf") await exportOwnerReportsPdf(payload); else exportOwnerReportsExcel(payload); }
     finally { setExporting(""); }
@@ -1457,6 +1531,7 @@ export default function OwnerReportsPage() {
               {(expenseReport?.items || []).length === 0 && <tr><td colSpan="7" className="px-4 py-8 text-center font-bold text-neutral-400">Sin gastos para estos filtros.</td></tr>}
             </tbody></table></div>
           </section>
+          <FundMovementReportSection report={fundMovementReport} />
                     <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)] sm:rounded-[30px] sm:p-5"><h3 className="text-xl font-black text-neutral-950">Comparativo por periodos</h3><p className="mt-1 text-sm text-neutral-500">{periodComparison?.currentFrom} → {periodComparison?.currentTo} frente a {periodComparison?.previousFrom} → {periodComparison?.previousTo}</p><div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{[["Ventas","sales"],["Gastos","expenses"],["Utilidad","profit"],["Ticket promedio","averageTicket"],["Pagos profesionales","professionalPayments"]].map(([label,key]) => { const metric=periodComparison?.metrics?.[key] || {}; const up=n(metric.difference)>=0; return <div key={key} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4"><p className="text-xs font-black uppercase text-neutral-400">{label}</p><p className="mt-2 text-xl font-black text-neutral-950">{formatMoney(metric.current)}</p><p className="mt-1 text-xs font-bold text-neutral-500">Anterior: {formatMoney(metric.previous)}</p><span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-black ${up ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-700"}`}>{up ? "↑" : "↓"} {Math.abs(n(metric.percentage)).toFixed(1)}%</span></div>; })}</div></section>
 <section className="rounded-[24px] border border-neutral-200 bg-white p-4 shadow-[0_14px_38px_rgba(15,23,42,0.05)] sm:rounded-[30px] sm:p-5">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between"><div><h3 className="text-xl font-black text-neutral-950">Pagos profesionales</h3><p className="mt-1 text-sm text-neutral-500">Liquidaciones, adelantos y saldos por profesional.</p></div><div className="flex flex-col gap-2 sm:flex-row"><PremiumReportPicker label="Profesional" value={paymentBarberId} onChange={setPaymentBarberId} options={[{ value: "", label: "Todos los profesionales", icon: "✦" }, ...barbers.map((barber) => ({ value: barber.barberId, label: barber.barberName, icon: "♙" }))]} /><PremiumReportPicker label="Estado" value={paymentStatus} onChange={setPaymentStatus} options={[{ value: "", label: "Todos los estados" }, { value: "PENDING", label: "Pendiente" }, { value: "PARTIAL", label: "Pago parcial" }, { value: "PAID", label: "Pagado" }, { value: "CANCELLED", label: "Cancelado" }]} /></div></div>

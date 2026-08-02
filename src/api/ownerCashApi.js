@@ -108,9 +108,9 @@ export async function getCashFundSummary(branchId) {
   );
 }
 
-export async function getCashFundMovements(branchId) {
+export async function getCashFundMovements(branchId, { from, to } = {}) {
   const data = await apiRequest(
-    `/api/owner/cash-registers/fund/movements${toQuery({ branchId })}`
+    `/api/owner/cash-registers/fund/movements${toQuery({ branchId, from, to })}`
   );
 
   return extractList(data);
