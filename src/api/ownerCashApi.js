@@ -116,6 +116,12 @@ export async function getCashFundMovements(branchId, { from, to } = {}) {
   return extractList(data);
 }
 
+export async function getCashFundMovementSummary(branchId, { from, to } = {}) {
+  return apiRequest(
+    `/api/owner/cash-registers/fund/movements/summary${toQuery({ branchId, from, to })}`
+  );
+}
+
 export async function createCashFundMovement({
   branchId,
   type,

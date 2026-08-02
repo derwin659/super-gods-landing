@@ -1,9 +1,18 @@
-function rows({ items, details, fundMovements = [], formatDateTime, statusLabel }) {
+function rows({ items, details, fundMovements = [], fundSummary = null, from, to, formatDateTime, statusLabel }) {
   const cash = items.map((x) => ({ Caja: x.id, Estado: statusLabel(x.status), Apertura: formatDateTime(x.openedAt), Cierre: formatDateTime(x.closedAt), Responsable: x.assignedUserName || x.openedByUserName || '', AperturaMonto: Number(x.openingAmount || 0), Ventas: Number(x.salesTotal || 0), Ingresos: Number(x.movementsIncome || 0), Salidas: Number(x.movementsExpense || 0), Esperado: Number(x.closingAmountExpected || 0), Contado: Number(x.closingAmountCounted || 0), Diferencia: Number(x.differenceAmount || 0) }));
   const sales = details.flatMap(({ cash: box, sales: list }) => list.flatMap((sale) => (sale.items?.length ? sale.items : [null]).map((item) => ({ Caja: box.id, Fecha: formatDateTime(sale.fechaCreacion || sale.createdAt || sale.saleDate), Cliente: sale.customerName || sale.clienteNombre || 'Cliente general', Item: item?.name || item?.nombre || item?.serviceName || item?.productName || '', Profesional: item?.barberName || item?.barberUserName || sale.barberName || sale.barberUserName || 'Sin profesional', Cantidad: Number(item?.quantity || item?.cantidad || 1), PrecioUnitario: Number(item?.unitPrice || item?.precioUnitario || item?.price || 0), TotalVenta: Number(sale.total || sale.totalAmount || 0), Metodo: sale.metodoPago || sale.paymentMethod || '' }))));
   const movements = details.flatMap(({ cash: box, movements: list }) => list.map((x) => ({ Caja: box.id, Fecha: formatDateTime(x.movementDate), Tipo: x.type || '', Concepto: x.concept || '', Profesional: x.barberUserName || '', Metodo: x.paymentMethod || '', Origen: x.fromPaymentMethod || '', Destino: x.toPaymentMethod || '', Monto: Number(x.amount || 0), Nota: x.note || '' })));
+  const fundSummaryRows = fundSummary ? [{
+    Desde: from,
+    Hasta: to,
+    SaldoInicial: Number(fundSummary.openingBalance || 0),
+    IngresosDelRango: Number(fundSummary.totalIn || 0),
+    RetirosDelRango: Number(fundSummary.totalOut || 0),
+    MovimientoNeto: Number(fundSummary.netMovement || 0),
+    SaldoFinal: Number(fundSummary.closingBalance || 0),
+  }] : [];
   const fund = fundMovements.map((x) => ({ Fecha: formatDateTime(x.movementDate || x.date), Tipo: x.type || '', Concepto: x.concept || '', Metodo: x.paymentMethod || '', Responsable: x.actorUserName || 'Sistema', Caja: x.cashRegisterId || '', Ingreso: Number(x.signedAmount || 0) >= 0 ? Number(x.amount || 0) : 0, Retiro: Number(x.signedAmount || 0) < 0 ? Number(x.amount || 0) : 0, Variacion: Number(x.signedAmount || 0), Nota: x.note || '' }));
-  return { cash, sales, movements, fund };
+  return { cash, sales, movements, fundSummary: fundSummaryRows, fund };
 }
 
 function xml(value) {
@@ -18,7 +27,7 @@ function worksheet(name, data) {
 
 export function exportCashHistoryExcel(payload) {
   const data = rows(payload);
-  const content = `<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#111111" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF" ss:Bold="1"/></Style></Styles>${worksheet('Cajas', data.cash)}${worksheet('Ventas', data.sales)}${worksheet('Movimientos', data.movements)}${worksheet('Fondo acumulado', data.fund)}</Workbook>`;
+  const content = `<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#111111" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF" ss:Bold="1"/></Style></Styles>${worksheet('Cajas', data.cash)}${worksheet('Ventas', data.sales)}${worksheet('Movimientos', data.movements)}${worksheet('Resumen fondo', data.fundSummary)}${worksheet('Fondo acumulado', data.fund)}</Workbook>`;
   const url = URL.createObjectURL(new Blob([content], { type: 'application/vnd.ms-excel;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;
@@ -47,6 +56,7 @@ export async function exportCashHistoryPdf(payload) {
   autoTable(doc, { startY: 27, head: [headers], body: data.cash.map((row) => headers.map((key) => row[key] ?? '')), styles: { fontSize: 6.5, cellPadding: 1.6 }, headStyles: { fillColor: [18, 18, 18] } });
   table(doc, autoTable, 'Ventas', data.sales);
   table(doc, autoTable, 'Movimientos', data.movements);
+  table(doc, autoTable, 'Resumen del fondo', data.fundSummary);
   table(doc, autoTable, 'Fondo acumulado', data.fund);
   doc.save(`historial-caja-${payload.from}-${payload.to}.pdf`);
 }

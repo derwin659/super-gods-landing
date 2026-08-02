@@ -951,11 +951,14 @@ function FundMovementReportSection({ report }) {
         <span className="w-fit rounded-full bg-white/10 px-3 py-1.5 text-xs font-black">{n(report?.count)} movimientos</span>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ingresos al fondo</p><p className="mt-2 text-2xl font-black text-emerald-300">{formatMoney(report?.totalIn)}</p></div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Retiros del fondo</p><p className="mt-2 text-2xl font-black text-red-300">{formatMoney(report?.totalOut)}</p></div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Variación neta</p><p className={`mt-2 text-2xl font-black ${n(report?.netMovement) >= 0 ? 'text-amber-300' : 'text-red-300'}`}>{formatMoney(report?.netMovement)}</p></div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Saldo inicial</p><p className="mt-2 text-2xl font-black text-slate-200">{formatMoney(report?.openingBalance)}</p></div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ingresos del rango</p><p className="mt-2 text-2xl font-black text-emerald-300">{formatMoney(report?.totalIn)}</p></div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Retiros del rango</p><p className="mt-2 text-2xl font-black text-red-300">{formatMoney(report?.totalOut)}</p></div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Movimientos del rango</p><p className={`mt-2 text-2xl font-black ${n(report?.netMovement) >= 0 ? 'text-amber-300' : 'text-red-300'}`}>{n(report?.netMovement) >= 0 ? '+' : ''}{formatMoney(report?.netMovement)}</p></div>
+        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.08] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-emerald-200">Saldo final</p><p className="mt-2 text-2xl font-black text-emerald-300">{formatMoney(report?.closingBalance)}</p></div>
       </div>
+      <p className="mt-3 text-xs font-bold text-slate-400">Saldo inicial + movimientos del rango = saldo final.</p>
 
       {methods.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">

@@ -16,6 +16,7 @@ import {
   getCashHistory,
   getCashFundSummary,
   getCashFundMovements,
+  getCashFundMovementSummary,
   getCashProducts,
   getCashServices,
   getCashMovements,
@@ -5043,6 +5044,7 @@ function HistorySummaryCard({ items, paymentMethods = DEFAULT_PAYMENT_METHODS })
       acc.sales += Number(cash.salesTotal || 0);
       acc.income += Number(cash.movementsIncome || 0);
       acc.expense += Number(cash.movementsExpense || 0);
+      acc.cashExpense += Number(cash.cashMovementsExpense || 0);
       acc.expected += Number(cash.closingAmountExpected || 0);
 
       const source = Array.isArray(cash?.paymentMethodBalances) && cash.paymentMethodBalances.length > 0
@@ -5064,12 +5066,14 @@ function HistorySummaryCard({ items, paymentMethods = DEFAULT_PAYMENT_METHODS })
       sales: 0,
       income: 0,
       expense: 0,
+      cashExpense: 0,
       expected: 0,
       methods: new Map(),
     }
   );
 
   const net = totals.sales + totals.income - totals.expense;
+  const otherExpense = Math.max(0, totals.expense - totals.cashExpense);
   const methodRows = buildPaymentMethodRows(
     Array.from(totals.methods.values()).map((item) => ({
       paymentMethod: item.code,
@@ -5101,11 +5105,13 @@ function HistorySummaryCard({ items, paymentMethods = DEFAULT_PAYMENT_METHODS })
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-7">
         <HistoryMetricCard label="Ventas" value={totals.sales} tone="green" />
         <HistoryMetricCard label="Ingresos" value={totals.income} />
-        <HistoryMetricCard label="Salidas" value={totals.expense} tone="red" />
-        <HistoryMetricCard label="Neto" value={net} tone={net >= 0 ? 'green' : 'red'} />
+        <HistoryMetricCard label="Salidas totales" value={totals.expense} tone="red" />
+        <HistoryMetricCard label="Salidas en efectivo" value={totals.cashExpense} tone="red" />
+        <HistoryMetricCard label="Salidas otros métodos" value={otherExpense} tone="red" />
+        <HistoryMetricCard label="Neto registrado" value={net} tone={net >= 0 ? 'green' : 'red'} />
         <HistoryMetricCard label="Efectivo esperado" value={totals.expected} tone={totals.expected >= 0 ? 'green' : 'red'} />
       </div>
 
@@ -5159,10 +5165,12 @@ function HistoryPaymentPill({ label, value }) {
   );
 }
 
-function FundHistorySection({ items = [] }) {
+function FundHistorySection({ items = [], summary = null }) {
   const totalIn = items.filter((item) => Number(item.signedAmount || 0) >= 0).reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalOut = items.filter((item) => Number(item.signedAmount || 0) < 0).reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const net = items.reduce((sum, item) => sum + Number(item.signedAmount || 0), 0);
+  const openingBalance = Number(summary?.openingBalance || 0);
+  const closingBalance = Number(summary?.closingBalance ?? (openingBalance + net));
   const typeLabel = (type) => ({
     CLOSING_DEPOSIT: 'Ingreso por cierre',
     OPENING_WITHDRAWAL: 'Retiro para apertura',
@@ -5184,11 +5192,14 @@ function FundHistorySection({ items = [] }) {
         <span className="w-fit rounded-full bg-white/10 px-3 py-1.5 text-xs font-black">{items.length} movimientos</span>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ingresos</p><p className="mt-2 text-xl font-black text-emerald-300">{formatMoney(totalIn)}</p></div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Retiros</p><p className="mt-2 text-xl font-black text-red-300">{formatMoney(totalOut)}</p></div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Variación neta</p><p className={`mt-2 text-xl font-black ${net >= 0 ? 'text-amber-300' : 'text-red-300'}`}>{formatMoney(net)}</p></div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Saldo inicial</p><p className="mt-2 text-xl font-black text-slate-200">{formatMoney(openingBalance)}</p></div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ingresos del rango</p><p className="mt-2 text-xl font-black text-emerald-300">{formatMoney(totalIn)}</p></div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Retiros del rango</p><p className="mt-2 text-xl font-black text-red-300">{formatMoney(totalOut)}</p></div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Movimientos del rango</p><p className={`mt-2 text-xl font-black ${net >= 0 ? 'text-amber-300' : 'text-red-300'}`}>{net >= 0 ? '+' : ''}{formatMoney(net)}</p></div>
+        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.08] p-4"><p className="text-[10px] font-black uppercase tracking-wider text-emerald-200">Saldo final</p><p className="mt-2 text-xl font-black text-emerald-300">{formatMoney(closingBalance)}</p></div>
       </div>
+      <p className="mt-3 text-xs font-bold text-slate-400">Saldo inicial + movimientos del rango = saldo final. El filtro solo afecta el periodo seleccionado.</p>
 
       <div className="mt-5 max-h-[360px] overflow-auto rounded-2xl border border-white/10">
         <table className="w-full min-w-[860px] text-left text-sm">
@@ -5644,6 +5655,7 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
   const [to, setTo] = useState(toDateInputValue(today));
   const [items, setItems] = useState([]);
   const [fundMovements, setFundMovements] = useState([]);
+  const [fundSummary, setFundSummary] = useState(null);
   const [selectedCash, setSelectedCash] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState('');
@@ -5654,15 +5666,19 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
     setErrorMsg('');
 
     try {
-      const [data, fundData] = await Promise.all([
+      const [data, fundData, fundSummaryData] = await Promise.all([
         getCashHistory({ branchId: branch.id, from, to }),
         canManageFund
           ? getCashFundMovements(branch.id, { from, to })
           : Promise.resolve([]),
+        canManageFund
+          ? getCashFundMovementSummary(branch.id, { from, to })
+          : Promise.resolve(null),
       ]);
 
       setItems(Array.isArray(data) ? data : []);
       setFundMovements(Array.isArray(fundData) ? fundData : []);
+      setFundSummary(fundSummaryData);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo cargar el historial.');
     } finally {
@@ -5685,7 +5701,7 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
         ]);
         return { cash, sales, movements };
       }));
-      const payload = { branch, items, details, fundMovements, from, to, formatDateTime, statusLabel: cashStatusLabel };
+      const payload = { branch, items, details, fundMovements, fundSummary, from, to, formatDateTime, statusLabel: cashStatusLabel };
       if (format === 'excel') exportCashHistoryExcel(payload);
       else await exportCashHistoryPdf(payload);
     } catch (error) {
@@ -5718,7 +5734,7 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
           )}
 
           {!loading && !errorMsg && canManageFund && (
-            <FundHistorySection items={fundMovements} />
+            <FundHistorySection items={fundMovements} summary={fundSummary} />
           )}
 
           {loading ? (
@@ -5760,9 +5776,11 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
                       </div>
                     </div>
 
-                    <div className="grid w-full grid-cols-2 gap-3 lg:w-auto lg:min-w-[520px] lg:grid-cols-4">
+                    <div className="grid w-full grid-cols-2 gap-3 lg:w-auto lg:min-w-[760px] lg:grid-cols-6">
                       <HistoryPaymentPill label="Ventas" value={cash.salesTotal} />
-                      <HistoryPaymentPill label="Salidas" value={cash.movementsExpense} />
+                      <HistoryPaymentPill label="Salidas totales" value={cash.movementsExpense} />
+                      <HistoryPaymentPill label="Salidas efectivo" value={cash.cashMovementsExpense} />
+                      <HistoryPaymentPill label="Salidas otros métodos" value={Math.max(0, Number(cash.movementsExpense || 0) - Number(cash.cashMovementsExpense || 0))} />
                       <HistoryPaymentPill label="Esperado" value={cash.closingAmountExpected} />
                       <HistoryPaymentPill label="Diferencia" value={cash.differenceAmount} />
                     </div>
