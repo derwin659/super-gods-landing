@@ -409,3 +409,62 @@ SET
 WHERE tenant_id = 70;
 
 COMMIT;
+
+
+QUERY PARA ACTIVAR PLAN DE UN AÑO
+
+BEGIN;
+
+WITH target_subscription AS (
+    SELECT sub_id
+    FROM subscription
+    WHERE tenant_id = 94
+    ORDER BY
+        fecha_inicio DESC NULLS LAST,
+        created_at DESC NULLS LAST,
+        sub_id DESC
+    LIMIT 1
+    FOR UPDATE
+),
+updated_subscription AS (
+    UPDATE subscription AS s
+    SET
+        plan                   = 'STARTER',
+        estado                 = 'ACTIVE',
+        trial                  = FALSE,
+        billing_cycle          = 'YEARLY',
+        fecha_inicio           = CURRENT_TIMESTAMP,
+        fecha_fin              = CURRENT_TIMESTAMP + INTERVAL '1 year',
+        fecha_renovacion       = CURRENT_TIMESTAMP + INTERVAL '1 year',
+
+        -- Límites oficiales del plan STARTER
+        max_branches           = 1,
+        max_barbers            = 5,
+        max_admins             = 1,
+        ai_enabled             = FALSE,
+        loyalty_enabled        = TRUE,
+        promotions_enabled     = FALSE,
+        custom_rewards_enabled = TRUE,
+
+        observaciones          = 'Activación manual por un año',
+        updated_at             = CURRENT_TIMESTAMP
+    FROM target_subscription AS ts
+    WHERE s.sub_id = ts.sub_id
+    RETURNING s.tenant_id, s.sub_id
+)
+UPDATE tenant AS t
+SET
+    plan                = 'STARTER',
+    active              = TRUE,
+    estado_suscripcion  = 'ACTIVE',
+    fecha_actualizacion = CURRENT_TIMESTAMP
+FROM updated_subscription AS us
+WHERE t.tenant_id = us.tenant_id
+RETURNING
+    t.tenant_id,
+    t.nombre,
+    t.plan,
+    t.active,
+    t.estado_suscripcion;
+
+COMMIT;
