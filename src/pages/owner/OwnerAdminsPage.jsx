@@ -14,6 +14,7 @@ import {
   updateAdminPermissions,
   updateOwnerAdmin,
   updateOwnerUserBranches,
+  updateEmployeeCompensation,
 } from '../../api/ownerAdminsApi';
 
 function initials(name) {
@@ -172,6 +173,10 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
   const [role, setRole] = useState(String(admin?.rol || 'ADMIN').toUpperCase());
   const [branchIds, setBranchIds] = useState(() => { const initial = admin?.branchIds?.length ? admin.branchIds : admin?.branchId ? [admin.branchId] : branches[0]?.id ? [branches[0].id] : []; return initial.map(String); });
   const [professionalProfileEnabled, setProfessionalProfileEnabled] = useState(admin?.professionalProfileEnabled === true);
+  const [salaryEnabled, setSalaryEnabled] = useState(admin?.salaryEnabled === true);
+  const [fixedSalaryAmount, setFixedSalaryAmount] = useState(admin?.fixedSalaryAmount ? String(admin.fixedSalaryAmount) : '');
+  const [salaryFrequency, setSalaryFrequency] = useState(admin?.salaryFrequency || 'MONTHLY');
+  const [salaryStartDate, setSalaryStartDate] = useState(admin?.salaryStartDate || new Date().toISOString().slice(0, 10));
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -281,6 +286,7 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
       }
 
       saved = await updateOwnerUserBranches({ userId: saved.id, branchIds });
+      saved = await updateEmployeeCompensation({ userId: saved.id, salaryEnabled, fixedSalaryAmount, salaryFrequency, salaryStartDate });
       onSaved(saved);
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo guardar el administrador.');
@@ -385,6 +391,17 @@ function AdminFormModal({ admin, branches, barbers, onClose, onSaved }) {
           </div>
         </div>
 
+        <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-4">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input type="checkbox" checked={salaryEnabled} onChange={(event) => setSalaryEnabled(event.target.checked)} className="mt-1 h-4 w-4 accent-emerald-600" />
+            <span><span className="block text-sm font-black text-neutral-900">Empleado con sueldo fijo</span><span className="mt-1 block text-xs font-semibold text-neutral-500">Permite pagarle desde caja, fondo acumulado o cuenta externa sin convertirlo en profesional.</span></span>
+          </label>
+          {salaryEnabled && <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <InputField label="Sueldo" value={fixedSalaryAmount} onChange={setFixedSalaryAmount} type="number" />
+            <SelectField label="Frecuencia" value={salaryFrequency} onChange={setSalaryFrequency} options={[{ value: 'WEEKLY', label: 'Semanal' }, { value: 'BIWEEKLY', label: 'Quincenal' }, { value: 'MONTHLY', label: 'Mensual' }]} />
+            <InputField label="Fecha de inicio" value={salaryStartDate} onChange={setSalaryStartDate} type="date" />
+          </div>}
+        </div>
         <div className="rounded-[24px] border border-neutral-200 bg-white p-4">
           <label className="flex cursor-pointer items-start gap-3">
             <input

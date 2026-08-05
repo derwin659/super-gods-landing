@@ -41,6 +41,10 @@ function normalizeUser(raw = {}) {
     rol: text(raw.rol ?? raw.role ?? '').toUpperCase(),
     activo: raw.activo !== false && raw.enabled !== false,
     canSell: raw.canSell !== false && raw.can_sell !== false,
+    salaryEnabled: raw.salaryEnabled === true || raw.salaryMode === true,
+    fixedSalaryAmount: toNumber(raw.fixedSalaryAmount),
+    salaryFrequency: text(raw.salaryFrequency || ''),
+    salaryStartDate: text(raw.salaryStartDate || ''),
     professionalProfileEnabled:
       raw.professionalProfileEnabled === true ||
       raw.professional_profile_enabled === true ||
@@ -97,6 +101,10 @@ function professionalProfilePayload({
 
   return {
     preserveProfessionalProfile: enabled,
+    salaryEnabled: raw.salaryEnabled === true || raw.salaryMode === true,
+    fixedSalaryAmount: toNumber(raw.fixedSalaryAmount),
+    salaryFrequency: text(raw.salaryFrequency || ''),
+    salaryStartDate: text(raw.salaryStartDate || ''),
     professionalProfileEnabled: enabled,
     professionalBranchIds: enabled ? professionalBranchIds.map(Number) : [],
     canSell: canSell === undefined ? enabled : Boolean(canSell),
@@ -329,4 +337,16 @@ export async function updateAdminPermissions({ adminUserId, permissions }) {
 export async function getMyAdminPermissions() {
   const data = await apiRequest('/api/owner/admin-permissions/me');
   return normalizePermissions(data);
+}
+export async function updateEmployeeCompensation({ userId, salaryEnabled, fixedSalaryAmount, salaryFrequency, salaryStartDate }) {
+  const data = await apiRequest(`/api/internal/users/${userId}/compensation`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      salaryEnabled: Boolean(salaryEnabled),
+      fixedSalaryAmount: salaryEnabled ? Number(fixedSalaryAmount) : null,
+      salaryFrequency: salaryEnabled ? salaryFrequency : null,
+      salaryStartDate: salaryEnabled && salaryStartDate ? salaryStartDate : null,
+    }),
+  });
+  return normalizeUser(data);
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { getOwnerInternalUsers } from '../../api/ownerAdminsApi';
 import { PremiumEmptyState, PremiumErrorState, premiumConfirm } from '../../components/PremiumUi';
 import {
   approveCashMovement,
@@ -1528,8 +1529,16 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
       setLoadingBarbers(true);
 
       try {
-        const data = await getCashBarbers(branch.id);
-        setBarbers(data.filter((item) => item.id > 0));
+        const [professionals, internalUsers] = await Promise.all([
+          getCashBarbers(branch.id), getOwnerInternalUsers(),
+        ]);
+        const payableEmployees = internalUsers
+          .filter((item) => item.activo && item.salaryEnabled)
+          .filter((item) => item.branchIds.includes(Number(branch.id)) || Number(item.branchId) === Number(branch.id))
+          .map((item) => ({ ...item, name: item.fullName, role: item.rol, employeeOnly: !item.professionalProfileEnabled }));
+        setBarbers([...professionals, ...payableEmployees]
+          .filter((item) => item.id > 0)
+          .filter((item, index, list) => list.findIndex((candidate) => Number(candidate.id) === Number(item.id)) === index));
       } catch {
         setBarbers([]);
       } finally {
@@ -1986,8 +1995,16 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
       setErrorMsg('');
 
       try {
-        const data = await getCashBarbers(branch.id);
-        setBarbers(data.filter((item) => item.id > 0));
+        const [professionals, internalUsers] = await Promise.all([
+          getCashBarbers(branch.id), getOwnerInternalUsers(),
+        ]);
+        const payableEmployees = internalUsers
+          .filter((item) => item.activo && item.salaryEnabled)
+          .filter((item) => item.branchIds.includes(Number(branch.id)) || Number(item.branchId) === Number(branch.id))
+          .map((item) => ({ ...item, name: item.fullName, role: item.rol, employeeOnly: !item.professionalProfileEnabled }));
+        setBarbers([...professionals, ...payableEmployees]
+          .filter((item) => item.id > 0)
+          .filter((item, index, list) => list.findIndex((candidate) => Number(candidate.id) === Number(item.id)) === index));
       } catch (error) {
         setErrorMsg(error.message || 'No se pudieron cargar los ' + labels.professionalsPlural + '.');
       } finally {
@@ -2185,7 +2202,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
   }
 
   return (
-    <ModalShell title={'Pagar ' + labels.professionalSingular} subtitle={branch?.name || 'Sede'} onClose={onClose}>
+    <ModalShell title={'Pagar al equipo'} subtitle={branch?.name || 'Sede'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {loadingBarbers ? (
           <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
