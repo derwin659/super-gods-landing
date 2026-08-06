@@ -101,10 +101,6 @@ function professionalProfilePayload({
 
   return {
     preserveProfessionalProfile: enabled,
-    salaryEnabled: raw.salaryEnabled === true || raw.salaryMode === true,
-    fixedSalaryAmount: toNumber(raw.fixedSalaryAmount),
-    salaryFrequency: text(raw.salaryFrequency || ''),
-    salaryStartDate: text(raw.salaryStartDate || ''),
     professionalProfileEnabled: enabled,
     professionalBranchIds: enabled ? professionalBranchIds.map(Number) : [],
     canSell: canSell === undefined ? enabled : Boolean(canSell),
