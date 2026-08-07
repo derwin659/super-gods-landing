@@ -83,7 +83,7 @@ function useAllowedServicesForBarber({ barberId, branchId, setSelectedServiceId 
       })
       .catch(() => {
         if (active) {
-          setAllowedServiceIds([]);
+          setAllowedServiceIds(null);
           setLoadingAllowedServices(false);
         }
       });
