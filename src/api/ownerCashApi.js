@@ -692,7 +692,7 @@ export async function getCashServices() {
 }
 
 export async function getCashProducts(branchId) {
-  const data = await apiRequest(`/api/owner/products${toQuery({ branchId })}`);
+  const data = await apiRequest(`/api/owner/catalog/products${toQuery({ branchId })}`);
 
   return extractList(data)
     .map((item) => ({
