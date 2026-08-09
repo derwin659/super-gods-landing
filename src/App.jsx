@@ -82,6 +82,7 @@ import {
   SuperAdminPayments,
   SuperAdminTenants,
   SuperAdminDemoRequests,
+  SuperAdminReviewModeration,
 } from './pages/super-admin';
 
 const WHATSAPP_NUMBER = '51958062847';
