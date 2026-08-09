@@ -1,4 +1,4 @@
-﻿import { apiRequest, getApiBaseUrl, getToken } from './apiClient';
+import { apiRequest, getApiBaseUrl, getToken } from './apiClient';
 import { normalizePhoneE164, whatsappPhoneDigits } from '../utils/internationalPhone';
 
 function toQuery(params = {}) {
@@ -556,9 +556,9 @@ function normalizeInactiveCustomer(raw = {}) {
   
     const text = encodeURIComponent(
       message ||
-        `Hola ${nombre || ''} ðŸ‘‹ somos ${businessName}.\n\n` +
-          `Hace tiempo no te vemos por aquÃ­ y querÃ­amos invitarte a volver.\n\n` +
-          `Tenemos una atenciÃ³n especial para ti esta semana. Puedes reservar tu cita cuando gustes.`
+        `Hola ${nombre || ''} 👋 somos ${businessName}.\n\n` +
+          `Hace tiempo no te vemos por aquí y queríamos invitarte a volver.\n\n` +
+          `Tenemos una atención especial para ti esta semana. Puedes reservar tu cita cuando gustes.`
     );
   
     return `https://wa.me/${phoneWithCountry}?text=${text}`;

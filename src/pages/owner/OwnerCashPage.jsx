@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PremiumEmptyState, PremiumErrorState, premiumConfirm } from '../../components/PremiumUi';
 import {
   approveCashMovement,
@@ -143,7 +143,7 @@ function methodLabel(value) {
     FREE: 'Gratis',
     NEQUI: 'Nequi',
     DAVIPLATA: 'Daviplata',
-    PAGO_MOVIL: 'Pago mÃ³vil',
+    PAGO_MOVIL: 'Pago móvil',
     ZELLE: 'Zelle',
     QR: 'QR',
   };
@@ -161,7 +161,7 @@ function ownerAsBarberOption(session) {
 
   return {
     id,
-    name: name ? `${name} (DueÃ±o)` : 'DueÃ±o del negocio',
+    name: name ? `${name} (Dueño)` : 'Dueño del negocio',
     owner: true,
   };
 }
@@ -308,7 +308,7 @@ async function offerCustomerWhatsappFollowUp(sale, { canOpenWhatsapp = false } =
   const message = customerWhatsappMessageOf(sale);
   const preview = message ? `\n\nMensaje:\n${message}` : '';
   const shouldOpen = await premiumConfirm(
-    `Venta registrada. Â¿Enviar WhatsApp a ${customer}?${preview}`
+    `Venta registrada. ¿Enviar WhatsApp a ${customer}?${preview}`
   );
 
   if (!shouldOpen) return;
@@ -320,30 +320,30 @@ async function offerCustomerWhatsappFollowUp(sale, { canOpenWhatsapp = false } =
 }
 
 const DEFAULT_PAYMENT_METHODS = [
-  { code: 'CASH', label: 'Efectivo', icon: 'ðŸ’µ', helper: 'Efectivo fÃ­sico' },
-  { code: 'YAPE', label: 'Yape', icon: 'ðŸŸ£', helper: 'Pago digital' },
-  { code: 'PLIN', label: 'Plin', icon: 'ðŸ”µ', helper: 'Pago digital' },
-  { code: 'CARD', label: 'Tarjeta', icon: 'ðŸ’³', helper: 'Tarjeta / POS' },
-  { code: 'TRANSFER', label: 'Transferencia', icon: 'ðŸ¦', helper: 'Transferencias' },
+  { code: 'CASH', label: 'Efectivo', icon: '💵', helper: 'Efectivo físico' },
+  { code: 'YAPE', label: 'Yape', icon: '🟣', helper: 'Pago digital' },
+  { code: 'PLIN', label: 'Plin', icon: '🔵', helper: 'Pago digital' },
+  { code: 'CARD', label: 'Tarjeta', icon: '💳', helper: 'Tarjeta / POS' },
+  { code: 'TRANSFER', label: 'Transferencia', icon: '🏦', helper: 'Transferencias' },
 ];
 
 const BASE_PAYMENT_METHODS = [
-  { code: 'CASH', label: 'Efectivo', icon: 'ðŸ’µ', helper: 'Efectivo fÃ­sico' },
-  { code: 'CARD', label: 'Tarjeta', icon: 'ðŸ’³', helper: 'Tarjeta / POS' },
-  { code: 'TRANSFER', label: 'Transferencia', icon: 'ðŸ¦', helper: 'Transferencias' },
+  { code: 'CASH', label: 'Efectivo', icon: '💵', helper: 'Efectivo físico' },
+  { code: 'CARD', label: 'Tarjeta', icon: '💳', helper: 'Tarjeta / POS' },
+  { code: 'TRANSFER', label: 'Transferencia', icon: '🏦', helper: 'Transferencias' },
 ];
 
 const METHOD_ICON_BY_CODE = {
-  CASH: 'ðŸ’µ',
-  YAPE: 'ðŸŸ£',
-  PLIN: 'ðŸ”µ',
-  CARD: 'ðŸ’³',
-  TRANSFER: 'ðŸ¦',
-  NEQUI: 'ðŸŸ¢',
-  DAVIPLATA: 'ðŸ”´',
-  PAGO_MOVIL: 'ðŸ“²',
-  ZELLE: 'ðŸ’¸',
-  QR: 'â–£',
+  CASH: '💵',
+  YAPE: '🟣',
+  PLIN: '🔵',
+  CARD: '💳',
+  TRANSFER: '🏦',
+  NEQUI: '🟢',
+  DAVIPLATA: '🔴',
+  PAGO_MOVIL: '📲',
+  ZELLE: '💸',
+  QR: '▣',
 };
 
 function normalizePaymentMethodOptions(methods = []) {
@@ -358,8 +358,8 @@ function normalizePaymentMethodOptions(methods = []) {
     map.set(code, {
       code,
       label: label || methodLabel(code),
-      icon: item?.icon || METHOD_ICON_BY_CODE[code] || 'â€¢',
-      helper: item?.helper || (code === 'CASH' ? 'Efectivo fÃ­sico' : 'MÃ©todo configurado'),
+      icon: item?.icon || METHOD_ICON_BY_CODE[code] || '•',
+      helper: item?.helper || (code === 'CASH' ? 'Efectivo físico' : 'Método configurado'),
     });
   });
 
@@ -419,9 +419,9 @@ function fundingSourceSelectOptions(cashRegister, paymentMethod = null, canManag
     : `disponible total ${formatMoney(totalBalanceForSource(cashRegister, source))}`;
 
   return [
-    { value: 'CASH_REGISTER', label: `Caja actual Â· ${balanceLabel('CASH_REGISTER')}` },
-    { value: 'ACCUMULATED_FUND', label: `Fondo acumulado Â· ${balanceLabel('ACCUMULATED_FUND')}` },
-    { value: 'EXTERNAL', label: 'Cuenta digital o externa Â· sin afectar saldos internos' },
+    { value: 'CASH_REGISTER', label: `Caja actual · ${balanceLabel('CASH_REGISTER')}` },
+    { value: 'ACCUMULATED_FUND', label: `Fondo acumulado · ${balanceLabel('ACCUMULATED_FUND')}` },
+    { value: 'EXTERNAL', label: 'Cuenta digital o externa · sin afectar saldos internos' },
   ].filter((option) => canManageFund || option.value !== 'ACCUMULATED_FUND');
 }
 
@@ -431,7 +431,7 @@ function paymentSelectOptionsWithBalances(methods, cashRegister, fundingSource) 
 
   return options.map((option) => ({
     ...option,
-    label: `${option.label} Â· disponible ${formatMoney(
+    label: `${option.label} · disponible ${formatMoney(
       availableBalanceForMethod(cashRegister, fundingSource, option.value)
     )}`,
   }));
@@ -481,8 +481,8 @@ function buildPaymentMethodRows(salesSummary = [], balanceSummary = [], configur
     return {
       code,
       label: base?.label || methodLabel(code),
-      icon: base?.icon || 'â€¢',
-      helper: base?.helper || 'MÃ©todo configurado',
+      icon: base?.icon || '•',
+      helper: base?.helper || 'Método configurado',
       salesAmount: summaryAmountOf(salesItem),
       balanceAmount: balanceItem ? summaryAmountOf(balanceItem) : summaryAmountOf(salesItem),
       count: summaryCountOf(salesItem || balanceItem),
@@ -528,7 +528,7 @@ function PaymentMethodCard({ method }) {
       </div>
 
       <div className="mt-3 text-xs font-semibold text-neutral-500">
-        {isCash ? 'Saldo fÃ­sico esperado con apertura y movimientos.' : method.helper}
+        {isCash ? 'Saldo físico esperado con apertura y movimientos.' : method.helper}
       </div>
     </div>
   );
@@ -541,7 +541,7 @@ function movementTypeLabel(type) {
     EXPENSE: 'Gasto',
     ADVANCE_BARBER: 'Adelanto ' + businessLabels.professionalSingular,
     PAYMENT_BARBER: 'Pago ' + businessLabels.professionalSingular,
-    PAYMENT_METHOD_TRANSFER: 'Traslado entre mÃ©todos',
+    PAYMENT_METHOD_TRANSFER: 'Traslado entre métodos',
   };
 
   return labels[type] || type || 'Movimiento';
@@ -716,9 +716,9 @@ function buildLocalSaleDateForBackend(dateValue) {
   if (selected > todayValue) selected = todayValue;
   if (selected < minValue) selected = minValue;
 
-  // Usamos mediodÃ­a local para evitar que una conversiÃ³n de zona horaria
-  // haga que la venta caiga en el dÃ­a anterior. Importante probar tambiÃ©n
-  // en mÃ³vil con tenants de Venezuela (America/Caracas) y PerÃº (America/Lima).
+  // Usamos mediodía local para evitar que una conversión de zona horaria
+  // haga que la venta caiga en el día anterior. Importante probar también
+  // en móvil con tenants de Venezuela (America/Caracas) y Perú (America/Lima).
   return `${selected}T12:00:00`;
 }
 
@@ -924,13 +924,13 @@ function CashNegativeAlert({ expected, cashSalesTotal, expense, labels = readBus
             </div>
   
             <h3 className="mt-2 text-xl font-black text-red-800">
-              La caja fÃ­sica esperada estÃ¡ en negativo
+              La caja física esperada está en negativo
             </h3>
   
             <p className="mt-2 max-w-3xl text-sm leading-6 text-red-700">
               Esto pasa cuando las salidas registradas superan el efectivo disponible.
               Revisa si hubo pagos a {labels.professionalsPlural}, adelantos o gastos registrados con un
-              mÃ©todo incorrecto.
+              método incorrecto.
             </p>
           </div>
   
@@ -1172,7 +1172,7 @@ function OpenCashModal({ branch, canManageFund = false, onClose, onSaved }) {
       : 0;
 
     if (Number.isNaN(amount) || amount < 0) {
-      setErrorMsg('Ingresa un monto vÃ¡lido.');
+      setErrorMsg('Ingresa un monto válido.');
       return;
     }
 
@@ -1232,7 +1232,7 @@ function OpenCashModal({ branch, canManageFund = false, onClose, onSaved }) {
           label="Nota de apertura"
           value={openingNote}
           onChange={setOpeningNote}
-          placeholder="Ej. Apertura de turno maÃ±ana"
+          placeholder="Ej. Apertura de turno mañana"
         />
 
         {errorMsg && <ErrorBox message={errorMsg} />}
@@ -1268,7 +1268,7 @@ function CloseCashModal({ branch, cashRegister, canManageFund = false, onClose, 
     setErrorMsg('');
 
     if (Number.isNaN(countedNumber) || countedNumber < 0) {
-      setErrorMsg('Ingresa un monto contado vÃ¡lido.');
+      setErrorMsg('Ingresa un monto contado válido.');
       return;
     }
 
@@ -1305,7 +1305,7 @@ function CloseCashModal({ branch, cashRegister, canManageFund = false, onClose, 
     <ModalShell title="Cerrar caja" subtitle={branch?.name || 'Sede'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <StatCard title="Esperado" value={formatMoney(expected)} helper="SegÃºn sistema" tone="gold" />
+          <StatCard title="Esperado" value={formatMoney(expected)} helper="Según sistema" tone="gold" />
           <StatCard
             title="Diferencia"
             value={formatMoney(difference)}
@@ -1341,7 +1341,7 @@ function CloseCashModal({ branch, cashRegister, canManageFund = false, onClose, 
         )}
 
         <TextAreaField
-          label="ObservaciÃ³n de cierre"
+          label="Observación de cierre"
           value={closingNote}
           onChange={setClosingNote}
           placeholder="Ej. Caja cerrada sin diferencias"
@@ -1418,7 +1418,7 @@ function ReconciliationModal({ branch, cashRegister, canManageFund = false, onCl
               return (
                 <InputField
                   key={method}
-                  label={`${methodLabel(method)} Â· disponible ${formatMoney(row.totalAmount)}`}
+                  label={`${methodLabel(method)} · disponible ${formatMoney(row.totalAmount)}`}
                   value={fundDeposits[method] || ''}
                   onChange={(value) => setFundDeposits((current) => ({ ...current, [method]: value }))}
                   type="number"
@@ -1469,16 +1469,16 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
     INCOME: [
       'Ingreso adicional',
       'Abono manual',
-      'RegularizaciÃ³n de caja',
+      'Regularización de caja',
       'Pago externo',
       'Otro ingreso',
     ],
     EXPENSE: [
-      'RegularizaciÃ³n de caja',
+      'Regularización de caja',
       'Compra de productos',
       'Limpieza',
       'Movilidad',
-      'AlimentaciÃ³n',
+      'Alimentación',
       'Mantenimiento',
       'Pago de Luz',
       'Pago de Agua',
@@ -1488,19 +1488,19 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
     ],
     ADVANCE_BARBER: [
       'Adelanto a ' + labels.professionalSingular,
-      'PrÃ©stamo del dÃ­a',
-      'LiquidaciÃ³n parcial',
+      'Préstamo del día',
+      'Liquidación parcial',
     ],
     PAYMENT_BARBER: [
       'Pago a ' + labels.professionalSingular + ' manual',
       'Pago de porcentaje',
-      'Pago de comisiÃ³n',
+      'Pago de comisión',
     ],
     PAYMENT_METHOD_TRANSFER: [
-      'Traslado entre mÃ©todos',
-      'ConversiÃ³n a efectivo',
-      'DepÃ³sito a cuenta digital',
-      'RegularizaciÃ³n entre mÃ©todos',
+      'Traslado entre métodos',
+      'Conversión a efectivo',
+      'Depósito a cuenta digital',
+      'Regularización entre métodos',
     ],
   };
 
@@ -1593,7 +1593,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
     }
 
     if (isTransfer && fromPaymentMethod === toPaymentMethod) {
-      setErrorMsg('El mÃ©todo origen y destino no pueden ser iguales.');
+      setErrorMsg('El método origen y destino no pueden ser iguales.');
       return;
     }
 
@@ -1650,7 +1650,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
       <form onSubmit={handleSubmit} className="space-y-4">
         {!isEditing && (
           <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold leading-6 text-blue-800">
-            Para cuadrar hoy: registra un ingreso si tienes mÃ¡s dinero fÃ­sico que el sistema, o una salida si tienes menos. Usa â€œRegularizaciÃ³n de cajaâ€ y deja el motivo en la nota.
+            Para cuadrar hoy: registra un ingreso si tienes más dinero físico que el sistema, o una salida si tienes menos. Usa “Regularización de caja” y deja el motivo en la nota.
           </div>
         )}
 
@@ -1663,7 +1663,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
             { value: 'EXPENSE', label: 'Sacar dinero / registrar gasto' },
             { value: 'ADVANCE_BARBER', label: 'Adelanto a ' + labels.professionalSingular },
             { value: 'PAYMENT_BARBER', label: 'Pago a ' + labels.professionalSingular + ' manual' },
-            { value: 'PAYMENT_METHOD_TRANSFER', label: 'Trasladar dinero entre mÃ©todos' },
+            { value: 'PAYMENT_METHOD_TRANSFER', label: 'Trasladar dinero entre métodos' },
           ]}
         />
 
@@ -1748,7 +1748,7 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
           </div>
         ) : (
           <SelectField
-            label={type === 'INCOME' ? 'MÃ©todo de ingreso' : 'MÃ©todo de salida'}
+            label={type === 'INCOME' ? 'Método de ingreso' : 'Método de salida'}
             value={paymentMethod}
             onChange={setPaymentMethod}
             options={paymentOptions}
@@ -1757,12 +1757,12 @@ function MovementModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_
 
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
           {isTransfer
-            ? 'Este traslado no crea una venta. Solo mueve saldo de un mÃ©todo a otro.'
+            ? 'Este traslado no crea una venta. Solo mueve saldo de un método a otro.'
             : type === 'INCOME'
-              ? 'Este ingreso se sumarÃ¡ al esperado de caja solo si el mÃ©todo es efectivo.'
+              ? 'Este ingreso se sumará al esperado de caja solo si el método es efectivo.'
               : needsBarber
-                ? 'Este movimiento quedarÃ¡ relacionado al ' + labels.professionalSingular + ' seleccionado.'
-                : 'Solo los movimientos en efectivo afectarÃ¡n el esperado de caja.'}
+                ? 'Este movimiento quedará relacionado al ' + labels.professionalSingular + ' seleccionado.'
+                : 'Solo los movimientos en efectivo afectarán el esperado de caja.'}
         </div>
 
         <TextAreaField
@@ -1838,7 +1838,7 @@ function FundMovementModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, o
   );
   const paymentOptions = paymentSelectOptions(paymentMethods).map((option) => ({
     ...option,
-    label: `${option.label} Â· disponible ${formatMoney(
+    label: `${option.label} · disponible ${formatMoney(
       availableBalanceForMethod(fundCashRegister, 'ACCUMULATED_FUND', option.value)
     )}`,
   }));
@@ -1869,7 +1869,7 @@ function FundMovementModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, o
       return;
     }
     if (!concept.trim()) {
-      setErrorMsg('Escribe el motivo del movimiento para dejar auditorÃ­a.');
+      setErrorMsg('Escribe el motivo del movimiento para dejar auditoría.');
       return;
     }
 
@@ -1904,11 +1904,11 @@ function FundMovementModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, o
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-800">
-          Este formulario modifica el fondo guardado, no el saldo de la caja abierta. Para cuadrar el dinero fÃ­sico de hoy usa â€œIngresar / sacar dineroâ€.
+          Este formulario modifica el fondo guardado, no el saldo de la caja abierta. Para cuadrar el dinero físico de hoy usa “Ingresar / sacar dinero”.
         </div>
 
         <SelectField
-          label="OperaciÃ³n"
+          label="Operación"
           value={type}
           onChange={handleTypeChange}
           options={[
@@ -1918,7 +1918,7 @@ function FundMovementModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, o
         />
 
         <SelectField
-          label="MÃ©todo donde estÃ¡ el dinero"
+          label="Método donde está el dinero"
           value={paymentMethod}
           onChange={setPaymentMethod}
           options={paymentOptions}
@@ -1946,7 +1946,7 @@ function FundMovementModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, o
           label="Nota"
           value={note}
           onChange={setNote}
-          placeholder="Ej. Dinero reservado por el dueÃ±o o retiro para depÃ³sito bancario."
+          placeholder="Ej. Dinero reservado por el dueño o retiro para depósito bancario."
         />
 
         {errorMsg && <ErrorBox message={errorMsg} />}
@@ -2148,7 +2148,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
     const amount = roundMoney(parseMoneyInput(amountPaid));
 
     if (amount <= 0) {
-      setErrorMsg('Ingresa un monto vÃ¡lido mayor a cero.');
+      setErrorMsg('Ingresa un monto válido mayor a cero.');
       return;
     }
 
@@ -2160,7 +2160,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
       .filter((row) => row.method && row.amount > 0);
 
     if (normalizedPayments.length === 0) {
-      setErrorMsg('Agrega al menos un mÃ©todo de pago.');
+      setErrorMsg('Agrega al menos un método de pago.');
       return;
     }
 
@@ -2170,7 +2170,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
 
     if (Math.abs(totalPayments - amount) > 0.009) {
       setErrorMsg(
-        `La distribuciÃ³n debe sumar exactamente ${formatMoney(amount)}. Actualmente suma ${formatMoney(totalPayments)}.`
+        `La distribución debe sumar exactamente ${formatMoney(amount)}. Actualmente suma ${formatMoney(totalPayments)}.`
       );
       return;
     }
@@ -2270,7 +2270,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
         />
 
         <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">
-          Los saldos se validan por mÃ©todo. Si eliges fondo acumulado, el pago descontarÃ¡ el fondo del mÃ©todo seleccionado; la cuenta externa no altera la caja.
+          Los saldos se validan por método. Si eliges fondo acumulado, el pago descontará el fondo del método seleccionado; la cuenta externa no altera la caja.
         </div>
 
         <button
@@ -2320,10 +2320,10 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="text-sm font-black text-neutral-950">
-                Distribuir por mÃ©todo de pago
+                Distribuir por método de pago
               </div>
               <div className="mt-1 text-xs font-bold text-neutral-500">
-                Puedes pagar una parte en efectivo y otra por Yape, Plin, tarjeta u otro mÃ©todo configurado.
+                Puedes pagar una parte en efectivo y otra por Yape, Plin, tarjeta u otro método configurado.
               </div>
             </div>
 
@@ -2332,7 +2332,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
               onClick={addPaymentRow}
               className="rounded-2xl border border-amber-200 bg-white px-4 py-3 text-xs font-black text-neutral-900 shadow-sm transition hover:bg-amber-50"
             >
-              + Agregar mÃ©todo
+              + Agregar método
             </button>
           </div>
 
@@ -2343,7 +2343,7 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
                 className="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-3 sm:grid-cols-[1fr_1fr_auto]"
               >
                 <SelectField
-                  label={`MÃ©todo ${index + 1}`}
+                  label={`Método ${index + 1}`}
                   value={normalizeMethod(row.method)}
                   onChange={(value) => updatePaymentRow(row.key, 'method', value)}
                   options={paymentOptions}
@@ -2382,13 +2382,13 @@ function BarberPaymentModal({ branch, cashRegister, paymentMethods = DEFAULT_PAY
 
           {Math.abs(remainingToDistribute) >= 0.01 && (
             <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
-              La suma de los mÃ©todos debe coincidir con el monto a pagar antes de confirmar.
+              La suma de los métodos debe coincidir con el monto a pagar antes de confirmar.
             </div>
           )}
         </div>
 
         <TextAreaField
-          label="ObservaciÃ³n"
+          label="Observación"
           value={note}
           onChange={setNote}
           placeholder={`Ej. Pago semanal del ${labels.professionalSingular}`}
@@ -2510,7 +2510,7 @@ function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), on
             <tr>
               <th className="px-5 py-4 font-black">Cliente</th>
               <th className="px-5 py-4 font-black">{labels.professionalSingular[0].toUpperCase() + labels.professionalSingular.slice(1)}</th>
-              <th className="px-5 py-4 font-black">MÃ©todo</th>
+              <th className="px-5 py-4 font-black">Método</th>
               <th className="px-5 py-4 font-black">Total</th>
               <th className="px-5 py-4 font-black">Fecha</th>
               <th className="px-5 py-4 font-black text-right">Acciones</th>
@@ -2521,7 +2521,7 @@ function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), on
             {sales.length === 0 ? (
               <tr>
                 <td className="px-5 py-6 text-neutral-500" colSpan="6">
-                  AÃºn no hay ventas registradas hoy.
+                  Aún no hay ventas registradas hoy.
                 </td>
               </tr>
             ) : (
@@ -2691,7 +2691,7 @@ function SaleDetailModal({ sale, onClose, labels = readBusinessLabels() }) {
             <DetailMetric label="Cliente" value={sale?.customerName || 'Cliente ocasional'} helper={sale?.customerId ? `ID cliente: ${sale.customerId}` : 'Sin cliente registrado'} />
             <DetailMetric label={labels.professionalDisplay} value={saleBarberName(sale)} helper="Principal o primer item" />
             <DetailMetric label="Fecha" value={formatDateTime(saleDateOf(sale))} helper="Fecha de venta" />
-            <DetailMetric label="MÃ©todo" value={methodLabel(sale?.metodoPago)} helper={payments.length > 1 ? 'Pago mixto' : 'Pago Ãºnico'} tone={payments.length > 1 ? 'gold' : 'default'} />
+            <DetailMetric label="Método" value={methodLabel(sale?.metodoPago)} helper={payments.length > 1 ? 'Pago mixto' : 'Pago único'} tone={payments.length > 1 ? 'gold' : 'default'} />
           </div>
         </div>
 
@@ -2725,7 +2725,7 @@ function SaleDetailModal({ sale, onClose, labels = readBusinessLabels() }) {
                           {saleItemName(item)}
                         </div>
                         <div className="mt-1 text-xs font-bold text-neutral-500">
-                          {saleItemTypeLabel(item)} Â· {labels.professionalDisplay}: {saleItemBarberName(item)}
+                          {saleItemTypeLabel(item)} · {labels.professionalDisplay}: {saleItemBarberName(item)}
                         </div>
                       </div>
 
@@ -2747,12 +2747,12 @@ function SaleDetailModal({ sale, onClose, labels = readBusinessLabels() }) {
           <div className="space-y-5">
             <div className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.045)]">
               <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
-                MÃ©todos de pago
+                Métodos de pago
               </div>
               <div className="mt-4 space-y-3">
                 {payments.length === 0 ? (
                   <div className="rounded-2xl bg-neutral-50 p-4 text-sm font-bold text-neutral-500">
-                    {methodLabel(sale?.metodoPago)} Â· {formatMoney(total)}
+                    {methodLabel(sale?.metodoPago)} · {formatMoney(total)}
                   </div>
                 ) : (
                   payments.map((payment, index) => (
@@ -2762,7 +2762,7 @@ function SaleDetailModal({ sale, onClose, labels = readBusinessLabels() }) {
                           {methodLabel(payment.method)}
                         </div>
                         <div className="text-xs font-bold text-neutral-500">
-                          MÃ©todo {index + 1}
+                          Método {index + 1}
                         </div>
                       </div>
                       <div className="text-lg font-black text-emerald-700">
@@ -2776,7 +2776,7 @@ function SaleDetailModal({ sale, onClose, labels = readBusinessLabels() }) {
 
             <div className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.045)]">
               <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
-                Resumen econÃ³mico
+                Resumen económico
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <DetailMetric label="Subtotal" value={formatMoney(subtotal)} />
@@ -2882,7 +2882,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
 
     const saleId = saleIdOf(sale);
     if (!saleId) {
-      setErrorMsg('No se encontrÃ³ el ID de la venta.');
+      setErrorMsg('No se encontró el ID de la venta.');
       return;
     }
 
@@ -2892,7 +2892,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
     }
 
     if (totalNumber > 0 && paymentPayloads.length === 0) {
-      setErrorMsg('Agrega al menos un mÃ©todo de pago.');
+      setErrorMsg('Agrega al menos un método de pago.');
       return;
     }
 
@@ -2960,7 +2960,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
             value={auditReason}
             onChange={(event) => setAuditReason(event.target.value)}
             rows={3}
-            placeholder="Ej. CorrecciÃ³n de profesional, valor o mÃ©todo de pago."
+            placeholder="Ej. Corrección de profesional, valor o método de pago."
             className="w-full rounded-3xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm font-bold text-neutral-900 outline-none transition focus:border-amber-400 focus:bg-white"
           />
         </div>
@@ -2975,7 +2975,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="text-xs font-black uppercase tracking-[0.20em] text-amber-600">
-                MÃ©todos de pago
+                Métodos de pago
               </div>
               <p className="mt-1 text-sm font-semibold text-neutral-500">
                 Puedes editar pagos mixtos sin afectar Flutter. La suma debe coincidir con el total.
@@ -2987,7 +2987,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
               onClick={addPaymentMethod}
               className="rounded-2xl border border-neutral-200 bg-neutral-950 px-4 py-3 text-sm font-black text-white transition hover:scale-[1.01]"
             >
-              + Agregar mÃ©todo
+              + Agregar método
             </button>
           </div>
 
@@ -2996,7 +2996,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
               <div key={payment.key} className="rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
                 <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
                   <SelectField
-                    label={`MÃ©todo ${index + 1}`}
+                    label={`Método ${index + 1}`}
                     value={payment.method}
                     onChange={(value) => updatePayment(index, { method: value })}
                     options={paymentOptions}
@@ -3109,7 +3109,7 @@ function EditSaleModal({ branch, sale, paymentMethods = DEFAULT_PAYMENT_METHODS,
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-          Este ajuste modifica la venta registrada. Si envÃ­as mÃ©todos de pago, el backend reemplazarÃ¡ los pagos anteriores de esta venta.
+          Este ajuste modifica la venta registrada. Si envías métodos de pago, el backend reemplazará los pagos anteriores de esta venta.
         </div>
 
         {errorMsg && <ErrorBox message={errorMsg} />}
@@ -3134,7 +3134,7 @@ function AppointmentSaleBanner({ appointment, isOpen, onOpenSale, onDismiss, lab
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-950 text-2xl text-white">
-            âœ‚ï¸
+            ✂️
           </div>
 
           <div>
@@ -3146,13 +3146,13 @@ function AppointmentSaleBanner({ appointment, isOpen, onOpenSale, onDismiss, lab
             </h3>
             <div className="mt-2 flex flex-wrap gap-2 text-sm font-bold text-neutral-600">
               <span>Cliente: {appointment.customerName || 'Cliente'}</span>
-              <span>â€¢</span>
+              <span>•</span>
               <span>Servicio: {appointment.serviceName || 'Servicio'}</span>
-              <span>â€¢</span>
+              <span>•</span>
               <span>{labels.professionalDisplay}: {appointment.barberName || labels.professionalDisplay}</span>
               {appointment.hora && (
                 <>
-                  <span>â€¢</span>
+                  <span>•</span>
                   <span>{appointment.hora}{appointment.horaFin ? ` - ${appointment.horaFin}` : ''}</span>
                 </>
               )}
@@ -3270,7 +3270,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
       name.includes('fade') ||
       name.includes('taper') ||
       name.includes('degradado') ||
-      name.includes('clÃ¡sico') ||
+      name.includes('clásico') ||
       name.includes('clasico')
     );
   });
@@ -3430,7 +3430,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
     }
 
     if (!barber) {
-      setErrorMsg('Selecciona el ' + labels.professionalSingular + ' que realizÃ³ el servicio.');
+      setErrorMsg('Selecciona el ' + labels.professionalSingular + ' que realizó el servicio.');
       return;
     }
 
@@ -3544,10 +3544,10 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
             : paymentPayloads,
         cutType: hasHaircut ? 'Corte registrado en agenda web' : null,
         cutDetail: hasHaircut
-          ? `${appointment.serviceName || items.find((item) => item.type === 'service')?.name || (labels.serviceReference === 'corte' ? 'Servicio de corte' : 'Servicio')} Â· ${appointment.barberName || items.find((item) => item.type === 'service')?.barberName || labels.professionalDisplay}`
+          ? `${appointment.serviceName || items.find((item) => item.type === 'service')?.name || (labels.serviceReference === 'corte' ? 'Servicio de corte' : 'Servicio')} · ${appointment.barberName || items.find((item) => item.type === 'service')?.barberName || labels.professionalDisplay}`
           : null,
         cutObservations: hasHaircut
-          ? `AtenciÃ³n finalizada desde agenda web${appointment.appointmentId ? ` Â· Cita #${appointment.appointmentId}` : ''}`
+          ? `Atención finalizada desde agenda web${appointment.appointmentId ? ` · Cita #${appointment.appointmentId}` : ''}`
           : null,
         items: items.map((item) => ({
           serviceId: item.serviceId,
@@ -3604,10 +3604,10 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
               Cita seleccionada
             </div>
             <div className="mt-2 text-xl font-black text-neutral-950">
-              {appointment.customerName || 'Cliente'} Â· #{appointment.appointmentId}
+              {appointment.customerName || 'Cliente'} · #{appointment.appointmentId}
             </div>
             <div className="mt-2 text-sm font-bold text-neutral-600">
-              Servicio inicial: {appointment.serviceName || 'Servicio'} Â· {labels.professionalDisplay}: {appointment.barberName || labels.professionalDisplay}
+              Servicio inicial: {appointment.serviceName || 'Servicio'} · {labels.professionalDisplay}: {appointment.barberName || labels.professionalDisplay}
             </div>
           </div>
 
@@ -3626,7 +3626,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                     { value: '', label: 'Selecciona servicio' },
                     ...availableServices.map((service) => ({
                       value: String(service.id),
-                      label: `${service.name} Â· ${servicePriceLabel(service)}`,
+                      label: `${service.name} · ${servicePriceLabel(service)}`,
                     })),
                   ]}
                 />
@@ -3670,7 +3670,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                         { value: '', label: 'Selecciona producto' },
                         ...products.map((product) => ({
                           value: String(product.id),
-                          label: `${product.name} Â· ${formatMoney(product.price)} Â· Stock ${product.stock}`,
+                          label: `${product.name} · ${formatMoney(product.price)} · Stock ${product.stock}`,
                         })),
                       ]}
                     />
@@ -3704,7 +3704,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                   />
                   {saleDate !== saleDateInputMaxValue() && (
                     <div className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
-                      Esta cita se cobrarÃ¡ con fecha anterior para regularizar caja.
+                      Esta cita se cobrará con fecha anterior para regularizar caja.
                     </div>
                   )}
                 </label>                <InputField label="Descuento" value={discount} onChange={setDiscount} type="number" step="0.01" prefix={getTenantCurrencySymbol()} />
@@ -3804,7 +3804,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                   Items de venta
                 </div>
                 <div className="mt-1 text-sm font-bold text-neutral-500">
-                  Puedes agregar mÃ¡s servicios o productos antes de cobrar.
+                  Puedes agregar más servicios o productos antes de cobrar.
                 </div>
               </div>
               <div className="rounded-2xl bg-neutral-950 px-4 py-3 text-xl font-black text-white">
@@ -3815,7 +3815,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
             <div className="mt-4 space-y-3">
               {items.length === 0 ? (
                 <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
-                  AÃºn no hay items en la venta.
+                  Aún no hay items en la venta.
                 </div>
               ) : (
                 items.map((item) => (
@@ -3824,7 +3824,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                       <div>
                         <div className="font-black text-neutral-950">{item.name}</div>
                         <div className="mt-1 text-xs font-bold text-neutral-500">
-                          {item.type === 'service' ? `Servicio Â· ${labels.professionalDisplay}: ${item.barberName || '-'}` : `Producto${item.barberName ? ` Â· ${labels.professionalDisplay}: ${item.barberName}` : ''}`}
+                          {item.type === 'service' ? `Servicio · ${labels.professionalDisplay}: ${item.barberName || '-'}` : `Producto${item.barberName ? ` · ${labels.professionalDisplay}: ${item.barberName}` : ''}`}
                         </div>
                       </div>
 
@@ -3857,7 +3857,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                           <div className="font-black text-neutral-950">{formatMoney(itemSubtotal(item))}</div>
                           <div className="text-xs font-bold text-neutral-500">
                             {item.variablePrice && item.baseUnitPrice !== item.unitPrice
-                              ? `${item.quantity} x ${formatMoney(item.unitPrice)} Â· desde ${formatMoney(item.baseUnitPrice)}`
+                              ? `${item.quantity} x ${formatMoney(item.unitPrice)} · desde ${formatMoney(item.baseUnitPrice)}`
                               : `${item.quantity} x ${formatMoney(item.unitPrice)}`}
                           </div>
                         </div>
@@ -3889,7 +3889,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
 
           <div className="grid gap-3 md:grid-cols-2">
             <StatCard title="Vuelto" value={formatMoney(change)} tone={change > 0 ? 'green' : 'default'} />
-            <StatCard title="Pago final" value={amountToCollectNow <= 0 ? 'Cubierto con inicial' : paymentLabelFromOptions(paymentMethods, paymentMethod)} helper="El backend completarÃ¡ la venta con DEPOSIT_APPLIED si corresponde." />
+            <StatCard title="Pago final" value={amountToCollectNow <= 0 ? 'Cubierto con inicial' : paymentLabelFromOptions(paymentMethods, paymentMethod)} helper="El backend completará la venta con DEPOSIT_APPLIED si corresponde." />
           </div>
 
           {errorMsg && <ErrorBox message={errorMsg} />}
@@ -3898,7 +3898,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
             disabled={saving || loadingAllowedServices}
             className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
           >
-            {saving ? 'Guardando venta...' : 'Cobrar y finalizar atenciÃ³n'}
+            {saving ? 'Guardando venta...' : 'Cobrar y finalizar atención'}
           </button>
         </form>
       )}
@@ -4085,7 +4085,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     }
 
     if (!quickCustomerPhoneValid || !phone) {
-      setErrorMsg('Ingresa un telÃ©fono vÃ¡lido para crear el cliente.');
+      setErrorMsg('Ingresa un teléfono válido para crear el cliente.');
       return;
     }
 
@@ -4283,7 +4283,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     }
 
     if (!isCourtesy && total > 0 && paymentPayloads.length === 0) {
-      setErrorMsg('Agrega al menos un mÃ©todo de pago.');
+      setErrorMsg('Agrega al menos un método de pago.');
       return;
     }
 
@@ -4305,7 +4305,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         name.includes('fade') ||
         name.includes('taper') ||
         name.includes('degradado') ||
-        name.includes('clÃ¡sico') ||
+        name.includes('clásico') ||
         name.includes('clasico')
       );
     });
@@ -4369,13 +4369,13 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
           <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
             <div className="rounded-[26px] border border-neutral-200 bg-white p-5">
               <div className="text-xs font-black uppercase tracking-[0.20em] text-amber-600">
-                Venta rÃ¡pida
+                Venta rápida
               </div>
               <h3 className="mt-2 text-2xl font-black text-neutral-950">
                 Servicios y productos
               </h3>
               <p className="mt-1 text-sm font-semibold text-neutral-500">
-                Agrega servicios o productos. El stock se descontarÃ¡ de la sede activa.
+                Agrega servicios o productos. El stock se descontará de la sede activa.
               </p>
 
               <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -4448,7 +4448,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                           {selectedCustomer.nombreCompleto}
                         </div>
                         <div className="mt-1 text-xs font-bold text-emerald-700/75">
-                          {selectedCustomer.telefono || 'Sin telÃ©fono'} Â· {selectedCustomer.puntosDisponibles || 0} pts
+                          {selectedCustomer.telefono || 'Sin teléfono'} · {selectedCustomer.puntosDisponibles || 0} pts
                         </div>
                       </div>
                       <button
@@ -4484,7 +4484,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                               {customer.nombreCompleto}
                             </div>
                             <div className="mt-1 text-xs font-bold text-neutral-500">
-                              {customer.telefono || 'Sin telÃ©fono'} Â· {customer.puntosDisponibles || 0} pts
+                              {customer.telefono || 'Sin teléfono'} · {customer.puntosDisponibles || 0} pts
                             </div>
                           </div>
                           <span className="rounded-full bg-neutral-950 px-3 py-1 text-xs font-black text-white">
@@ -4501,7 +4501,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                         Cliente no encontrado
                       </div>
                       <p className="mt-2 text-xs font-bold leading-5 text-amber-800">
-                        Puedes guardar la venta como cliente ocasional o crear el cliente ahora agregando su telÃ©fono.
+                        Puedes guardar la venta como cliente ocasional o crear el cliente ahora agregando su teléfono.
                       </p>
 
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -4602,7 +4602,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       { value: '', label: 'Selecciona servicio' },
                       ...availableServices.map((service) => ({
                         value: String(service.id),
-                        label: `${service.name} Â· ${servicePriceLabel(service)}`,
+                        label: `${service.name} · ${servicePriceLabel(service)}`,
                       })),
                     ]}
                   />
@@ -4630,7 +4630,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       { value: '', label: 'Selecciona producto' },
                       ...products.map((product) => ({
                         value: String(product.id),
-                        label: `${product.name} Â· ${formatMoney(product.price)} Â· Stock ${product.stock}`,
+                        label: `${product.name} · ${formatMoney(product.price)} · Stock ${product.stock}`,
                       })),
                     ]}
                   />
@@ -4698,7 +4698,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                   />
                   {saleDate !== saleDateInputMaxValue() && (
                     <div className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
-                      Esta venta se guardarÃ¡ con fecha anterior. Ãšsalo para regularizar ventas olvidadas.
+                      Esta venta se guardará con fecha anterior. Úsalo para regularizar ventas olvidadas.
                     </div>
                   )}
                 </label>
@@ -4760,10 +4760,10 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-600">
-                        MÃ©todos de pago
+                        Métodos de pago
                       </div>
                       <div className="mt-2 text-sm font-bold leading-5 text-neutral-500">
-                        Divide el cobro entre los mÃ©todos configurados para este negocio.
+                        Divide el cobro entre los métodos configurados para este negocio.
                       </div>
                     </div>
 
@@ -4772,7 +4772,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       onClick={addPaymentMethod}
                       className="rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white transition hover:scale-[1.01] sm:shrink-0"
                     >
-                      + Agregar mÃ©todo
+                      + Agregar método
                     </button>
                   </div>
 
@@ -4784,7 +4784,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       >
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <div className="text-xs font-black uppercase tracking-[0.16em] text-neutral-500">
-                            {index === 0 ? 'MÃ©todo principal' : `MÃ©todo ${index + 1}`}
+                            {index === 0 ? 'Método principal' : `Método ${index + 1}`}
                           </div>
 
                           <button
@@ -4799,7 +4799,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
 
                         <div className="grid gap-3 sm:grid-cols-[1fr_1fr]">
                           <SelectField
-                            label="MÃ©todo"
+                            label="Método"
                             value={payment.method}
                             onChange={(value) => updatePayment(index, 'method', value)}
                             options={paymentOptions}
@@ -4873,7 +4873,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
             <div className="mt-4 space-y-3">
               {items.length === 0 ? (
                 <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
-                  AÃºn no hay items en la venta.
+                  Aún no hay items en la venta.
                 </div>
               ) : (
                 items.map((item) => (
@@ -4883,8 +4883,8 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                         <div className="font-black text-neutral-950">{item.name}</div>
                         <div className="mt-1 text-xs font-bold text-neutral-500">
                           {item.type === 'service'
-                            ? `Servicio Â· ${labels.professionalDisplay}: ${item.barberName || '-'}`
-                            : `Producto${item.barberName ? ` Â· ${labels.professionalDisplay}: ${item.barberName}` : ''}`}
+                            ? `Servicio · ${labels.professionalDisplay}: ${item.barberName || '-'}`
+                            : `Producto${item.barberName ? ` · ${labels.professionalDisplay}: ${item.barberName}` : ''}`}
                         </div>
                       </div>
 
@@ -4917,7 +4917,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                           <div className="font-black text-neutral-950">{formatMoney(itemSubtotal(item))}</div>
                           <div className="text-xs font-bold text-neutral-500">
                             {item.variablePrice && item.baseUnitPrice !== item.unitPrice
-                              ? `${item.quantity} x ${formatMoney(item.unitPrice)} Â· desde ${formatMoney(item.baseUnitPrice)}`
+                              ? `${item.quantity} x ${formatMoney(item.unitPrice)} · desde ${formatMoney(item.baseUnitPrice)}`
                               : `${item.quantity} x ${formatMoney(item.unitPrice)}`}
                           </div>
                         </div>
@@ -5042,7 +5042,7 @@ function cashStatusLabel(status) {
 
   if (code === 'OPEN') return 'Abierta';
   if (code === 'CLOSED') return 'Cerrada';
-  if (code === 'AUTO_CLOSED') return 'Cierre automÃ¡tico';
+  if (code === 'AUTO_CLOSED') return 'Cierre automático';
 
   return status || 'Sin estado';
 }
@@ -5143,14 +5143,14 @@ function HistorySummaryCard({ items, paymentMethods = DEFAULT_PAYMENT_METHODS })
         <HistoryMetricCard label="Ingresos" value={totals.income} />
         <HistoryMetricCard label="Salidas totales" value={totals.expense} tone="red" />
         <HistoryMetricCard label="Salidas en efectivo" value={totals.cashExpense} tone="red" />
-        <HistoryMetricCard label="Salidas otros mÃ©todos" value={otherExpense} tone="red" />
+        <HistoryMetricCard label="Salidas otros métodos" value={otherExpense} tone="red" />
         <HistoryMetricCard label="Neto registrado" value={net} tone={net >= 0 ? 'green' : 'red'} />
         <HistoryMetricCard label="Efectivo esperado" value={totals.expected} tone={totals.expected >= 0 ? 'green' : 'red'} />
       </div>
 
       <div className="mt-5 rounded-[24px] border border-neutral-200 bg-white p-4">
         <div className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-neutral-500">
-          Saldo por mÃ©todo
+          Saldo por método
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -5219,8 +5219,8 @@ function FundHistorySection({ items = [], summary = null }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300">Fondo acumulado</div>
-          <h3 className="mt-1 text-xl font-black">Movimientos de gestiÃ³n de fondos</h3>
-          <p className="mt-1 text-sm font-semibold text-slate-300">Ingresos y retiros separados de la caja del dÃ­a.</p>
+          <h3 className="mt-1 text-xl font-black">Movimientos de gestión de fondos</h3>
+          <p className="mt-1 text-sm font-semibold text-slate-300">Ingresos y retiros separados de la caja del día.</p>
         </div>
         <span className="w-fit rounded-full bg-white/10 px-3 py-1.5 text-xs font-black">{items.length} movimientos</span>
       </div>
@@ -5237,7 +5237,7 @@ function FundHistorySection({ items = [], summary = null }) {
       <div className="mt-5 max-h-[360px] overflow-auto rounded-2xl border border-white/10">
         <table className="w-full min-w-[860px] text-left text-sm">
           <thead className="sticky top-0 bg-slate-950 text-[10px] font-black uppercase tracking-wider text-slate-400">
-            <tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Movimiento</th><th className="px-4 py-3">MÃ©todo</th><th className="px-4 py-3">Responsable / caja</th><th className="px-4 py-3 text-right">Monto</th></tr>
+            <tr><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Movimiento</th><th className="px-4 py-3">Método</th><th className="px-4 py-3">Responsable / caja</th><th className="px-4 py-3 text-right">Monto</th></tr>
           </thead>
           <tbody className="divide-y divide-white/10">
             {items.map((item) => {
@@ -5245,7 +5245,7 @@ function FundHistorySection({ items = [], summary = null }) {
               return (
                 <tr key={item.id} className="align-top hover:bg-white/[0.04]">
                   <td className="px-4 py-3 font-bold text-slate-300">{formatDateTime(item.movementDate || item.date)}</td>
-                  <td className="px-4 py-3"><p className="font-black">{item.concept || typeLabel(item.type)}</p><p className="mt-1 text-xs font-semibold text-slate-400">{typeLabel(item.type)}{item.note ? ` Â· ${item.note}` : ''}</p></td>
+                  <td className="px-4 py-3"><p className="font-black">{item.concept || typeLabel(item.type)}</p><p className="mt-1 text-xs font-semibold text-slate-400">{typeLabel(item.type)}{item.note ? ` · ${item.note}` : ''}</p></td>
                   <td className="px-4 py-3 font-bold text-blue-300">{methodLabel(item.paymentMethod)}</td>
                   <td className="px-4 py-3"><p className="font-bold">{item.actorUserName || 'Sistema'}</p><p className="mt-1 text-xs text-slate-400">{item.cashRegisterId ? `Caja #${item.cashRegisterId}` : 'Sin caja relacionada'}</p></td>
                   <td className={`px-4 py-3 text-right font-black ${income ? 'text-emerald-300' : 'text-red-300'}`}>{income ? '+' : '-'}{formatMoney(Math.abs(Number(item.amount || 0)))}</td>
@@ -5813,7 +5813,7 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
                       <HistoryPaymentPill label="Ventas" value={cash.salesTotal} />
                       <HistoryPaymentPill label="Salidas totales" value={cash.movementsExpense} />
                       <HistoryPaymentPill label="Salidas efectivo" value={cash.cashMovementsExpense} />
-                      <HistoryPaymentPill label="Salidas otros mÃ©todos" value={Math.max(0, Number(cash.movementsExpense || 0) - Number(cash.cashMovementsExpense || 0))} />
+                      <HistoryPaymentPill label="Salidas otros métodos" value={Math.max(0, Number(cash.movementsExpense || 0) - Number(cash.cashMovementsExpense || 0))} />
                       <HistoryPaymentPill label="Esperado" value={cash.closingAmountExpected} />
                       <HistoryPaymentPill label="Diferencia" value={cash.differenceAmount} />
                     </div>
@@ -6035,7 +6035,7 @@ function ProductOrdersSection({ items = [], processingId, isOpen, onApprove, onR
                     <div className="min-w-0">
                       <p className="truncate text-base font-black text-neutral-950">{order.productName}</p>
                       <p className="mt-1 text-xs font-bold text-neutral-500">
-                        {order.customerName} Â· {order.customerPhone || 'Sin telefono'}
+                        {order.customerName} · {order.customerPhone || 'Sin telefono'}
                       </p>
                     </div>
                     <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-800">
@@ -6354,7 +6354,7 @@ export default function OwnerCashPage() {
       setErrorMsg('El motivo de auditoria es obligatorio para eliminar una venta.');
       return;
     }
-    const ok = await premiumConfirm('Â¿Seguro que deseas eliminar esta venta? Esta acciÃ³n no se puede deshacer.');
+    const ok = await premiumConfirm('¿Seguro que deseas eliminar esta venta? Esta acción no se puede deshacer.');
     if (!ok) return;
 
     setErrorMsg('');
@@ -6389,7 +6389,7 @@ export default function OwnerCashPage() {
       setErrorMsg('El motivo de auditoria es obligatorio para eliminar un movimiento.');
       return;
     }
-    const ok = await premiumConfirm('Â¿Seguro que deseas eliminar este movimiento? Esta acciÃ³n no se puede deshacer.');
+    const ok = await premiumConfirm('¿Seguro que deseas eliminar este movimiento? Esta acción no se puede deshacer.');
     if (!ok) return;
 
     setErrorMsg('');
@@ -6411,7 +6411,7 @@ export default function OwnerCashPage() {
     if (!selectedBranch || !movement?.id) return;
 
     const ok = await premiumConfirm(
-      `Â¿Aprobar el movimiento "${movement.concept || 'Movimiento'}" por ${formatMoney(movement.amount)}?`
+      `¿Aprobar el movimiento "${movement.concept || 'Movimiento'}" por ${formatMoney(movement.amount)}?`
     );
     if (!ok) return;
 
@@ -6437,7 +6437,7 @@ export default function OwnerCashPage() {
     if (!selectedBranch || !movement?.id) return;
 
     const ok = await premiumConfirm(
-      `Â¿Rechazar el movimiento "${movement.concept || 'Movimiento'}" por ${formatMoney(movement.amount)}?`
+      `¿Rechazar el movimiento "${movement.concept || 'Movimiento'}" por ${formatMoney(movement.amount)}?`
     );
     if (!ok) return;
 
@@ -6657,7 +6657,7 @@ export default function OwnerCashPage() {
               <h3 className="mt-2 text-xl font-black text-neutral-950">Una caja anterior se cerro automaticamente</h3>
               <p className="mt-2 text-sm font-semibold text-neutral-600">
                 {canManageFund ? (
-                  <>Esperado {formatMoney(pendingReconciliation.closingAmountExpected)}. Confirma el efectivo, registra un gasto olvidado o envÃ­a el saldo al fondo acumulado.</>
+                  <>Esperado {formatMoney(pendingReconciliation.closingAmountExpected)}. Confirma el efectivo, registra un gasto olvidado o envía el saldo al fondo acumulado.</>
                 ) : (
                   <>Esperado {formatMoney(pendingReconciliation.closingAmountExpected)}. Confirma el efectivo y registra cualquier gasto olvidado.</>
                 )}
@@ -6683,7 +6683,7 @@ export default function OwnerCashPage() {
             </h2>
 
             <p className="mt-3 max-w-2xl text-sm leading-7 text-white/65">
-              Revisa caja abierta, mÃ©todos de pago, ingresos, gastos y movimientos
+              Revisa caja abierta, métodos de pago, ingresos, gastos y movimientos
               operativos por sede.
             </p>
 
@@ -6871,7 +6871,7 @@ export default function OwnerCashPage() {
 
           <EmptyCard
         title="No hay caja abierta"
-        text="Abre una caja para empezar a registrar ventas, ingresos, gastos y movimientos del dÃ­a."
+        text="Abre una caja para empezar a registrar ventas, ingresos, gastos y movimientos del día."
         action={
           <button
             onClick={() => setShowOpenModal(true)}
@@ -6890,13 +6890,13 @@ export default function OwnerCashPage() {
             <StatCard title="Fondo acumulado" value={formatMoney(accumulatedFundBalance)} helper="Colchon para gastos grandes" tone="gold" />
             )}
             <StatCard title="Apertura" value={formatMoney(openingAmount)} helper="Fondo inicial de efectivo" />
-            <StatCard title="Ventas total" value={formatMoney(salesTotal)} helper="Todos los mÃ©todos" tone="gold" />
-            <StatCard title="Efectivo fÃ­sico" value={formatMoney(cashBalance)} helper="Saldo esperado en caja" tone={balanceTone(cashBalance)} />
-            <StatCard title="Digital disponible" value={formatMoney(digitalBalance)} helper="MÃ©todos digitales configurados" />
+            <StatCard title="Ventas total" value={formatMoney(salesTotal)} helper="Todos los métodos" tone="gold" />
+            <StatCard title="Efectivo físico" value={formatMoney(cashBalance)} helper="Saldo esperado en caja" tone={balanceTone(cashBalance)} />
+            <StatCard title="Digital disponible" value={formatMoney(digitalBalance)} helper="Métodos digitales configurados" />
             <StatCard
               title="Esperado"
               value={formatMoney(expected)}
-              helper={expected < 0 ? 'Caja fÃ­sica en negativo' : 'Caja fÃ­sica esperada'}
+              helper={expected < 0 ? 'Caja física en negativo' : 'Caja física esperada'}
               tone={balanceTone(expected)}
             />
           </section>
@@ -6932,14 +6932,14 @@ export default function OwnerCashPage() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
-                  ConciliaciÃ³n por mÃ©todo
+                  Conciliación por método
                 </div>
                 <h3 className="mt-2 text-2xl font-black text-neutral-950">
-                  Dinero esperado por mÃ©todo de pago
+                  Dinero esperado por método de pago
                 </h3>
                 <p className="mt-1 max-w-3xl text-sm leading-6 text-neutral-500">
                   El efectivo incluye apertura, ventas en efectivo, ingresos, gastos, pagos a {labels.professionalsPlural} y traslados.
-                  Los mÃ©todos digitales muestran el saldo disponible despuÃ©s de movimientos.
+                  Los métodos digitales muestran el saldo disponible después de movimientos.
                 </p>
               </div>
 
@@ -6971,15 +6971,15 @@ export default function OwnerCashPage() {
 <section className="grid gap-5 xl:grid-cols-[0.78fr_1.22fr]">
             <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
               <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">
-                Caja fÃ­sica
+                Caja física
               </div>
 
               <h3 className="mt-2 text-2xl font-black text-neutral-950">
-                FÃ³rmula del efectivo esperado
+                Fórmula del efectivo esperado
               </h3>
 
               <p className="mt-1 text-sm leading-6 text-neutral-500">
-                Este cÃ¡lculo te dice cuÃ¡nto dinero fÃ­sico deberÃ­as tener en la caja.
+                Este cálculo te dice cuánto dinero físico deberías tener en la caja.
               </p>
 
               <div className="mt-5 space-y-3">
@@ -7012,7 +7012,7 @@ export default function OwnerCashPage() {
                     {formatMoney(expected)}
                   </div>
                   <div className="mt-1 text-xs text-neutral-500">
-                    Si el monto fÃ­sico contado no coincide, revisa movimientos o pagos registrados con mÃ©todo incorrecto.
+                    Si el monto físico contado no coincide, revisa movimientos o pagos registrados con método incorrecto.
                   </div>
                 </div>
               </div>
@@ -7045,7 +7045,7 @@ export default function OwnerCashPage() {
                     <tr>
                       <th className="px-5 py-4 font-black">Tipo</th>
                       <th className="px-5 py-4 font-black">Concepto</th>
-                      <th className="px-5 py-4 font-black">MÃ©todo</th>
+                      <th className="px-5 py-4 font-black">Método</th>
                       <th className="px-5 py-4 font-black">Monto</th>
                       <th className="px-5 py-4 font-black">Fecha</th>
                       <th className="px-5 py-4 font-black text-right">Acciones</th>
@@ -7079,7 +7079,7 @@ export default function OwnerCashPage() {
 
                           <td className="px-5 py-5 font-bold text-neutral-700">
                             {movement.type === 'PAYMENT_METHOD_TRANSFER'
-                              ? `${methodLabel(movement.fromPaymentMethod)} â†’ ${methodLabel(movement.toPaymentMethod)}`
+                              ? `${methodLabel(movement.fromPaymentMethod)} → ${methodLabel(movement.toPaymentMethod)}`
                               : methodLabel(movement.paymentMethod)}
                           </td>
 

@@ -1,4 +1,4 @@
-﻿import { apiRequest } from './apiClient';
+import { apiRequest } from './apiClient';
 
 function toQuery(params = {}) {
   const search = new URLSearchParams();
@@ -740,10 +740,10 @@ export async function getOwnerPaymentMethods(branchId) {
       id: Number(item.id ?? item.paymentMethodId ?? 0),
       code: String(item.code ?? item.method ?? '').trim().toUpperCase(),
       label: String(
-        item.displayName ?? item.name ?? item.label ?? item.code ?? 'MÃ©todo'
+        item.displayName ?? item.name ?? item.label ?? item.code ?? 'Método'
       ),
       displayName: String(
-        item.displayName ?? item.name ?? item.label ?? item.code ?? 'MÃ©todo'
+        item.displayName ?? item.name ?? item.label ?? item.code ?? 'Método'
       ),
       countryCode: String(item.countryCode ?? ''),
       active: item.active !== false,
