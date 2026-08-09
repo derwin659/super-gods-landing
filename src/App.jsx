@@ -2339,6 +2339,7 @@ export default function App() {
           <Route path="pagos" element={<SuperAdminPayments />} />
           <Route path="crear-barberia" element={<SuperAdminCreateBarbershop />} />
           <Route path="solicitudes-demo" element={<SuperAdminDemoRequests />} />
+          <Route path="moderacion-resenas" element={<SuperAdminReviewModeration />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

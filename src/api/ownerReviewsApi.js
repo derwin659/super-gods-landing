@@ -13,3 +13,9 @@ export function replyOwnerReview(reviewId, reply) {
     body: JSON.stringify({ reply }),
   });
 }
+export function reportOwnerReview(reviewId, reason, details = '') {
+  return apiRequest(`/api/owner/reviews/${reviewId}/report`, {
+    method: 'POST',
+    body: JSON.stringify({ reason, details }),
+  });
+}

@@ -107,4 +107,15 @@ export const superAdminApi = {
       method: "DELETE",
     });
   },
+  getReviewModeration(status = '') {
+    const query = status ? `?status=${encodeURIComponent(status)}` : '';
+    return request(`/api/super-admin/reviews${query}`);
+  },
+
+  moderateReview(reviewId, status, note) {
+    return request(`/api/super-admin/reviews/${reviewId}/moderate`, {
+      method: "PUT",
+      body: JSON.stringify({ status, note }),
+    });
+  },
 };

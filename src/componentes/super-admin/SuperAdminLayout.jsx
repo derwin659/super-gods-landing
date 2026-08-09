@@ -5,6 +5,7 @@ import {
   CreditCard,
   LogOut,
   PlusCircle,
+  MessageSquareWarning,
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
@@ -13,6 +14,7 @@ const navItems = [
   { to: '/super-admin', label: 'Vista ejecutiva', detail: 'Metricas y alertas', icon: BarChart3 },
   { to: '/super-admin/barberias', label: 'Cuentas', detail: 'CRUD completo', icon: Building2 },
   { to: '/super-admin/pagos', label: 'Pagos', detail: 'Aprobacion manual', icon: CreditCard },
+  { to: '/super-admin/moderacion-resenas', label: 'Moderación', detail: 'Reseñas reportadas', icon: MessageSquareWarning },
   { to: '/super-admin/solicitudes-demo', label: 'Demos', detail: 'Leads y pruebas', icon: Sparkles },
   { to: '/super-admin/crear-barberia', label: 'Crear cuenta', detail: 'Alta guiada', icon: PlusCircle },
 ];
