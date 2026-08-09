@@ -7,3 +7,9 @@ export function getOwnerReviews({ branchId = null, rating = null } = {}) {
   const query = params.toString();
   return apiRequest(`/api/owner/reviews${query ? `?${query}` : ''}`);
 }
+export function replyOwnerReview(reviewId, reply) {
+  return apiRequest(`/api/owner/reviews/${reviewId}/reply`, {
+    method: 'PUT',
+    body: JSON.stringify({ reply }),
+  });
+}
