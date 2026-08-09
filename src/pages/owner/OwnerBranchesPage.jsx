@@ -136,6 +136,10 @@ function BranchFormModal({ branch, onClose, onSaved }) {
   const [publicDescription, setPublicDescription] = useState(branch?.publicDescription || '');
   const [publicVisible, setPublicVisible] = useState(branch?.publicVisible === true);
   const [directoryEnabled, setDirectoryEnabled] = useState(branch?.directoryEnabled === true);
+  const [walkInEnabled, setWalkInEnabled] = useState(branch?.walkInEnabled === true);
+  const [walkInPaused, setWalkInPaused] = useState(branch?.walkInPaused === true);
+  const [walkInEstimatedWaitMinutes, setWalkInEstimatedWaitMinutes] = useState(branch?.walkInEstimatedWaitMinutes ?? '');
+  const [walkInMessage, setWalkInMessage] = useState(branch?.walkInMessage || '');
   const [activo, setActivo] = useState(branch?.activo !== false);
 
   const [imageFile, setImageFile] = useState(null);
@@ -207,6 +211,10 @@ function BranchFormModal({ branch, onClose, onSaved }) {
         publicVisible,
         directoryEnabled,
         publicDescription: publicDescription.trim() || null,
+        walkInEnabled,
+        walkInPaused: walkInEnabled && walkInPaused,
+        walkInEstimatedWaitMinutes: walkInEstimatedWaitMinutes === '' ? null : Number(walkInEstimatedWaitMinutes),
+        walkInMessage: walkInMessage.trim() || null,
       };
 
       let saved = isEdit
@@ -355,6 +363,20 @@ function BranchFormModal({ branch, onClose, onSaved }) {
                 </div>
               </div>
 
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div><div className="text-sm font-black text-neutral-950">Clientes sin reserva</div><div className="mt-1 text-xs font-bold text-neutral-600">Publica si esta sede acepta personas por orden de llegada.</div></div>
+                  <button type="button" onClick={() => { setWalkInEnabled((value) => !value); if (walkInEnabled) setWalkInPaused(false); }} className={`rounded-2xl px-4 py-3 text-sm font-black ${walkInEnabled ? 'bg-emerald-600 text-white' : 'border border-neutral-200 bg-white text-neutral-700'}`}>{walkInEnabled ? 'Aceptamos sin reserva' : 'Solo con reserva'}</button>
+                </div>
+                {walkInEnabled && <div className="mt-4 space-y-3">
+                  <button type="button" onClick={() => setWalkInPaused((value) => !value)} className={`w-full rounded-2xl px-4 py-3 text-sm font-black ${walkInPaused ? 'bg-red-600 text-white' : 'border border-emerald-300 bg-white text-emerald-800'}`}>{walkInPaused ? 'Llegadas pausadas temporalmente' : 'Recibiendo clientes sin reserva'}</button>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block"><span className="text-xs font-black text-neutral-700">Espera estimada (minutos)</span><input type="number" min="0" max="240" value={walkInEstimatedWaitMinutes} onChange={(event) => setWalkInEstimatedWaitMinutes(event.target.value)} placeholder="Ej. 20" className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 font-bold" /></label>
+                    <label className="block"><span className="text-xs font-black text-neutral-700">Mensaje para el cliente</span><input maxLength={200} value={walkInMessage} onChange={(event) => setWalkInMessage(event.target.value)} placeholder="Atendemos por orden de llegada" className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 font-bold" /></label>
+                  </div>
+                  <p className="text-xs font-bold leading-5 text-emerald-800">La espera es orientativa y puede cambiar mientras el cliente se dirige al local.</p>
+                </div>}
+              </div>
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -526,6 +548,10 @@ function BranchCard({ branch, onEdit, onToggle, onDeleteImage, onPreview }) {
             </div>
           </div>
 
+          <div className={`rounded-2xl px-4 py-3 ${branch.walkInEnabled ? (branch.walkInPaused ? 'bg-red-50' : 'bg-emerald-50') : 'bg-neutral-50'}`}>
+            <div className="text-xs font-black uppercase tracking-[0.14em] text-neutral-400">Sin reserva</div>
+            <div className="mt-1 text-sm font-black text-neutral-800">{branch.walkInEnabled ? (branch.walkInPaused ? 'Llegadas pausadas' : `Acepta llegadas${branch.walkInEstimatedWaitMinutes != null ? ` · ${branch.walkInEstimatedWaitMinutes} min aprox.` : ''}`) : 'Solo con reserva'}</div>
+          </div>
           <div className="rounded-2xl bg-neutral-50 px-4 py-3">
             <div className="text-xs font-black uppercase tracking-[0.14em] text-neutral-400">
               Dirección
