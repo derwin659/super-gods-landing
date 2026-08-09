@@ -1,4 +1,4 @@
-import { apiRequest, getApiBaseUrl, getToken } from './apiClient';
+﻿import { apiRequest, getApiBaseUrl, getToken } from './apiClient';
 import { normalizePhoneE164, whatsappPhoneDigits } from '../utils/internationalPhone';
 
 function toQuery(params = {}) {
@@ -46,18 +46,23 @@ function text(value, fallback = '') {
 }
 
 function normalizeCustomer(raw = {}) {
+  const composedName = [
+    raw.nombres ?? raw.nombre ?? raw.firstName,
+    raw.apellidos ?? raw.apellido ?? raw.lastName,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
   const name =
     raw.nombreCompleto ??
     raw.fullName ??
     raw.name ??
-    raw.nombre ??
-    [raw.nombres, raw.apellidos].filter(Boolean).join(' ') ??
-    'Cliente';
+    (composedName || 'Cliente');
 
   return {
     id: toNumber(raw.customerId ?? raw.id),
     nombres: text(raw.nombres ?? raw.nombre ?? raw.firstName ?? name, 'Cliente'),
-    apellidos: text(raw.apellidos ?? raw.lastName ?? ''),
+    apellidos: text(raw.apellidos ?? raw.apellido ?? raw.lastName ?? ''),
     nombreCompleto: text(name, 'Cliente').trim() || 'Cliente',
     telefono: text(raw.telefono ?? raw.phone ?? raw.phoneNumber ?? ''),
     email: text(raw.email ?? raw.correo ?? ''),
@@ -350,8 +355,8 @@ export async function updateOwnerCustomer({
   favoriteBarberName = null,
 }) {
   const payload = {
-    nombres,
-    apellidos,
+    nombre: nombres,
+    apellido: apellidos,
     telefono:
       telefono !== null && telefono !== undefined
         ? normalizePhoneE164(telefono)
@@ -551,9 +556,9 @@ function normalizeInactiveCustomer(raw = {}) {
   
     const text = encodeURIComponent(
       message ||
-        `Hola ${nombre || ''} 👋 somos ${businessName}.\n\n` +
-          `Hace tiempo no te vemos por aquí y queríamos invitarte a volver.\n\n` +
-          `Tenemos una atención especial para ti esta semana. Puedes reservar tu cita cuando gustes.`
+        `Hola ${nombre || ''} ðŸ‘‹ somos ${businessName}.\n\n` +
+          `Hace tiempo no te vemos por aquÃ­ y querÃ­amos invitarte a volver.\n\n` +
+          `Tenemos una atenciÃ³n especial para ti esta semana. Puedes reservar tu cita cuando gustes.`
     );
   
     return `https://wa.me/${phoneWithCountry}?text=${text}`;

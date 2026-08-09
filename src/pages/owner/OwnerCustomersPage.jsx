@@ -210,7 +210,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
     }
 
     if (!phoneValid || !telefono) {
-      setErrorMsg('Revisa el país y escribe un WhatsApp válido.');
+      setErrorMsg('Revisa el paÃ­s y escribe un WhatsApp vÃ¡lido.');
       return;
     }
 
@@ -283,7 +283,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
             setTelefono(e164);
             setPhoneValid(meta.isValid);
           }}
-          helperText="Selecciona el país. Se guardará con su prefijo internacional."
+          helperText="Selecciona el paÃ­s. Se guardarÃ¡ con su prefijo internacional."
         />
 
         <InputField
@@ -351,7 +351,7 @@ function HistoryItemRow({ item }) {
           ? 'bg-emerald-50 text-emerald-700'
           : 'bg-amber-50 text-amber-700'
       }`}>
-        {isProduct ? '📦' : '✂️'}
+        {isProduct ? 'ðŸ“¦' : 'âœ‚ï¸'}
       </div>
 
       <div className="min-w-0 flex-1">
@@ -359,7 +359,7 @@ function HistoryItemRow({ item }) {
           {item.nombre || 'Item'}
         </div>
         <div className="mt-1 text-xs font-bold text-neutral-500">
-          Cant. {item.cantidad || 1} · {formatMoney(item.precioUnitario || 0)}
+          Cant. {item.cantidad || 1} Â· {formatMoney(item.precioUnitario || 0)}
         </div>
       </div>
 
@@ -393,12 +393,12 @@ function HistoryVisitCard({ item }) {
             </div>
 
             <div className="mt-2 flex items-center gap-2 text-sm font-bold text-neutral-500">
-              <span>👤</span>
+              <span>ðŸ‘¤</span>
               <span className="truncate">{item.barbero}</span>
             </div>
 
             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm font-bold text-neutral-400">
-              <span>📅</span>
+              <span>ðŸ“…</span>
               <span>{prettyDate(item.fecha)}</span>
 
               {hasItems && (
@@ -422,7 +422,7 @@ function HistoryVisitCard({ item }) {
 
             {hasItems && (
               <div className="mt-2 text-xl font-black text-neutral-400">
-                {expanded ? '⌃' : '⌄'}
+                {expanded ? 'âŒƒ' : 'âŒ„'}
               </div>
             )}
 
@@ -696,7 +696,7 @@ function CustomerDetailModal({
                     </span>
 
                     <div className="mt-2 text-sm font-bold text-white/65">
-                      {customer?.telefono || 'Sin teléfono'}
+                      {customer?.telefono || 'Sin telÃ©fono'}
                     </div>
 
                     {customer?.email && (
@@ -742,7 +742,7 @@ function CustomerDetailModal({
 
                 <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
                   <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-black text-neutral-950">Preferencias WhatsApp</p><p className="mt-1 text-xs font-semibold text-neutral-500">Controla mensajes operativos y promociones.</p></div>{(detail?.whatsappOptedOutAt || customer?.whatsappOptedOutAt) && <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700">Baja total</span>}</div>
-                  <div className="mt-3 space-y-2">{[["Mensajes operativos","Recibos, citas y recordatorios","transactional",detail?.whatsappTransactionalEnabled ?? customer?.whatsappTransactionalEnabled],["Promociones","Campañas y ofertas comerciales","marketing",detail?.whatsappMarketingEnabled ?? customer?.whatsappMarketingEnabled]].map(([title,helper,key,enabled]) => <button key={key} type="button" disabled={consentSaving} onClick={() => onWhatsappConsent(key, !enabled)} className="flex w-full items-center gap-3 rounded-xl border border-white bg-white p-3 text-left disabled:opacity-60"><span className={`h-6 w-11 rounded-full p-1 transition ${enabled ? "bg-emerald-500" : "bg-neutral-300"}`}><span className={`block h-4 w-4 rounded-full bg-white transition ${enabled ? "translate-x-5" : ""}`} /></span><span className="flex-1"><span className="block text-sm font-black text-neutral-900">{title}</span><span className="block text-xs font-semibold text-neutral-500">{helper}</span></span></button>)}</div>
+                  <div className="mt-3 space-y-2">{[["Mensajes operativos","Recibos, citas y recordatorios","transactional",detail?.whatsappTransactionalEnabled ?? customer?.whatsappTransactionalEnabled],["Promociones","CampaÃ±as y ofertas comerciales","marketing",detail?.whatsappMarketingEnabled ?? customer?.whatsappMarketingEnabled]].map(([title,helper,key,enabled]) => <button key={key} type="button" disabled={consentSaving} onClick={() => onWhatsappConsent(key, !enabled)} className="flex w-full items-center gap-3 rounded-xl border border-white bg-white p-3 text-left disabled:opacity-60"><span className={`h-6 w-11 rounded-full p-1 transition ${enabled ? "bg-emerald-500" : "bg-neutral-300"}`}><span className={`block h-4 w-4 rounded-full bg-white transition ${enabled ? "translate-x-5" : ""}`} /></span><span className="flex-1"><span className="block text-sm font-black text-neutral-900">{title}</span><span className="block text-xs font-semibold text-neutral-500">{helper}</span></span></button>)}</div>
                   <button type="button" disabled={consentSaving} onClick={() => onWhatsappConsent("optout", !(detail?.whatsappOptedOutAt || customer?.whatsappOptedOutAt))} className="mt-3 w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700 disabled:opacity-60">{(detail?.whatsappOptedOutAt || customer?.whatsappOptedOutAt) ? "Reactivar WhatsApp" : "Dar de baja todo WhatsApp"}</button>
                 </div>
                 <div className="mt-5 grid gap-3">
@@ -796,7 +796,7 @@ function CustomerDetailModal({
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-black text-neutral-950">{item.title}</p>
                                 <p className="mt-1 line-clamp-2 text-xs font-semibold text-neutral-500">{item.message}</p>
-                                <p className="mt-2 text-[11px] font-black uppercase tracking-[0.16em] text-violet-500">{done ? 'Completado' : 'Pendiente'}{item.createdAt ? ` · ${prettyDate(item.createdAt)}` : ''}</p>
+                                <p className="mt-2 text-[11px] font-black uppercase tracking-[0.16em] text-violet-500">{done ? 'Completado' : 'Pendiente'}{item.createdAt ? ` Â· ${prettyDate(item.createdAt)}` : ''}</p>
                               </div>
                               {onUpdateFollowUpStatus && item.id && (
                                 <button
@@ -825,21 +825,21 @@ function CustomerDetailModal({
 
               <div className="mt-4 grid gap-4">
                 <div>
-                  <div className="text-sm font-black text-neutral-500">Última visita</div>
+                  <div className="text-sm font-black text-neutral-500">Ãšltima visita</div>
                   <div className="mt-1 text-lg font-black text-neutral-950">
                     {prettyDate(detail?.ultimaVisita || customer?.ultimaVisita)}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-sm font-black text-neutral-500">Último servicio</div>
+                  <div className="text-sm font-black text-neutral-500">Ãšltimo servicio</div>
                   <div className="mt-1 text-lg font-black text-neutral-950">
                     {detail?.ultimoServicio || customer?.ultimoServicio || history?.[0]?.servicio || '-'}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-sm font-black text-neutral-500">Último {labels.professionalSingular}</div>
+                  <div className="text-sm font-black text-neutral-500">Ãšltimo {labels.professionalSingular}</div>
                   <div className="mt-1 text-lg font-black text-neutral-950">
                     {detail?.ultimoBarbero || customer?.ultimoBarbero || history?.[0]?.barbero || '-'}
                   </div>
@@ -904,19 +904,19 @@ function CustomerDetailModal({
 
             {history.length > 0 && (
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <HistorySummaryCard label="Visitas" value={history.length} icon="📅" />
-                <HistorySummaryCard label="Items" value={totalItems} icon="✂️" />
-                <HistorySummaryCard label="Total" value={formatMoney(totalSpent)} icon="💰" />
+                <HistorySummaryCard label="Visitas" value={history.length} icon="ðŸ“…" />
+                <HistorySummaryCard label="Items" value={totalItems} icon="âœ‚ï¸" />
+                <HistorySummaryCard label="Total" value={formatMoney(totalSpent)} icon="ðŸ’°" />
               </div>
             )}
 
             {history.length === 0 ? (
               <div className="mt-5 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
                 <div className="text-lg font-black text-neutral-950">
-                  Sin historial todavía
+                  Sin historial todavÃ­a
                 </div>
                 <p className="mt-2 text-sm font-bold text-neutral-500">
-                  Cuando se registren ventas, cortes o atenciones, aparecerán aquí.
+                  Cuando se registren ventas, cortes o atenciones, aparecerÃ¡n aquÃ­.
                 </p>
               </div>
             ) : (
@@ -966,7 +966,7 @@ function CustomerCard({ customer, onOpen, onWhatsapp }) {
           </div>
 
           <div className="mt-1 text-sm font-bold text-neutral-500">
-            {customer.telefono || 'Sin teléfono'}
+            {customer.telefono || 'Sin telÃ©fono'}
           </div>
         </div>
 
@@ -993,13 +993,13 @@ function CustomerCard({ customer, onOpen, onWhatsapp }) {
 
       <div className="mt-4 rounded-2xl bg-neutral-50 px-4 py-3">
         <div className="text-xs font-black uppercase tracking-[0.12em] text-neutral-400">
-          Última atención
+          Ãšltima atenciÃ³n
         </div>
         <div className="mt-1 text-sm font-black text-neutral-950">
           {customer.ultimoServicio || 'Sin datos'}
         </div>
         <div className="text-sm font-bold text-neutral-500">
-          {customer.ultimoBarbero || 'Sin ' + labels.professionalSingular} · {prettyDate(customer.ultimaVisita)}
+          {customer.ultimoBarbero || 'Sin ' + labels.professionalSingular} Â· {prettyDate(customer.ultimaVisita)}
         </div>
       </div>
 
@@ -1099,7 +1099,7 @@ function InactiveCustomersPanel({
         <div className="relative flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-black uppercase tracking-[0.20em] text-amber-300">
-              Fidelización
+              FidelizaciÃ³n
             </div>
 
             <h3 className="mt-4 text-2xl font-black tracking-tight">
@@ -1107,7 +1107,7 @@ function InactiveCustomersPanel({
             </h3>
 
             <p className="mt-2 max-w-2xl text-sm leading-7 text-white/65">
-              Detecta clientes que no regresan hace varios días y envíales un mensaje rápido por WhatsApp.
+              Detecta clientes que no regresan hace varios dÃ­as y envÃ­ales un mensaje rÃ¡pido por WhatsApp.
             </p>
           </div>
 
@@ -1124,7 +1124,7 @@ function InactiveCustomersPanel({
                     : 'rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-xs font-black text-white/75 transition hover:bg-white/15 hover:text-white'
                 }
               >
-                {option} días
+                {option} dÃ­as
               </button>
             ))}
 
@@ -1153,12 +1153,12 @@ function InactiveCustomersPanel({
           </div>
         ) : customers.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-7 text-center">
-            <div className="text-2xl">🎉</div>
+            <div className="text-2xl">ðŸŽ‰</div>
             <div className="mt-2 text-lg font-black text-neutral-950">
               No hay clientes inactivos en este rango
             </div>
             <p className="mx-auto mt-2 max-w-xl text-sm font-bold leading-6 text-neutral-500">
-              Prueba con 15, 30, 60 o 90 días para encontrar clientes que necesitan seguimiento.
+              Prueba con 15, 30, 60 o 90 dÃ­as para encontrar clientes que necesitan seguimiento.
             </p>
           </div>
         ) : (
@@ -1185,10 +1185,10 @@ function InactiveCustomersPanel({
                           {customer.nombre || 'Cliente'}
                         </div>
                         <div className="mt-1 text-sm font-bold text-neutral-500">
-                          {customer.telefono || 'Sin teléfono'}
+                          {customer.telefono || 'Sin telÃ©fono'}
                         </div>
                         <div className="mt-1 text-xs font-black uppercase tracking-[0.12em] text-neutral-400">
-                          Última visita: {prettyDate(customer.ultimaVisita)}
+                          Ãšltima visita: {prettyDate(customer.ultimaVisita)}
                         </div>
                       </div>
                     </div>
@@ -1204,7 +1204,7 @@ function InactiveCustomersPanel({
                       </a>
                     ) : (
                       <span className="shrink-0 rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-center text-sm font-black text-neutral-400">
-                        Sin teléfono
+                        Sin telÃ©fono
                       </span>
                     )}
                   </div>
@@ -1344,7 +1344,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
             Reporte inteligente de clientes
           </h3>
           <p className="mt-3 text-sm font-semibold leading-6 text-white/65">
-            Filtra por registro, sede, ultima visita y segmento. Los resultados muestran clientes reales para campañas o seguimiento.
+            Filtra por registro, sede, ultima visita y segmento. Los resultados muestran clientes reales para campaÃ±as o seguimiento.
           </p>
           <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/45">Criterios de segmento</p>
@@ -1448,16 +1448,16 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
                     type="button"
                     onClick={createCampaignDraft}
                     disabled={!canCreateCampaign}
-                    title={`${items.length} filtrados · ${campaignPhoneItems.length} con telefono · ${campaignNeedsConsent} requieren permiso`}
+                    title={`${items.length} filtrados Â· ${campaignPhoneItems.length} con telefono Â· ${campaignNeedsConsent} requieren permiso`}
                     className="rounded-2xl border border-amber-200 bg-amber-100 px-4 py-3 text-xs font-black text-amber-900 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    {creatingCampaignDraft ? 'Preparando...' : 'Crear campaña'}
+                    {creatingCampaignDraft ? 'Preparando...' : 'Crear campaÃ±a'}
                   </button>
                 </div>
               </div>
               {canExportReport ? (
                 <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-black text-amber-900">
-                  Vista previa en pantalla: {items.length} cargados · {campaignPhoneItems.length} con telefono. Al crear campaña se cargara la audiencia completa filtrada hasta 500 clientes.
+                  Vista previa en pantalla: {items.length} cargados Â· {campaignPhoneItems.length} con telefono. Al crear campaÃ±a se cargara la audiencia completa filtrada hasta 500 clientes.
                 </div>
               ) : null}
 
@@ -1500,7 +1500,7 @@ function CustomerReportResults({ items, activeStatus, loading }) {
                     <span className={`rounded-full border px-2 py-1 text-[10px] font-black ${meta.className}`}>{meta.label}</span>
                   </div>
                   <p className="mt-1 truncate text-xs font-bold text-neutral-500">
-                    {item.branchName || 'Sin sede'} · {item.visits} visitas · Ult. visita {item.lastVisit ? item.lastVisit.slice(0, 10) : 'sin venta'}
+                    {item.branchName || 'Sin sede'} Â· {item.visits} visitas Â· Ult. visita {item.lastVisit ? item.lastVisit.slice(0, 10) : 'sin venta'}
                   </p>
                 </div>
                 <div className="text-left sm:text-right">
@@ -1785,7 +1785,7 @@ export default function OwnerCustomersPage() {
     setShowForm(true);
   }
 
-  function handleSavedCustomer(saved) {
+  async function handleSavedCustomer(saved) {
     setShowForm(false);
     setEditingCustomer(null);
 
@@ -1803,6 +1803,8 @@ export default function OwnerCustomersPage() {
       setSelectedCustomer((prev) => ({ ...prev, ...saved }));
       setCustomerDetail((prev) => (prev ? { ...prev, ...saved } : prev));
     }
+
+    await loadCustomers(query, { refreshTotal: !query.trim() });
   }
 
   function createAppointmentForCustomer(customer) {
@@ -1890,7 +1892,7 @@ export default function OwnerCustomersPage() {
             </h2>
 
             <p className="mt-3 max-w-2xl text-sm leading-7 text-white/65">
-              Consulta clientes, puntos, teléfonos, historial de cortes y crea citas desde su ficha.
+              Consulta clientes, puntos, telÃ©fonos, historial de cortes y crea citas desde su ficha.
             </p>
           </div>
 
@@ -1925,7 +1927,7 @@ export default function OwnerCustomersPage() {
 
       <section className="grid gap-5 md:grid-cols-3">
         <StatCard label="Clientes totales" value={totalCustomers ?? customers.length} />
-        <StatCard label="Con teléfono" value={withPhone} tone="blue" />
+        <StatCard label="Con telÃ©fono" value={withPhone} tone="blue" />
         <StatCard label="Puntos visibles" value={totalPoints} tone="gold" />
       </section>
 
@@ -1997,7 +1999,7 @@ export default function OwnerCustomersPage() {
                   setQueryPhoneValid(meta.isValid);
                 }}
                 helperText={query && !queryPhoneValid
-                  ? 'Completa el número para iniciar la búsqueda.'
+                  ? 'Completa el nÃºmero para iniciar la bÃºsqueda.'
                   : 'Busca con el prefijo correcto, incluso si el cliente es extranjero.'}
               />
             ) : (
@@ -2113,7 +2115,7 @@ export default function OwnerCustomersPage() {
       ) : customers.length === 0 ? (
         <div className="rounded-[30px] border border-dashed border-neutral-300 bg-white/70 p-10 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100 text-2xl">
-            👤
+            ðŸ‘¤
           </div>
           <div className="mt-4 text-xl font-black text-neutral-950">
             {isSearching ? 'No encontramos ese cliente' : 'No hay clientes para mostrar'}

@@ -1,4 +1,4 @@
-import { apiRequest } from './apiClient';
+﻿import { apiRequest } from './apiClient';
 
 function toQuery(params = {}) {
   const search = new URLSearchParams();
@@ -373,6 +373,24 @@ export async function getCashBarbers(branchId) {
   }
 }
 
+export async function getCashPayableEmployees(branchId) {
+  const data = await apiRequest(
+    `/api/owner/barber-payments/payable-employees${toQuery({ branchId })}`
+  );
+
+  return extractList(data).map((item) => ({
+    id: Number(item.id ?? item.userId ?? 0),
+    name: [item.nombre, item.apellido].filter(Boolean).join(' ').trim() || 'Empleado',
+    fullName: [item.nombre, item.apellido].filter(Boolean).join(' ').trim() || 'Empleado',
+    role: String(item.rol || item.role || ''),
+    rol: String(item.rol || item.role || ''),
+    activo: item.activo !== false,
+    salaryEnabled: item.salaryEnabled === true,
+    professionalProfileEnabled: item.professionalProfileEnabled === true,
+    branchId: Number(item.branchId || branchId || 0),
+    branchIds: Array.isArray(item.branchIds) ? item.branchIds.map(Number) : [Number(branchId)],
+  }));
+}
 export async function getBarberPaymentPreview({
   branchId,
   barberUserId,
@@ -722,10 +740,10 @@ export async function getOwnerPaymentMethods(branchId) {
       id: Number(item.id ?? item.paymentMethodId ?? 0),
       code: String(item.code ?? item.method ?? '').trim().toUpperCase(),
       label: String(
-        item.displayName ?? item.name ?? item.label ?? item.code ?? 'Método'
+        item.displayName ?? item.name ?? item.label ?? item.code ?? 'MÃ©todo'
       ),
       displayName: String(
-        item.displayName ?? item.name ?? item.label ?? item.code ?? 'Método'
+        item.displayName ?? item.name ?? item.label ?? item.code ?? 'MÃ©todo'
       ),
       countryCode: String(item.countryCode ?? ''),
       active: item.active !== false,
