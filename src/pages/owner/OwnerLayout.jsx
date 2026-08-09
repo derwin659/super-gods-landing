@@ -23,6 +23,7 @@ import {
   Menu,
   X,
   Sparkles,
+  Images,
   ChevronRight,
   Crown,
 } from 'lucide-react';
@@ -222,6 +223,18 @@ const navGroups = [
         feature: 'core',
       },
       {
+        to: '/owner/vitrina',
+        label: 'Vitrina',
+        description: 'Trabajos del equipo',
+        icon: Images,
+        tone: {
+          soft: 'bg-violet-50 text-violet-700 ring-violet-100',
+          active: 'from-violet-600 to-fuchsia-500',
+          glow: 'shadow-violet-300/60',
+        },
+        permissions: ['CONFIG_BARBERS'],
+        feature: 'core',
+      },      {
         to: '/owner/horarios',
         label: 'Horarios',
         description: 'Disponibilidad',

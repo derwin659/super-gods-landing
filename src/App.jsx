@@ -57,6 +57,7 @@ import OwnerServicesPage from './pages/owner/OwnerServicesPage';
 import OwnerBranchesPage from './pages/owner/OwnerBranchesPage';
 import OwnerRewardsPage from './pages/owner/OwnerRewardsPage';
 import OwnerBarbersPage from './pages/owner/OwnerBarbersPage';
+import OwnerShowcasePage from './pages/owner/OwnerShowcasePage';
 import OwnerBarberSchedulePage from './pages/owner/OwnerBarberSchedulePage';
 import OwnerReservationSettingsPage from './pages/owner/OwnerReservationSettingsPage';
 import OwnerPromotionsPage from './pages/owner/OwnerPromotionsPage';
@@ -2178,6 +2179,15 @@ export default function App() {
             element={
               <OwnerPermissionRoute permissions={['CONFIG_BARBERS']}>
                 <OwnerBarbersPage />
+              </OwnerPermissionRoute>
+            }
+          />
+
+          <Route
+            path="vitrina"
+            element={
+              <OwnerPermissionRoute permissions={['CONFIG_BARBERS']}>
+                <OwnerShowcasePage />
               </OwnerPermissionRoute>
             }
           />
