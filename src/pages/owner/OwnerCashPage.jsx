@@ -5260,7 +5260,7 @@ function FundHistorySection({ items = [], summary = null }) {
   );
 }
 
-function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, session = null, canManageFund = false, labels = readBusinessLabels(), onClose }) {
+function HistoryDetailModal({ branch, cash, from, to, paymentMethods: initialPaymentMethods = DEFAULT_PAYMENT_METHODS, session = null, canManageFund = false, labels = readBusinessLabels(), onClose }) {
   const [sales, setSales] = useState([]);
   const [movements, setMovements] = useState(Array.isArray(cash?.movements) ? cash.movements : []);
   const [editingSale, setEditingSale] = useState(null);
@@ -5306,6 +5306,8 @@ function HistoryDetailModal({ branch, cash, paymentMethods: initialPaymentMethod
       const data = await getCashMovements({
         branchId: branch.id,
         cashRegisterId: cash.id,
+        from,
+        to,
       });
 
       setMovements(Array.isArray(data) ? data : []);
@@ -5730,7 +5732,7 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
       const details = await Promise.all(items.map(async (cash) => {
         const [sales, movements] = await Promise.all([
           getSalesByCashRegister({ branchId: branch.id, cashRegisterId: cash.id }),
-          getCashMovements({ branchId: branch.id, cashRegisterId: cash.id }),
+          getCashMovements({ branchId: branch.id, cashRegisterId: cash.id, from, to }),
         ]);
         return { cash, sales, movements };
       }));
@@ -5829,6 +5831,8 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
         <HistoryDetailModal
           branch={branch}
           cash={selectedCash}
+          from={from}
+          to={to}
           paymentMethods={paymentMethods}
           canManageFund={canManageFund}
           onClose={() => setSelectedCash(null)}

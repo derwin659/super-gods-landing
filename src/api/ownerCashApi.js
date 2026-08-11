@@ -202,10 +202,12 @@ export async function closeCashRegister({
   );
 }
 
-export async function getCashMovements({ branchId, cashRegisterId }) {
+export async function getCashMovements({ branchId, cashRegisterId, from, to }) {
   const data = await apiRequest(
     `/api/owner/cash-registers/${cashRegisterId}/movements${toQuery({
       branchId,
+      from,
+      to,
     })}`
   );
 
