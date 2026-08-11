@@ -12,6 +12,19 @@ import {
   registerReceiptEvent,
 } from '../api/ownerCashApi';
 
+const AUTO_PRINT_TIMEOUT_MS = 12_000;
+
+function withTimeout(promise, timeoutMs, message) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
+}
+
 
 function resolveAssetUrl(value) {
   const raw = String(value || '').trim();
@@ -331,11 +344,15 @@ export async function autoPrintApprovedSale(sale, { branchId = null } = {}) {
   }
 
   try {
-    return await printSaleReceipt(sale, {
-      action: 'PRINT',
-      openDrawer: true,
-      branchId,
-    });
+    return await withTimeout(
+      printSaleReceipt(sale, {
+        action: 'PRINT',
+        openDrawer: true,
+        branchId,
+      }),
+      AUTO_PRINT_TIMEOUT_MS,
+      'La impresora no respondio a tiempo. La venta si quedo aprobada.'
+    );
   } catch (error) {
     console.error('Venta guardada, pero falló la impresión o vista previa:', error);
     return { printed: false, error };

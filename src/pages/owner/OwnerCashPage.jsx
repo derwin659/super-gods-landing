@@ -6483,7 +6483,9 @@ export default function OwnerCashPage() {
         saleId,
       });
 
-      await autoPrintApprovedSale(approvedSale, { branchId: selectedBranch.id });
+      // La aprobacion ya termino en el servidor. La impresora es un efecto
+      // secundario y nunca debe mantener la venta en estado "Procesando".
+      void autoPrintApprovedSale(approvedSale, { branchId: selectedBranch.id });
       offerCustomerWhatsappFollowUp(saleWithWhatsappFallback(approvedSale, sale), {
         canOpenWhatsapp: currentRole === 'OWNER',
       });
