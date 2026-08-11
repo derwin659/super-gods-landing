@@ -7,6 +7,7 @@ import {
   saleHasCashPayment,
 } from '../utils/receiptBuilder';
 import { readPrinterSettings } from '../utils/printerSettingsStorage';
+import { getQzCertificate, signQzPayload } from '../api/qzSigningApi';
 import {
   registerDrawerEvent,
   registerReceiptEvent,
@@ -57,6 +58,15 @@ function buildNativeEscPosQr(value, { moduleSize = 5, errorCorrection = 49 } = {
   ].join('');
 }
 
+let qzSecurityConfigured = false;
+
+function configureQzSecurity(qz) {
+  if (qzSecurityConfigured) return;
+  qz.security.setCertificatePromise(() => getQzCertificate());
+  qz.security.setSignatureAlgorithm('SHA512');
+  qz.security.setSignaturePromise((payload) => signQzPayload(payload));
+  qzSecurityConfigured = true;
+}
 function getQz() {
   const qz = window.qz;
 
@@ -110,6 +120,7 @@ export function openReceiptPreview(sale, settings = {}) {
 
 export async function connectQz() {
   const qz = getQz();
+  configureQzSecurity(qz);
 
   if (!qz.websocket.isActive()) {
     await qz.websocket.connect({ retries: 3, delay: 1 });
