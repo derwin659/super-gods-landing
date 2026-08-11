@@ -4,10 +4,6 @@ function reportRequest(path) {
   const separator = path.includes('?') ? '&' : '?';
   return apiRequest(path + separator + '_ts=' + Date.now(), {
     cache: 'no-store',
-    headers: {
-      'Cache-Control': 'no-cache',
-      Pragma: 'no-cache',
-    },
   });
 }
 
