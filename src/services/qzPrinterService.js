@@ -209,7 +209,7 @@ async function printThermalReceipt(printerName, sale, settings) {
           language: 'ESCPOS',
           dotDensity: 'double',
           pageWidth: is58 ? 384 : 576,
-          imageWidth: is58 ? 72 : 120,
+          imageWidth: is58 ? 120 : 180,
           interpolation: 'nearest-neighbor',
         },
       }]);
@@ -228,15 +228,30 @@ async function printThermalReceipt(printerName, sale, settings) {
   }));
 
   if (withQr) {
+    const qrImageUrl = resolveAssetUrl(settings.appQrImageUrl || '/super-gods-app-qr.png');
     try {
-      const moduleSize = is58 ? 4 : 6;
-      await qzPrint(printerName, buildNativeEscPosQr(qrData, { moduleSize }));
+      // Algunas impresoras POS-58 imprimen los comandos QR nativos como texto.
+      // Enviar el QR rasterizado mantiene el resultado consistente entre modelos.
+      await qzPrint(printerName, [{
+        type: 'pixel',
+        format: 'image',
+        flavor: 'file',
+        data: qrImageUrl,
+        options: {
+          language: 'ESCPOS',
+          dotDensity: 'double',
+          pageWidth: is58 ? 384 : 576,
+          imageWidth: is58 ? 220 : 300,
+          interpolation: 'nearest-neighbor',
+        },
+      }]);
+      await qzPrint(printerName, '\n');
     } catch (qrError) {
-      console.warn('No se pudo imprimir el QR nativo; se imprimirá la URL como texto.', qrError);
+      console.warn('No se pudo imprimir la imagen QR; se imprimirá la URL.', qrError);
       await qzPrint(printerName, `\x1B\x61\x01${qrData}\n`);
     }
 
-    // El pie siempre se imprime, incluso si el QR nativo no es compatible.
+    // El pie siempre se imprime, incluso si la imagen QR no se puede descargar.
     await qzPrint(printerName, buildEscPosReceiptAfterQr(sale, settings));
   }
 
