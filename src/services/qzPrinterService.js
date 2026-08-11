@@ -62,9 +62,23 @@ let qzSecurityConfigured = false;
 
 function configureQzSecurity(qz) {
   if (qzSecurityConfigured) return;
-  qz.security.setCertificatePromise(() => getQzCertificate());
+  qz.security.setCertificatePromise(async () => {
+    try {
+      return await getQzCertificate();
+    } catch (error) {
+      console.warn('Firma QZ no disponible; se usara autorizacion manual.', error);
+      return '';
+    }
+  });
   qz.security.setSignatureAlgorithm('SHA512');
-  qz.security.setSignaturePromise((payload) => signQzPayload(payload));
+  qz.security.setSignaturePromise(async (payload) => {
+    try {
+      return await signQzPayload(payload);
+    } catch (error) {
+      console.warn('No se pudo firmar la solicitud QZ; se usara autorizacion manual.', error);
+      return '';
+    }
+  });
   qzSecurityConfigured = true;
 }
 function getQz() {
