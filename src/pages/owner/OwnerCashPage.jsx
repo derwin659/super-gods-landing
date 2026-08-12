@@ -6232,6 +6232,34 @@ function CashBranchSelector({
     </div>
   );
 }
+function CashOverviewCard({ eyebrow, title, primaryLabel, primaryValue, secondaryLabel, secondaryValue, tone = 'light' }) {
+  const dark = tone === 'dark';
+  const gold = tone === 'gold';
+  return (
+    <article className={
+      dark
+        ? 'rounded-[26px] border border-neutral-900 bg-neutral-950 p-5 text-white shadow-[0_18px_40px_rgba(15,23,42,0.14)]'
+        : gold
+          ? 'rounded-[26px] border border-amber-300 bg-amber-50/50 p-5 text-neutral-950 shadow-sm'
+          : 'rounded-[26px] border border-neutral-200 bg-white p-5 text-neutral-950 shadow-sm'
+    }>
+      <div className={dark ? 'text-[10px] font-black uppercase tracking-[0.2em] text-white/40' : 'text-[10px] font-black uppercase tracking-[0.2em] text-amber-700'}>
+        {eyebrow}
+      </div>
+      <h3 className="mt-2 text-base font-black">{title}</h3>
+      <div className={dark ? 'mt-4 grid grid-cols-2 divide-x divide-white/10' : 'mt-4 grid grid-cols-2 divide-x divide-neutral-200'}>
+        <div className="pr-4">
+          <div className={dark ? 'text-xs font-bold text-white/45' : 'text-xs font-bold text-neutral-500'}>{primaryLabel}</div>
+          <div className="mt-1 text-2xl font-black">{primaryValue}</div>
+        </div>
+        <div className="pl-4">
+          <div className={dark ? 'text-xs font-bold text-white/45' : 'text-xs font-bold text-neutral-500'}>{secondaryLabel}</div>
+          <div className="mt-1 text-2xl font-black">{secondaryValue}</div>
+        </div>
+      </div>
+    </article>
+  );
+}
 export default function OwnerCashPage() {
   const { session } = useAuth();
   const [branches, setBranches] = useState([]);
@@ -6807,155 +6835,143 @@ export default function OwnerCashPage() {
           </div>
         </section>
       )}
-      <section className="relative overflow-hidden rounded-[34px] border border-amber-400/15 bg-[linear-gradient(135deg,#090909_0%,#15110A_42%,#101827_100%)] p-6 text-white shadow-[0_22px_60px_rgba(15,23,42,0.18)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(251,191,36,0.20),transparent_30%),radial-gradient(circle_at_100%_0%,rgba(59,130,246,0.16),transparent_32%)]" />
+      <section className="relative rounded-[34px] border border-amber-400/15 bg-[linear-gradient(135deg,#090909_0%,#15110A_42%,#101827_100%)] p-5 text-white shadow-[0_22px_60px_rgba(15,23,42,0.18)] sm:p-6">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[34px]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(251,191,36,0.18),transparent_30%),radial-gradient(circle_at_100%_0%,rgba(59,130,246,0.14),transparent_32%)]" />
+        </div>
 
-        <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-amber-300">
-              Caja Web
+        <div className="relative">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-300/80">
+                Caja web
+              </div>
+              <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+                Control de caja
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-white/55">
+                Operación diaria, saldos y movimientos de la sede seleccionada.
+              </p>
             </div>
 
-            <h2 className="mt-5 text-4xl font-black tracking-tight">
-              Control de caja
-            </h2>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => loadCash(selectedBranchId, { silent: true })}
+                disabled={refreshing}
+                className="rounded-xl border border-white/10 bg-white/[0.07] px-3.5 py-2.5 text-xs font-black text-white/80 transition hover:bg-white/[0.12] disabled:opacity-60"
+              >
+                {refreshing ? 'Actualizando...' : '↻ Actualizar'}
+              </button>
+              <button
+                onClick={() => setShowHistoryModal(true)}
+                disabled={!selectedBranch}
+                className="rounded-xl border border-white/10 bg-white/[0.07] px-3.5 py-2.5 text-xs font-black text-white/80 transition hover:bg-white/[0.12] disabled:opacity-60"
+              >
+                Historial
+              </button>
+              <button
+                onClick={() => setShowAuditActivityModal(true)}
+                disabled={!selectedBranch}
+                className="rounded-xl border border-white/10 bg-white/[0.07] px-3.5 py-2.5 text-xs font-black text-white/80 transition hover:bg-white/[0.12] disabled:opacity-60"
+              >
+                Actividad
+              </button>
+              {canManageFund && (
+                <button
+                  onClick={() => setShowFundMovementModal(true)}
+                  disabled={!selectedBranch}
+                  className="rounded-xl border border-amber-300/25 bg-amber-300/10 px-3.5 py-2.5 text-xs font-black text-amber-200 transition hover:bg-amber-300/15 disabled:opacity-50"
+                >
+                  Fondo acumulado
+                </button>
+              )}
+            </div>
+          </div>
 
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-white/65">
-              Revisa caja abierta, métodos de pago, ingresos, gastos y movimientos
-              operativos por sede.
-            </p>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-
-              <CashBranchSelector
-                branches={branches}
-                value={selectedBranchId}
-                onChange={setSelectedBranchId}
-                disabled={loadingBranches}
-              />
-
-              <div className={`rounded-2xl border px-4 py-3 ${
-                isOpen
-                  ? 'border-emerald-400/20 bg-emerald-400/10'
-                  : 'border-red-400/20 bg-red-400/10'
-              }`}>
-                <div className={`text-[11px] font-black uppercase tracking-[0.18em] ${
-                  isOpen ? 'text-emerald-300/70' : 'text-red-300/80'
-                }`}>
-                  Estado
-                </div>
-
-                <div className={`mt-1 text-sm font-black ${
-                  isOpen ? 'text-emerald-300' : 'text-red-200'
-                }`}>
-                  {isOpen ? 'Caja abierta' : 'Caja cerrada'}
+          <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(300px,0.8fr)_minmax(520px,1.2fr)]">
+            <div className="rounded-[24px] border border-white/10 bg-white/[0.055] p-3.5">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <CashBranchSelector
+                  branches={branches}
+                  value={selectedBranchId}
+                  onChange={setSelectedBranchId}
+                  disabled={loadingBranches}
+                />
+                <div className={
+                  isOpen
+                    ? 'flex min-w-[150px] flex-1 items-center gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3'
+                    : 'flex min-w-[150px] flex-1 items-center gap-3 rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3'
+                }>
+                  <span className={isOpen ? 'h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.8)]' : 'h-2.5 w-2.5 rounded-full bg-red-300'} />
+                  <div>
+                    <div className={isOpen ? 'text-[10px] font-black uppercase tracking-[0.16em] text-emerald-300/65' : 'text-[10px] font-black uppercase tracking-[0.16em] text-red-300/70'}>
+                      Estado
+                    </div>
+                    <div className={isOpen ? 'mt-0.5 text-sm font-black text-emerald-300' : 'mt-0.5 text-sm font-black text-red-200'}>
+                      {isOpen ? 'Caja abierta' : 'Caja cerrada'}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {cashRegister?.openedAt && (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3">
-                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-white/35">
-                    Apertura
-                  </div>
-                  <div className="mt-1 text-sm font-black">
-                    {formatDateTime(cashRegister.openedAt)}
-                  </div>
-                </div>
-              )}
+              <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 px-1 text-xs font-bold text-white/45">
+                {cashRegister?.openedAt && (
+                  <span><strong className="text-white/70">Apertura:</strong> {formatDateTime(cashRegister.openedAt)}</span>
+                )}
+                {lastUpdatedAt && (
+                  <span>
+                    <strong className="text-white/70">Actualizado:</strong>{' '}
+                    {lastUpdatedAt.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+              </div>
+            </div>
 
-              {lastUpdatedAt && (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3">
-                  <div className="text-[11px] font-black uppercase tracking-[0.18em] text-white/35">
-                    Actualizado
-                  </div>
-                  <div className="mt-1 text-sm font-black">
-                    {lastUpdatedAt.toLocaleTimeString('es-PE', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </div>
+            <div className="rounded-[24px] border border-white/10 bg-black/15 p-3.5">
+              <div className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-white/35">
+                Operaciones
+              </div>
+              {isOpen ? (
+                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+                  <button
+                    onClick={() => setShowSaleModal(true)}
+                    disabled={!canManageSales}
+                    className="rounded-2xl bg-emerald-400 px-4 py-3.5 text-sm font-black text-neutral-950 transition hover:bg-emerald-300 disabled:opacity-50"
+                  >
+                    Nueva venta
+                  </button>
+                  <button
+                    onClick={() => setShowMovementModal(true)}
+                    className="rounded-2xl bg-amber-400 px-4 py-3.5 text-sm font-black text-neutral-950 transition hover:bg-amber-300"
+                  >
+                    Movimiento
+                  </button>
+                  <button
+                    onClick={() => setShowBarberPaymentModal(true)}
+                    className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3.5 text-sm font-black text-white transition hover:bg-white/15"
+                  >
+                    Pagar {labels.professionalSingular}
+                  </button>
+                  <button
+                    onClick={() => setShowCloseModal(true)}
+                    className="rounded-2xl border border-red-300/25 bg-red-300/10 px-4 py-3.5 text-sm font-black text-red-200 transition hover:bg-red-300/15"
+                  >
+                    Cerrar caja
+                  </button>
                 </div>
+              ) : (
+                <button
+                  onClick={() => setShowOpenModal(true)}
+                  disabled={!selectedBranch}
+                  className="w-full rounded-2xl bg-amber-400 px-5 py-3.5 text-sm font-black text-neutral-950 transition hover:bg-amber-300 disabled:opacity-60"
+                >
+                  Abrir caja
+                </button>
               )}
             </div>
           </div>
-
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => loadCash(selectedBranchId, { silent: true })}
-              disabled={refreshing}
-              className="rounded-2xl border border-white/10 bg-white/10 px-5 py-4 text-sm font-black text-white transition hover:bg-white/15 disabled:opacity-60"
-            >
-              {refreshing ? 'Actualizando...' : 'Actualizar'}
-            </button>
-
-            <button
-              onClick={() => setShowHistoryModal(true)}
-              disabled={!selectedBranch}
-              className="rounded-2xl border border-white/10 bg-white/10 px-5 py-4 text-sm font-black text-white transition hover:bg-white/15 disabled:opacity-60"
-            >
-              Historial
-            </button>
-
-            <button
-              onClick={() => setShowAuditActivityModal(true)}
-              disabled={!selectedBranch}
-              className="rounded-2xl border border-white/10 bg-white/10 px-5 py-4 text-sm font-black text-white transition hover:bg-white/15 disabled:opacity-60"
-            >
-              Actividad
-            </button>
-            {canManageFund && (
-            <button
-              onClick={() => setShowFundMovementModal(true)}
-              disabled={!selectedBranch}
-              className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-5 py-4 text-sm font-black text-amber-200 transition hover:bg-amber-300/20 disabled:opacity-50"
-            >
-              Gestionar fondo
-            </button>
-            )}
-            {isOpen ? (
-              <>
-                <button
-                  onClick={() => setShowSaleModal(true)}
-                  disabled={!canManageSales}
-                  className="rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-neutral-950 shadow-[0_16px_35px_rgba(16,185,129,0.18)] transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Nueva venta
-                </button>
-
-                <button
-                  onClick={() => setShowMovementModal(true)}
-                  className="rounded-2xl bg-amber-400 px-5 py-4 text-sm font-black text-neutral-950 shadow-[0_16px_35px_rgba(251,191,36,0.22)] transition hover:scale-[1.02]"
-                >
-                  Ingresar / sacar dinero
-                </button>
-
-                <button
-                  onClick={() => setShowBarberPaymentModal(true)}
-                  className="rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-neutral-950 shadow-[0_16px_35px_rgba(16,185,129,0.18)] transition hover:scale-[1.02]"
-                >
-                  Pagar {labels.professionalSingular}
-                </button>
-
-                <button
-                  onClick={() => setShowCloseModal(true)}
-                  className="rounded-2xl bg-white px-5 py-4 text-sm font-black text-neutral-950 transition hover:scale-[1.02]"
-                >
-                  Cerrar caja
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setShowOpenModal(true)}
-                disabled={!selectedBranch}
-                className="rounded-2xl bg-amber-400 px-5 py-4 text-sm font-black text-neutral-950 shadow-[0_16px_35px_rgba(251,191,36,0.22)] transition hover:scale-[1.02] disabled:opacity-60"
-              >
-                Abrir caja
-              </button>
-            )}
-          </div>
         </div>
       </section>
-
       {errorMsg && <ErrorBox message={errorMsg} />}
 
       {pendingAppointment && (
@@ -7012,19 +7028,32 @@ export default function OwnerCashPage() {
         </>
       ) : (
         <>
-          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-6">
-            {canManageFund && (
-            <StatCard title="Fondo acumulado" value={formatMoney(accumulatedFundBalance)} helper="Colchon para gastos grandes" tone="gold" />
-            )}
-            <StatCard title="Apertura" value={formatMoney(openingAmount)} helper="Fondo inicial de efectivo" />
-            <StatCard title="Ventas total" value={formatMoney(salesTotal)} helper="Todos los métodos" tone="gold" />
-            <StatCard title="Efectivo físico" value={formatMoney(cashBalance)} helper="Saldo esperado en caja" tone={balanceTone(cashBalance)} />
-            <StatCard title="Digital disponible" value={formatMoney(digitalBalance)} helper="Métodos digitales configurados" />
-            <StatCard
-              title="Esperado"
-              value={formatMoney(expected)}
-              helper={expected < 0 ? 'Caja física en negativo' : 'Caja física esperada'}
-              tone={balanceTone(expected)}
+          <section className="grid gap-4 lg:grid-cols-3">
+            <CashOverviewCard
+              eyebrow="Disponibilidad"
+              title="Fondos disponibles"
+              primaryLabel="Fondo acumulado"
+              primaryValue={canManageFund ? formatMoney(accumulatedFundBalance) : 'Restringido'}
+              secondaryLabel="Digital"
+              secondaryValue={formatMoney(digitalBalance)}
+              tone="gold"
+            />
+            <CashOverviewCard
+              eyebrow="Operación"
+              title="Movimiento del día"
+              primaryLabel="Apertura"
+              primaryValue={formatMoney(openingAmount)}
+              secondaryLabel="Ventas"
+              secondaryValue={formatMoney(salesTotal)}
+            />
+            <CashOverviewCard
+              eyebrow="Control"
+              title="Efectivo en caja"
+              primaryLabel="Físico"
+              primaryValue={formatMoney(cashBalance)}
+              secondaryLabel="Esperado"
+              secondaryValue={formatMoney(expected)}
+              tone="dark"
             />
           </section>
 
