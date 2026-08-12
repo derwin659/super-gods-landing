@@ -227,8 +227,8 @@ function ServiceFormModal({ service, onClose, onSaved }) {
 
     const duration = Number(String(duracionMinutos).replace(',', '.'));
 
-    if (Number.isNaN(duration) || duration <= 0) {
-      setErrorMsg('Ingresa una duración válida mayor a cero.');
+    if (!Number.isFinite(duration) || duration < 5 || duration > 1440) {
+      setErrorMsg('Ingresa una duración entre 5 y 1440 minutos.');
       return;
     }
 

@@ -22,6 +22,7 @@ import { getOwnerProductOrders } from '../../api/ownerProductOrdersApi';
 import { getBarberServiceAssignment } from '../../api/ownerBarbersApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
 import { useBusinessLabels } from '../../hooks/useBusinessLabels';
+import { bookingEndTime, bookingIntervalLabel, validDuration } from '../../utils/bookingTime';
 
 function toDateInputValue(date) {
   const yyyy = date.getFullYear();
@@ -741,6 +742,8 @@ function AppointmentFormModal({
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const selectedService = services.find((item) => String(item.id) === String(serviceId));
+  const selectedDuration = validDuration(selectedService?.durationMinutes);
 
 
   const visibleServices = useMemo(() => {
@@ -800,11 +803,15 @@ function AppointmentFormModal({
         appointmentId: appointment?.appointmentId || null,
       });
 
-      setSlots(data.slots || []);
+      const exactSlots = (data.slots || []).map((slot) => ({
+        ...slot,
+        horaFin: bookingEndTime(slot.hora, selectedDuration) || slot.horaFin,
+      }));
+      setSlots(exactSlots);
 
       if (
         selectedSlot &&
-        !(data.slots || []).some(
+        !exactSlots.some(
           (slot) => slot.hora === selectedSlot.hora && slot.available
         )
       ) {
@@ -964,7 +971,8 @@ function AppointmentFormModal({
         barberUserId: Number(barberUserId),
         fecha,
         horaInicio: selectedSlot.hora,
-        horaFin: selectedSlot.horaFin || null,
+        horaFin: bookingEndTime(selectedSlot.hora, selectedDuration),
+        durationMinutes: selectedDuration,
         estado: appointment?.estado || null,
         notas: notas.trim() || null,
         depositRequired,
@@ -1328,7 +1336,7 @@ function AppointmentFormModal({
                           }`}
                         >
                           <div className="text-base font-black">
-                            {slot.hora}
+                            {bookingIntervalLabel(slot.hora, selectedDuration)}
                           </div>
                           <div className="mt-1 text-xs font-bold opacity-75">
                             {slot.available
@@ -1430,7 +1438,7 @@ function AppointmentFormModal({
 
             {selectedSlot && (
               <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm font-black text-neutral-900">
-                Horario seleccionado: {selectedSlot.hora} - {selectedSlot.horaFin}
+                Horario seleccionado: {bookingIntervalLabel(selectedSlot.hora, selectedDuration)}
               </div>
             )}
 
@@ -1481,6 +1489,8 @@ export default function OwnerAgendaPage() {
   const [loadingAgenda, setLoadingAgenda] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const selectedService = services.find((item) => String(item.id) === String(serviceId));
+  const selectedDuration = validDuration(selectedService?.durationMinutes);
 
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState(null);

@@ -30,6 +30,7 @@ import {
 } from '../../api/publicBookingApi';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { useI18n } from '../../i18n/I18nProvider';
+import { bookingEndTime, bookingIntervalLabel, validDuration } from '../../utils/bookingTime';
 
 const DEFAULT_LOGO = '/logo-super-gods.png';
 
@@ -124,7 +125,7 @@ function normalizeService(raw) {
         raw.isVariablePrice ??
         raw.allowPriceOverride
     ),
-    durationMinutes: asNumber(raw.durationMinutes ?? raw.duracionMinutos ?? raw.duration, 30),
+    durationMinutes: validDuration(raw.durationMinutes ?? raw.duracionMinutos ?? raw.duration),
     imageUrl: firstText(raw.imageUrl, raw.serviceImageUrl, raw.photoUrl),
     category: firstText(raw.category, raw.categoria, raw.categoryName, raw.nombreCategoria),
   };
@@ -649,6 +650,8 @@ export default function PublicBookingPage() {
           barberId: selectedBarberId ? Number(selectedBarberId) : null,
           date: selectedDate,
           horaInicio: selectedTime,
+          horaFin: bookingEndTime(selectedTime, selectedServicesDuration),
+          durationMinutes: selectedServicesDuration,
           customerName: customer.customerName.trim(),
           customerLastName: customer.customerLastName.trim() || null,
           customerPhone: customer.customerPhone.trim(),
@@ -1019,7 +1022,7 @@ export default function PublicBookingPage() {
                 ) : null}
                 {selectedServices.length > 0 ? (
                   <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm font-black text-emerald-900 md:col-span-2">
-                    {selectedServices.length} servicio{selectedServices.length === 1 ? '' : 's'} seleccionado{selectedServices.length === 1 ? '' : 's'} · {selectedServicesDuration} min aprox. · {money(selectedServicesTotal)}
+                    {selectedServices.length} servicio{selectedServices.length === 1 ? '' : 's'} seleccionado{selectedServices.length === 1 ? '' : 's'} · {selectedServicesDuration} min · {money(selectedServicesTotal)}
                   </div>
                 ) : null}
                 {filteredServices.length === 0 ? (
@@ -1047,7 +1050,7 @@ export default function PublicBookingPage() {
                       </p>
                       <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
                         <Clock3 size={14} />
-                        {service.durationMinutes} min aprox.
+                        {service.durationMinutes} min
                       </div>
                       {service.category ? (
                         <div className="mt-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
@@ -1124,7 +1127,7 @@ export default function PublicBookingPage() {
                               : 'h-13 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:border-slate-950'
                           }
                         >
-                          {slot}
+                          {bookingIntervalLabel(slot, selectedServicesDuration)}
                         </button>
                       ))}
                     </div>
@@ -1417,7 +1420,7 @@ export default function PublicBookingPage() {
                     label="Total servicios"
                     value={money(selectedServicesTotal)}
                   />
-                  <SummaryLine label="Duración" value={`${selectedServicesDuration} min aprox.`} />
+                  <SummaryLine label="Duración" value={`${selectedServicesDuration} min`} />
                   <SummaryLine label="Fecha" value={displayDate(selectedDate)} />
                   <SummaryLine label="Hora" value={selectedTime || 'Por elegir'} />
                 </>
