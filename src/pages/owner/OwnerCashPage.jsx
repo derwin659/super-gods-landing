@@ -3598,7 +3598,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
           Cargando servicios y {labels.professionalsPlural}...
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-1">
           <div className="rounded-[26px] border border-amber-200 bg-amber-50 p-5">
             <div className="text-xs font-black uppercase tracking-[0.20em] text-amber-700">
               Cita seleccionada
@@ -3892,14 +3892,22 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
             <StatCard title="Pago final" value={amountToCollectNow <= 0 ? 'Cubierto con inicial' : paymentLabelFromOptions(paymentMethods, paymentMethod)} helper="El backend completará la venta con DEPOSIT_APPLIED si corresponde." />
           </div>
 
-          {errorMsg && <ErrorBox message={errorMsg} />}
 
-          <button
-            disabled={saving || loadingAllowedServices}
-            className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
-          >
-            {saving ? 'Guardando venta...' : 'Cobrar y finalizar atención'}
-          </button>
+          <div className="sticky bottom-0 z-30 -mx-5 -mb-4 mt-1 border-t border-neutral-200 bg-white/95 px-5 py-4 shadow-[0_-18px_45px_rgba(15,23,42,0.10)] backdrop-blur-xl sm:-mx-6 sm:-mb-5 sm:px-6">
+            {errorMsg && <div className="mb-3"><ErrorBox message={errorMsg} /></div>}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex items-center justify-between rounded-2xl bg-neutral-950 px-4 py-3 text-white sm:min-w-[220px]">
+                <span className="text-xs font-black uppercase tracking-[0.16em] text-white/50">Total</span>
+                <span className="text-xl font-black">{formatMoney(total)}</span>
+              </div>
+              <button
+                disabled={saving || loadingAllowedServices}
+                className="min-h-14 flex-1 rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 shadow-[0_12px_28px_rgba(251,191,36,0.28)] transition hover:bg-amber-300 disabled:opacity-60"
+              >
+                {saving ? 'Guardando venta...' : isCourtesy ? 'Guardar cortesía gratis' : 'Guardar nueva venta'}
+              </button>
+            </div>
+          </div>
         </form>
       )}
     </ModalShell>
@@ -4365,8 +4373,8 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
           Cargando servicios, productos y {labels.professionalsPlural}...
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-1">
+          <div className="grid items-start gap-4 xl:grid-cols-[1.15fr_0.85fr]">
             <div className="rounded-[26px] border border-neutral-200 bg-white p-5">
               <div className="text-xs font-black uppercase tracking-[0.20em] text-amber-600">
                 Venta rápida
@@ -4646,6 +4654,88 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                   </button>
                 </div>
               </div>
+
+          <div className="rounded-[26px] border border-neutral-200 bg-white p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="text-xs font-black uppercase tracking-[0.20em] text-amber-600">
+                  Items de venta
+                </div>
+                <div className="mt-1 text-sm font-bold text-neutral-500">
+                  {items.length} item(s) agregado(s)
+                </div>
+              </div>
+              <div className="rounded-2xl bg-neutral-950 px-4 py-3 text-xl font-black text-white">
+                {formatMoney(total)}
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {items.length === 0 ? (
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
+                  Aún no hay items en la venta.
+                </div>
+              ) : (
+                items.map((item) => (
+                  <div key={item.key} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="font-black text-neutral-950">{item.name}</div>
+                        <div className="mt-1 text-xs font-bold text-neutral-500">
+                          {item.type === 'service'
+                            ? `Servicio · ${labels.professionalDisplay}: ${item.barberName || '-'}`
+                            : `Producto${item.barberName ? ` · ${labels.professionalDisplay}: ${item.barberName}` : ''}`}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-end gap-3">
+                        {(item.type === 'product' || (item.type === 'service' && item.variablePrice)) ? (
+                          <label className="min-w-[220px] rounded-2xl border border-amber-200 bg-amber-50 p-3 text-left">
+                            <span className="inline-flex rounded-full bg-neutral-950 px-2.5 py-1 text-[10px] font-black uppercase text-white">
+                              {item.type === 'product' ? 'Editable' : 'Variable'}
+                            </span>
+                            <span className="ml-2 text-[11px] font-black text-amber-700">
+                              Base {formatMoney(item.baseUnitPrice)}
+                            </span>
+                            <span className="mt-2 block text-[11px] font-black uppercase tracking-[0.12em] text-neutral-500">
+                              Precio final a cobrar
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.unitPrice}
+                              onChange={(event) => updateItemUnitPrice(item.key, event.target.value)}
+                              className="mt-1 h-12 w-full rounded-xl border border-amber-200 bg-white px-3 text-lg font-black text-neutral-950 outline-none focus:border-violet-500"
+                            />
+                            <span className="mt-1 block text-xs font-bold text-neutral-500">
+                              Escribe el monto real de esta venta.
+                            </span>
+                          </label>
+                        ) : null}
+                        <div className="text-right">
+                          <div className="font-black text-neutral-950">{formatMoney(itemSubtotal(item))}</div>
+                          <div className="text-xs font-bold text-neutral-500">
+                            {item.variablePrice && item.baseUnitPrice !== item.unitPrice
+                              ? `${item.quantity} x ${formatMoney(item.unitPrice)} · desde ${formatMoney(item.baseUnitPrice)}`
+                              : `${item.quantity} x ${formatMoney(item.unitPrice)}`}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item.key)}
+                          className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700 hover:bg-red-100"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
             </div>
 
             <div className="rounded-[26px] border border-neutral-200 bg-white p-5">
@@ -4855,95 +4945,22 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
             </div>
           </div>
 
-          <div className="rounded-[26px] border border-neutral-200 bg-white p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.20em] text-amber-600">
-                  Items de venta
-                </div>
-                <div className="mt-1 text-sm font-bold text-neutral-500">
-                  {items.length} item(s) agregado(s)
-                </div>
-              </div>
-              <div className="rounded-2xl bg-neutral-950 px-4 py-3 text-xl font-black text-white">
-                {formatMoney(total)}
-              </div>
-            </div>
 
-            <div className="mt-4 space-y-3">
-              {items.length === 0 ? (
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
-                  Aún no hay items en la venta.
-                </div>
-              ) : (
-                items.map((item) => (
-                  <div key={item.key} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="font-black text-neutral-950">{item.name}</div>
-                        <div className="mt-1 text-xs font-bold text-neutral-500">
-                          {item.type === 'service'
-                            ? `Servicio · ${labels.professionalDisplay}: ${item.barberName || '-'}`
-                            : `Producto${item.barberName ? ` · ${labels.professionalDisplay}: ${item.barberName}` : ''}`}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center justify-end gap-3">
-                        {(item.type === 'product' || (item.type === 'service' && item.variablePrice)) ? (
-                          <label className="min-w-[220px] rounded-2xl border border-amber-200 bg-amber-50 p-3 text-left">
-                            <span className="inline-flex rounded-full bg-neutral-950 px-2.5 py-1 text-[10px] font-black uppercase text-white">
-                              {item.type === 'product' ? 'Editable' : 'Variable'}
-                            </span>
-                            <span className="ml-2 text-[11px] font-black text-amber-700">
-                              Base {formatMoney(item.baseUnitPrice)}
-                            </span>
-                            <span className="mt-2 block text-[11px] font-black uppercase tracking-[0.12em] text-neutral-500">
-                              Precio final a cobrar
-                            </span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={item.unitPrice}
-                              onChange={(event) => updateItemUnitPrice(item.key, event.target.value)}
-                              className="mt-1 h-12 w-full rounded-xl border border-amber-200 bg-white px-3 text-lg font-black text-neutral-950 outline-none focus:border-violet-500"
-                            />
-                            <span className="mt-1 block text-xs font-bold text-neutral-500">
-                              Escribe el monto real de esta venta.
-                            </span>
-                          </label>
-                        ) : null}
-                        <div className="text-right">
-                          <div className="font-black text-neutral-950">{formatMoney(itemSubtotal(item))}</div>
-                          <div className="text-xs font-bold text-neutral-500">
-                            {item.variablePrice && item.baseUnitPrice !== item.unitPrice
-                              ? `${item.quantity} x ${formatMoney(item.unitPrice)} · desde ${formatMoney(item.baseUnitPrice)}`
-                              : `${item.quantity} x ${formatMoney(item.unitPrice)}`}
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeItem(item.key)}
-                          className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-700 hover:bg-red-100"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+          <div className="sticky bottom-0 z-30 -mx-5 -mb-4 mt-1 border-t border-neutral-200 bg-white/95 px-5 py-4 shadow-[0_-18px_45px_rgba(15,23,42,0.10)] backdrop-blur-xl sm:-mx-6 sm:-mb-5 sm:px-6">
+            {errorMsg && <div className="mb-3"><ErrorBox message={errorMsg} /></div>}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex items-center justify-between rounded-2xl bg-neutral-950 px-4 py-3 text-white sm:min-w-[220px]">
+                <span className="text-xs font-black uppercase tracking-[0.16em] text-white/50">Total</span>
+                <span className="text-xl font-black">{formatMoney(total)}</span>
+              </div>
+              <button
+                disabled={saving || loadingAllowedServices}
+                className="min-h-14 flex-1 rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 shadow-[0_12px_28px_rgba(251,191,36,0.28)] transition hover:bg-amber-300 disabled:opacity-60"
+              >
+                {saving ? 'Guardando venta...' : isCourtesy ? 'Guardar cortesía gratis' : 'Guardar nueva venta'}
+              </button>
             </div>
           </div>
-
-          {errorMsg && <ErrorBox message={errorMsg} />}
-
-          <button
-            disabled={saving || loadingAllowedServices}
-            className="w-full rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 transition hover:scale-[1.01] disabled:opacity-60"
-          >
-            {saving ? 'Guardando venta...' : isCourtesy ? 'Guardar cortesia gratis' : 'Guardar nueva venta'}
-          </button>
         </form>
       )}
     </ModalShell>
@@ -4952,9 +4969,9 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
 
 function ModalShell({ title, subtitle, onClose, children }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/60 px-4 py-8 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full max-w-6xl overflow-auto rounded-[34px] border border-white/10 bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.35)]">
-        <div className="mb-5 flex items-start justify-between gap-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/60 p-2 backdrop-blur-sm sm:p-4">
+      <div className="flex max-h-[96vh] w-full max-w-7xl flex-col overflow-hidden rounded-[30px] border border-white/10 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.35)] sm:max-h-[94vh] sm:rounded-[34px]">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-neutral-200 bg-white px-5 py-4 sm:px-6 sm:py-5">
           <div>
             <div className="text-xs font-black uppercase tracking-[0.22em] text-amber-600">{subtitle}</div>
             <h2 className="mt-1 text-2xl font-black text-neutral-950">{title}</h2>
@@ -4968,7 +4985,9 @@ function ModalShell({ title, subtitle, onClose, children }) {
           </button>
         </div>
 
-        {children}
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
+          {children}
+        </div>
       </div>
     </div>
   );
