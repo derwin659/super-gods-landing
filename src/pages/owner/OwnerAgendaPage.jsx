@@ -1489,8 +1489,6 @@ export default function OwnerAgendaPage() {
   const [loadingAgenda, setLoadingAgenda] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const selectedService = services.find((item) => String(item.id) === String(serviceId));
-  const selectedDuration = validDuration(selectedService?.durationMinutes);
 
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState(null);
