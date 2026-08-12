@@ -1082,8 +1082,13 @@ function PublicHomePage() {
 
       <footer className="border-t border-slate-200 bg-white px-4 py-8">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div className="flex items-center">
-            <img src="/logo-super-gods.png" alt="Gods Technologies S.A.C." className="h-12 w-auto object-contain" />
+          <div className="flex flex-col gap-3">
+            <img src="/logo-super-gods.png" alt="Gods Technologies S.A.C." className="h-12 w-fit object-contain" />
+            <div className="text-xs font-semibold leading-5 text-slate-500">
+              <p className="font-black text-slate-700">GODS TECHNOLOGIES S.A.C.</p>
+              <p>Nombre comercial: SUPER GODS APP</p>
+              <p>RUC 20616348656 · Cusco, Perú</p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-5 text-sm font-bold text-slate-500">
             <a href="/" className="hover:text-blue-700">Inicio</a>
@@ -1835,10 +1840,15 @@ function LandingSelect({ label, name, value, onChange, options }) {
 const LEGAL_PAGES = {
   privacy: {
     title: 'Politica de Privacidad',
-    updatedAt: '25 de mayo de 2026',
+    updatedAt: '12 de agosto de 2026',
     intro:
-      'Esta politica explica como Gods Technologies S.A.C. trata la informacion relacionada con Super Gods App, una plataforma SaaS para gestion de negocios de belleza, barberias y servicios.',
+      'Esta politica explica como GODS TECHNOLOGIES S.A.C., identificada con RUC 20616348656 y nombre comercial SUPER GODS APP, trata la informacion relacionada con Super Gods App, una plataforma SaaS para gestion de negocios de belleza, barberias y servicios.',
     sections: [
+      {
+        title: 'Identidad del responsable',
+        body:
+          'GODS TECHNOLOGIES S.A.C., RUC 20616348656, con nombre comercial SUPER GODS APP y domicilio fiscal en Jr. Jiron Anta Nro. B-21, Dpto. 602, Urb. Progreso, Wanchaq, Cusco, Cusco, Peru, es responsable de la operacion de la plataforma y del tratamiento de datos que le corresponda conforme a ley.',
+      },
       {
         title: 'Informacion que recopilamos',
         body:
@@ -1868,10 +1878,15 @@ const LEGAL_PAGES = {
   },
   terms: {
     title: 'Terminos de Servicio',
-    updatedAt: '25 de mayo de 2026',
+    updatedAt: '12 de agosto de 2026',
     intro:
-      'Estos terminos regulan el uso de Super Gods App, software ofrecido por Gods Technologies S.A.C. para administracion de reservas, caja, clientes, puntos, promociones, inventario, reportes y funciones relacionadas.',
+      'Estos terminos regulan el uso de Super Gods App, software ofrecido por GODS TECHNOLOGIES S.A.C., identificada con RUC 20616348656 y nombre comercial SUPER GODS APP, para administracion de reservas, caja, clientes, puntos, promociones, inventario, reportes y funciones relacionadas.',
     sections: [
+      {
+        title: 'Identificacion del proveedor',
+        body:
+          'GODS TECHNOLOGIES S.A.C., RUC 20616348656, nombre comercial SUPER GODS APP, tiene domicilio fiscal en Jr. Jiron Anta Nro. B-21, Dpto. 602, Urb. Progreso, Wanchaq, Cusco, Cusco, Peru.',
+      },
       {
         title: 'Servicio',
         body:
@@ -1901,7 +1916,7 @@ const LEGAL_PAGES = {
   },
   refund: {
     title: 'Politica de Reembolsos y Cancelacion',
-    updatedAt: '25 de mayo de 2026',
+    updatedAt: '12 de agosto de 2026',
     intro:
       'Esta politica describe como gestionamos cancelaciones y reembolsos de suscripciónes de Super Gods App.',
     sections: [
@@ -1943,8 +1958,8 @@ function LegalPage({ type }) {
         <div className="flex items-center gap-3">
           <img src="/gods-technologies-logo-horizontal.png" alt="Gods Technologies S.A.C." className="h-12 w-auto object-contain" />
           <div>
-            <p className="text-lg font-black text-slate-950">Gods Technologies S.A.C.</p>
-            <p className="text-sm font-semibold text-slate-500">Super Gods App</p>
+            <p className="text-lg font-black text-slate-950">GODS TECHNOLOGIES S.A.C.</p>
+            <p className="text-sm font-semibold text-slate-500">SUPER GODS APP · RUC 20616348656</p>
           </div>
         </div>
 
