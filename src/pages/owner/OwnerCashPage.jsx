@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PremiumEmptyState, PremiumErrorState, premiumConfirm } from '../../components/PremiumUi';
 import {
   approveCashMovement,
@@ -6100,6 +6100,119 @@ function ProductOrdersSection({ items = [], processingId, isOpen, onApprove, onR
   );
 }
 
+function CashBranchSelector({
+  branches,
+  value,
+  onChange,
+  disabled = false,
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
+  const selected = branches.find(
+    (branch) => String(branch.id) === String(value)
+  );
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const closeOutside = (event) => {
+      if (!rootRef.current?.contains(event.target)) setOpen(false);
+    };
+    const closeWithKeyboard = (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('keydown', closeWithKeyboard);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('keydown', closeWithKeyboard);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative z-30 w-full min-w-[220px] sm:w-auto">
+      <button
+        type="button"
+        disabled={disabled || branches.length === 0}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="group flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.07] px-3.5 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:border-amber-300/35 hover:bg-white/[0.11] focus:outline-none focus:ring-4 focus:ring-amber-300/15 disabled:cursor-not-allowed disabled:opacity-55 sm:min-w-[230px]"
+      >
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[15px] border border-amber-300/20 bg-amber-300/10 text-amber-300 transition group-hover:bg-amber-300/15">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="M3 10h18M5 10v10h14V10M4 4h16l1 6H3l1-6Z" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M9 20v-6h6v6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
+            Sede operativa
+          </span>
+          <span className="mt-1 block truncate text-[15px] font-black text-white">
+            {disabled ? 'Cargando sedes...' : selected?.name || 'Selecciona una sede'}
+          </span>
+        </span>
+
+        <span className={open ? 'rotate-180 text-amber-300 transition' : 'text-white/55 transition'}>
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+            <path d="m7 10 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          aria-label="Seleccionar sede operativa"
+          className="absolute left-0 top-[calc(100%+10px)] z-50 w-full min-w-[260px] overflow-hidden rounded-[22px] border border-white/10 bg-[#17140F]/[0.98] p-2 shadow-[0_24px_70px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:w-[310px]"
+        >
+          <div className="px-3 pb-2 pt-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/35">
+            Cambiar sede
+          </div>
+          <div className="max-h-64 space-y-1 overflow-y-auto">
+            {branches.map((branch) => {
+              const active = String(branch.id) === String(value);
+              return (
+                <button
+                  key={branch.id}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => {
+                    onChange(String(branch.id));
+                    setOpen(false);
+                  }}
+                  className={
+                    active
+                      ? 'flex w-full items-center gap-3 rounded-2xl border border-amber-300/25 bg-amber-300/10 px-3 py-3 text-left text-white'
+                      : 'flex w-full items-center gap-3 rounded-2xl border border-transparent px-3 py-3 text-left text-white/75 transition hover:border-white/10 hover:bg-white/[0.07] hover:text-white'
+                  }
+                >
+                  <span className={active ? 'grid h-9 w-9 place-items-center rounded-xl bg-amber-300 text-sm font-black text-neutral-950' : 'grid h-9 w-9 place-items-center rounded-xl bg-white/[0.07] text-sm font-black text-white/70'}>
+                    {String(branch.name || 'S').trim().charAt(0).toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-black">
+                    {branch.name}
+                  </span>
+                  {active && (
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-emerald-400/15 text-emerald-300">
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.7" aria-hidden="true">
+                        <path d="m5 12 4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 export default function OwnerCashPage() {
   const { session } = useAuth();
   const [branches, setBranches] = useState([]);
@@ -6694,24 +6807,13 @@ export default function OwnerCashPage() {
             </p>
 
             <div className="mt-5 flex flex-wrap gap-3">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3">
-                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-white/35">
-                  Sede
-                </div>
 
-                <select
-                  value={selectedBranchId}
-                  onChange={(e) => setSelectedBranchId(e.target.value)}
-                  className="mt-1 bg-transparent text-sm font-black text-white outline-none"
-                  disabled={loadingBranches}
-                >
-                  {branches.map((branch) => (
-                    <option key={branch.id} value={branch.id} className="text-neutral-950">
-                      {branch.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <CashBranchSelector
+                branches={branches}
+                value={selectedBranchId}
+                onChange={setSelectedBranchId}
+                disabled={loadingBranches}
+              />
 
               <div className={`rounded-2xl border px-4 py-3 ${
                 isOpen
