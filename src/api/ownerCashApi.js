@@ -146,6 +146,13 @@ export async function createCashFundMovement({
     }
   );
 }
+export async function updateCashFundMovement({ branchId, movementId, type, paymentMethod, amount, concept, note = null, movementDate = null, auditReason }) {
+  return apiRequest(`/api/owner/cash-registers/fund/movements/${movementId}${toQuery({ branchId, auditReason })}`, { method: 'PUT', body: JSON.stringify({ type, paymentMethod, amount: Number(amount || 0), concept, note, movementDate }) });
+}
+
+export async function deleteCashFundMovement({ branchId, movementId, auditReason }) {
+  return apiRequest(`/api/owner/cash-registers/fund/movements/${movementId}${toQuery({ branchId, auditReason })}`, { method: 'DELETE' });
+}
 export async function reconcileCashRegister({ branchId, cashRegisterId, closingAmountCounted, fundDeposits = {}, note = null }) {
   return apiRequest(
     `/api/owner/cash-registers/${cashRegisterId}/reconcile${toQuery({ branchId })}`,

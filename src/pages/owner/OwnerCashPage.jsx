@@ -6,6 +6,8 @@ import {
   closeCashRegister,
   createBarberPayment,
   createCashFundMovement,
+  updateCashFundMovement,
+  deleteCashFundMovement,
   createCashMovement,
   createCashSale,
   deleteCashMovement,
@@ -5217,7 +5219,7 @@ function HistoryPaymentPill({ label, value }) {
   );
 }
 
-function FundHistorySection({ items = [], summary = null }) {
+function FundHistorySection({ items = [], summary = null, onEdit, onDelete }) {
   const totalIn = items.filter((item) => Number(item.signedAmount || 0) >= 0).reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalOut = items.filter((item) => Number(item.signedAmount || 0) < 0).reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const net = items.reduce((sum, item) => sum + Number(item.signedAmount || 0), 0);
@@ -5261,13 +5263,14 @@ function FundHistorySection({ items = [], summary = null }) {
           <tbody className="divide-y divide-white/10">
             {items.map((item) => {
               const income = Number(item.signedAmount || 0) >= 0;
+              const editable = ['MANUAL_DEPOSIT', 'MANUAL_WITHDRAWAL', 'ADJUSTMENT_IN', 'ADJUSTMENT_OUT'].includes(String(item.type || '').toUpperCase()) && !item.cashRegisterId;
               return (
                 <tr key={item.id} className="align-top hover:bg-white/[0.04]">
                   <td className="px-4 py-3 font-bold text-slate-300">{formatDateTime(item.movementDate || item.date)}</td>
                   <td className="px-4 py-3"><p className="font-black">{item.concept || typeLabel(item.type)}</p><p className="mt-1 text-xs font-semibold text-slate-400">{typeLabel(item.type)}{item.note ? ` · ${item.note}` : ''}</p></td>
                   <td className="px-4 py-3 font-bold text-blue-300">{methodLabel(item.paymentMethod)}</td>
                   <td className="px-4 py-3"><p className="font-bold">{item.actorUserName || 'Sistema'}</p><p className="mt-1 text-xs text-slate-400">{item.cashRegisterId ? `Caja #${item.cashRegisterId}` : 'Sin caja relacionada'}</p></td>
-                  <td className={`px-4 py-3 text-right font-black ${income ? 'text-emerald-300' : 'text-red-300'}`}>{income ? '+' : '-'}{formatMoney(Math.abs(Number(item.amount || 0)))}</td>
+                  <td className={`px-4 py-3 text-right font-black ${income ? 'text-emerald-300' : 'text-red-300'}`}><div>{income ? '+' : '-'}{formatMoney(Math.abs(Number(item.amount || 0)))}</div>{editable ? <div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => onEdit?.(item)} className="rounded-lg bg-amber-300/15 px-2 py-1 text-[10px] text-amber-200">Editar</button><button type="button" onClick={() => onDelete?.(item)} className="rounded-lg bg-red-400/15 px-2 py-1 text-[10px] text-red-200">Eliminar</button></div> : <div className="mt-1 text-[9px] text-slate-500">Automático</div>}</td>
                 </tr>
               );
             })}
@@ -5765,6 +5768,32 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
     }
   }
 
+  async function editFundMovement(item) {
+    const amount = window.prompt('Monto corregido:', String(item.amount ?? ''));
+    if (amount === null) return;
+    const parsed = Number(String(amount).replace(',', '.'));
+    if (!Number.isFinite(parsed) || parsed <= 0) { setErrorMsg('Ingresa un monto válido mayor a cero.'); return; }
+    const concept = window.prompt('Concepto:', item.concept || '');
+    if (concept === null || !concept.trim()) return;
+    const note = window.prompt('Detalle adicional:', item.note || '');
+    if (note === null) return;
+    const auditReason = window.prompt('Motivo obligatorio de auditoría:');
+    if (auditReason === null || !auditReason.trim()) { setErrorMsg('El motivo de auditoría es obligatorio.'); return; }
+    try {
+      await updateCashFundMovement({ branchId: branch.id, movementId: item.id, type: item.type, paymentMethod: item.paymentMethod, amount: parsed, concept: concept.trim(), note: note.trim() || null, movementDate: item.movementDate?.slice?.(0, 10) || null, auditReason: auditReason.trim() });
+      await loadHistory();
+    } catch (error) { setErrorMsg(error.message || 'No se pudo actualizar el movimiento del fondo.'); }
+  }
+
+  async function removeFundMovement(item) {
+    const auditReason = window.prompt('Motivo obligatorio para eliminar este movimiento:');
+    if (auditReason === null || !auditReason.trim()) { setErrorMsg('El motivo de auditoría es obligatorio.'); return; }
+    if (!await premiumConfirm(`¿Eliminar “${item.concept || 'Movimiento'}”? El cambio quedará auditado.`)) return;
+    try {
+      await deleteCashFundMovement({ branchId: branch.id, movementId: item.id, auditReason: auditReason.trim() });
+      await loadHistory();
+    } catch (error) { setErrorMsg(error.message || 'No se pudo eliminar el movimiento del fondo.'); }
+  }
   return (
     <>
       <ModalShell title="Historial de caja" subtitle={branch?.name || 'Sede'} onClose={onClose}>
@@ -5788,7 +5817,7 @@ function CashHistoryModal({ branch, paymentMethods = DEFAULT_PAYMENT_METHODS, se
           )}
 
           {!loading && !errorMsg && canManageFund && (
-            <FundHistorySection items={fundMovements} summary={fundSummary} />
+            <FundHistorySection items={fundMovements} summary={fundSummary} onEdit={editFundMovement} onDelete={removeFundMovement} />
           )}
 
           {loading ? (
