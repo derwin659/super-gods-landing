@@ -1150,7 +1150,7 @@ export default function OwnerBarbersPage() {
   const [commissionBarber, setCommissionBarber] = useState(null);
   const [branches, setBranches] = useState([]);
   const [branchId, setBranchId] = useState('');
-  const [showInactive, setShowInactive] = useState(false);
+  const [showInactive, setShowInactive] = useState(true);
   const [search, setSearch] = useState('');
 
   const [loading, setLoading] = useState(true);
@@ -1173,7 +1173,7 @@ export default function OwnerBarbersPage() {
 
     try {
       const [barberData, branchData, ownerProfile, serviceData] = await Promise.all([
-        getOwnerBarbers({ branchId: branchId || undefined }),
+        getOwnerBarbers({ branchId: branchId || undefined, includeInactive: true }),
         getOwnerBranchesForBarbers(),
         isOwnerSession ? getOwnerProfessionalProfile() : Promise.resolve(null),
         getOwnerServices({ onlyActive: true }),
@@ -1417,7 +1417,7 @@ export default function OwnerBarbersPage() {
                 : 'border border-neutral-200 bg-neutral-50 text-neutral-700 hover:bg-neutral-100'
             }`}
           >
-            {showInactive ? 'Ver todos' : 'Solo activos'}
+            {showInactive ? 'Todos (activos e inactivos)' : 'Solo activos'}
           </button>
 
           <button

@@ -13,8 +13,8 @@ function buildQuery(params = {}) {
   return text ? `?${text}` : '';
 }
 
-export async function getOwnerBarbers({ branchId } = {}) {
-  return apiRequest(`/api/owner/barbers${buildQuery({ branchId })}`);
+export async function getOwnerBarbers({ branchId, includeInactive = false } = {}) {
+  return apiRequest(`/api/owner/barbers${buildQuery({ branchId, includeInactive })}`);
 }
 
 export async function getOwnerBranchesForBarbers() {
