@@ -21,6 +21,7 @@ export default function OwnerShowcasePage() {
   const [working,setWorking]=useState(0);
   const [showCreator,setShowCreator]=useState(false);
   const [form,setForm]=useState(initialForm);
+  const [previewUrl,setPreviewUrl]=useState('');
   const [listFilters,setListFilters]=useState(initialListFilters);
   const [rejectItem,setRejectItem]=useState(null);
   const [rejectPreset,setRejectPreset]=useState('');
@@ -29,6 +30,11 @@ export default function OwnerShowcasePage() {
   async function load(){setLoading(true);setError('');try{const [content,summary]=await Promise.all([getOwnerShowcase(status),getOwnerShowcaseMetrics()]);setItems(content);setMetrics(Object.fromEntries(summary.map((entry)=>[String(entry.showcaseId),entry])));}catch(e){setError(e.message||'No se pudo cargar la vitrina.');}finally{setLoading(false);}}
   useEffect(()=>{load();},[status]);
   useEffect(()=>{getOwnerBranches({onlyActive:true}).then((data)=>setBranches(Array.isArray(data)?data:[])).catch(()=>setBranches([]));},[]);
+  useEffect(()=>{
+    if(!form.file){setPreviewUrl('');return undefined;}
+    const url=URL.createObjectURL(form.file);setPreviewUrl(url);
+    return ()=>URL.revokeObjectURL(url);
+  },[form.file]);
   const selectedNames=useMemo(()=>branches.filter((b)=>form.branchIds.includes(branchIdOf(b))).map(branchNameOf),[branches,form.branchIds]);
   const professionalOptions=useMemo(()=>{
     const unique=new Map();
@@ -86,6 +92,12 @@ export default function OwnerShowcasePage() {
   async function manage(item,action){if(action==='delete'&&!window.confirm('¿Eliminar definitivamente este trabajo? Esta acción no se puede deshacer.'))return;setWorking(item.id);setError('');try{if(action==='archive')await archiveOwnerShowcase(item.id);if(action==='publish')await publishOwnerShowcase(item.id);if(action==='delete')await deleteOwnerShowcase(item.id);await load();}catch(e){setError(e.message||'No se pudo actualizar el trabajo.');}finally{setWorking(0);}}
   async function manageFeatured(item,action){setWorking(item.id);setError('');setSuccess('');try{if(action==='toggle')await setOwnerShowcaseFeatured(item.id,!item.featured);else await moveOwnerShowcaseFeatured(item.id,action);setSuccess(action==='toggle'?(item.featured?'La publicación dejó de estar destacada.':'Publicación destacada en la vitrina.'):'Prioridad actualizada.');await load();}catch(e){setError(e.message||'No se pudo actualizar el destacado.');}finally{setWorking(0);}}
   function toggleBranch(id){setForm((current)=>({...current,branchIds:current.branchIds.includes(id)?current.branchIds.filter((value)=>value!==id):[...current.branchIds,id]}));}
+  function selectMediaFile(file){
+    if(!file){setForm((current)=>({...current,file:null}));return;}
+    const mediaType=file.type.startsWith('video/')?'VIDEO':'IMAGE';
+    setForm((current)=>({...current,file,mediaType,durationSeconds:mediaType==='VIDEO'?current.durationSeconds:''}));
+    setError('');
+  }
 
   return <div className="space-y-6">
     <section className="overflow-hidden rounded-[32px] bg-[linear-gradient(135deg,#0F172A,#312E81)] p-7 text-white shadow-xl">
@@ -98,10 +110,11 @@ export default function OwnerShowcasePage() {
         <label className="text-sm font-black">Título<input required maxLength={120} value={form.title} onChange={(e)=>setForm({...form,title:e.target.value})} placeholder="Ej. Balayage caramelo" className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none focus:border-amber-400"/></label>
         <label className="text-sm font-black">Categoría<input maxLength={80} value={form.category} onChange={(e)=>setForm({...form,category:e.target.value})} placeholder="Ej. Color, barbería, uñas" className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none focus:border-amber-400"/></label>
         <label className="text-sm font-black">Tipo<select value={form.mediaType} onChange={(e)=>setForm({...form,mediaType:e.target.value})} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white p-4"><option value="IMAGE">Foto</option><option value="VIDEO">Video</option></select></label>
-        <label className="text-sm font-black">Archivo<input required type="file" accept={form.mediaType==='VIDEO'?'video/*':'image/*'} onChange={(e)=>setForm({...form,file:e.target.files?.[0]||null})} className="mt-2 block w-full rounded-2xl border border-dashed border-neutral-300 bg-white p-3 text-sm"/></label>
+        <label className="text-sm font-black">Archivo<input required type="file" accept="image/*,video/*" onChange={(e)=>selectMediaFile(e.target.files?.[0]||null)} className="mt-2 block w-full cursor-pointer rounded-2xl border border-dashed border-amber-300 bg-amber-50 p-3 text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-neutral-950 file:px-4 file:py-2 file:font-black file:text-white"/><span className="mt-2 block text-xs font-semibold text-neutral-500">JPG, PNG, WEBP, MP4 o MOV. El tipo se detecta automaticamente.</span></label>
         {form.mediaType==='VIDEO'&&<label className="text-sm font-black">Duración en segundos<input required min="1" max="90" type="number" value={form.durationSeconds} onChange={(e)=>setForm({...form,durationSeconds:e.target.value})} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white p-4"/></label>}
         <label className="text-sm font-black lg:col-span-2">Descripción<textarea maxLength={600} value={form.description} onChange={(e)=>setForm({...form,description:e.target.value})} placeholder="Cuenta qué hace especial este resultado" className="mt-2 min-h-24 w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none focus:border-amber-400"/></label>
       </div>
+      {previewUrl&&<section className="mt-5 overflow-hidden rounded-[26px] border border-amber-200 bg-white shadow-sm"><div className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,.85fr)]"><div className="relative min-h-64 bg-neutral-950">{form.mediaType==='VIDEO'?<video src={previewUrl} controls muted playsInline onLoadedMetadata={(event)=>setForm((current)=>({...current,durationSeconds:String(Math.max(1,Math.ceil(event.currentTarget.duration||1)))}))} className="h-full max-h-[520px] w-full object-contain"/>:<img src={previewUrl} alt="Vista previa" className="h-full max-h-[520px] w-full object-contain"/>}<span className="absolute left-4 top-4 rounded-full bg-black/75 px-3 py-1 text-xs font-black text-white">VISTA PREVIA · {form.mediaType==='VIDEO'?'VIDEO':'FOTO'}</span></div><div className="flex flex-col justify-center p-6"><div className="text-xs font-black uppercase tracking-[.18em] text-amber-700">Así lo verá el cliente</div><h3 className="mt-3 text-2xl font-black text-neutral-950">{form.title.trim()||'Título de la publicación'}</h3><p className="mt-2 font-bold text-neutral-500">{form.category.trim()||'Inspiración del negocio'}</p><p className="mt-4 text-sm leading-6 text-neutral-600">{form.description.trim()||'Agrega una descripción para contar qué hace especial este trabajo.'}</p>{form.mediaType==='VIDEO'&&<div className="mt-4 rounded-2xl bg-neutral-100 px-4 py-3 text-sm font-black text-neutral-700">Duración detectada: {form.durationSeconds||'calculando…'} s</div>}<button type="button" onClick={()=>setForm((current)=>({...current,file:null,durationSeconds:''}))} className="mt-5 rounded-2xl border border-neutral-200 px-4 py-3 text-sm font-black text-neutral-600">Cambiar archivo</button></div></div></section>}
       <div className="mt-5 rounded-2xl border border-neutral-200 bg-white p-5"><div className="flex items-center gap-2 font-black"><Building2 size={19}/>¿Dónde aparecerá?</div><div className="mt-4 grid gap-3 sm:grid-cols-3">{[['ALL_BRANCHES','Todas las sedes'],['SELECTED_BRANCHES','Algunas sedes'],['ORIGIN_BRANCH','Una sede']].map(([value,label])=><button type="button" key={value} onClick={()=>setForm({...form,visibilityScope:value})} className={`rounded-2xl border px-4 py-3 text-sm font-black ${form.visibilityScope===value?'border-amber-400 bg-amber-50 text-neutral-950':'border-neutral-200 text-neutral-500'}`}>{label}</button>)}</div>
         {form.visibilityScope==='ORIGIN_BRANCH'&&<select value={form.branchId} onChange={(e)=>setForm({...form,branchId:e.target.value})} className="mt-4 w-full rounded-2xl border border-neutral-200 p-4 font-bold"><option value="">Selecciona una sede</option>{branches.map((b)=><option key={branchIdOf(b)} value={branchIdOf(b)}>{branchNameOf(b)}</option>)}</select>}
         {form.visibilityScope==='SELECTED_BRANCHES'&&<div className="mt-4 flex flex-wrap gap-2">{branches.map((b)=>{const id=branchIdOf(b);const active=form.branchIds.includes(id);return <button type="button" key={id} onClick={()=>toggleBranch(id)} className={`rounded-full px-4 py-2 text-sm font-black ${active?'bg-neutral-950 text-white':'border border-neutral-200 bg-white text-neutral-600'}`}>{active?'✓ ':''}{branchNameOf(b)}</button>})}{selectedNames.length===0&&<span className="text-sm font-semibold text-neutral-400">Elige las sedes.</span>}</div>}
