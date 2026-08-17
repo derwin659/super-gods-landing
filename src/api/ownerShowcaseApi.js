@@ -1,5 +1,10 @@
 import { apiRequest, getApiBaseUrl, getToken } from './apiClient';
 
+export async function getOwnerShowcaseMetrics() {
+  const data = await apiRequest('/api/owner/showcase/metrics');
+  return Array.isArray(data) ? data : [];
+}
+
 export async function getOwnerShowcase(status = '') {
   const query = status ? `?status=${encodeURIComponent(status)}` : '';
   const data = await apiRequest(`/api/owner/showcase${query}`);
