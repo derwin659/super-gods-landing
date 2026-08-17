@@ -1,4 +1,4 @@
-﻿import { apiRequest, getApiBaseUrl, getToken } from './apiClient';
+import { apiRequest, getApiBaseUrl, getToken } from './apiClient';
 
 export async function getOwnerShowcase(status = '') {
   const query = status ? `?status=${encodeURIComponent(status)}` : '';
@@ -23,6 +23,8 @@ export async function createOwnerCatalog(formData) {
 export async function moderateOwnerShowcase(id, status, reason = null) {
   return apiRequest(`/api/owner/showcase/${id}/moderate`, { method: 'POST', body: JSON.stringify({ status, reason }) });
 }
+export async function setOwnerShowcaseFeatured(id, featured) { return apiRequest(`/api/owner/showcase/${id}/featured`, { method: 'PATCH', body: JSON.stringify({ featured }) }); }
+export async function moveOwnerShowcaseFeatured(id, direction) { return apiRequest(`/api/owner/showcase/${id}/featured/move`, { method: 'POST', body: JSON.stringify({ direction }) }); }
 export async function archiveOwnerShowcase(id) { return apiRequest(`/api/owner/showcase/${id}/archive`, { method: 'POST' }); }
 export async function publishOwnerShowcase(id) { return apiRequest(`/api/owner/showcase/${id}/publish`, { method: 'POST' }); }
 export async function deleteOwnerShowcase(id) { return apiRequest(`/api/owner/showcase/${id}`, { method: 'DELETE' }); }
