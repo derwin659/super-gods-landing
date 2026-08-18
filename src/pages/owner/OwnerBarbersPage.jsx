@@ -860,13 +860,18 @@ function ToggleConfirmModal({ barber, onCancel, onConfirm, saving }) {
 
 function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCommissions, onDelete }) {
   const labels = useBusinessLabels();
-  const active = barber.activo !== false;
+  const retired = Boolean(barber.retiredAt);
+  const active = !retired && barber.activo !== false;
 
   return (
     <div className={`rounded-[30px] border bg-white p-5 shadow-[0_14px_38px_rgba(15,23,42,0.045)] ${
-      active ? 'border-neutral-200' : 'border-red-200'
+      retired ? 'border-slate-300 bg-slate-50' : active ? 'border-neutral-200' : 'border-red-200'
     }`}>
-      {!active && (
+      {retired ? (
+        <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-black text-slate-700">
+          Profesional retirado el {new Date(barber.retiredAt).toLocaleDateString('es-PE')}. Historial conservado.{barber.retirementReason ? ' Motivo: ' + barber.retirementReason : ''}
+        </div>
+      ) : !active && (
         <div className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700">
           {labels.professionalDisplay} inactivo: no aparecerá para nuevas operaciones.
         </div>
@@ -886,7 +891,7 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCom
                 ? 'bg-emerald-50 text-emerald-700'
                 : 'bg-red-50 text-red-700'
             }`}>
-              {active ? 'Activo' : 'Inactivo'}
+              {retired ? 'Retirado' : active ? 'Activo' : 'Inactivo'}
             </span>
           </div>
 
@@ -918,7 +923,7 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCom
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {!retired && <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <button
           type="button"
           onClick={onServices}
@@ -961,7 +966,7 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCom
         <button type="button" onClick={onDelete} className="rounded-2xl border border-red-300 bg-white px-4 py-3 text-sm font-black text-red-700 transition hover:-translate-y-0.5 hover:bg-red-50">
           Retirar profesional
         </button>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -1134,6 +1139,8 @@ function DeleteBarberModal({ barber, onClose, onDeleted }) {
     <div className="space-y-4 p-5 sm:p-6">{loading ? <div className="rounded-3xl bg-white p-8 text-center font-black text-neutral-500">Analizando historial...</div> : preview && <>
       <div className={`rounded-[26px] border p-5 ${preview.blocked ? 'border-red-200 bg-red-50' : preview.hasHistory ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}><div className="text-xs font-black uppercase tracking-[.18em] text-neutral-500">{preview.deletionMode === 'HARD_DELETE' ? 'Eliminación definitiva' : preview.blocked ? 'Acción pendiente' : 'Historial protegido'}</div><h4 className="mt-2 text-xl font-black text-neutral-950">{preview.blocked ? 'Primero resuelve las citas futuras' : preview.hasHistory ? 'Se retirará sin perder información' : 'Puede eliminarse por completo'}</h4><p className="mt-2 text-sm font-semibold leading-6 text-neutral-600">{preview.explanation}</p></div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4"><Metric label="Citas futuras" value={preview.futureAppointments}/><Metric label="Historial" value={historyTotal}/><Metric label="Horarios" value={preview.schedules}/><Metric label="Configuración" value={preview.configurations}/></div>
+      {preview.blocked && <button type="button" onClick={()=>{onClose();window.location.assign('/owner/agenda');}} className="w-full rounded-2xl bg-neutral-950 px-5 py-4 font-black text-white">Ir a Agenda para cancelar o reasignar</button>
+      }
       {!preview.blocked && <label className="block"><span className="text-sm font-black text-neutral-800">Motivo del retiro</span><textarea rows="3" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ejemplo: terminó su relación laboral" className="mt-2 w-full resize-none rounded-2xl border border-neutral-200 bg-white p-4 font-semibold outline-none focus:border-amber-400"/></label>}
     </>}
     {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-black text-red-700">{error}</div>}
@@ -1150,7 +1157,7 @@ export default function OwnerBarbersPage() {
   const [commissionBarber, setCommissionBarber] = useState(null);
   const [branches, setBranches] = useState([]);
   const [branchId, setBranchId] = useState('');
-  const [showInactive, setShowInactive] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [search, setSearch] = useState('');
 
   const [loading, setLoading] = useState(true);
@@ -1202,7 +1209,10 @@ export default function OwnerBarbersPage() {
     const term = search.trim().toLowerCase();
 
     return barbers.filter((item) => {
-      if (!showInactive && item.activo === false) return false;
+      const retired = Boolean(item.retiredAt);
+      if (statusFilter === 'ACTIVE' && (retired || item.activo === false)) return false;
+      if (statusFilter === 'INACTIVE' && (retired || item.activo !== false)) return false;
+      if (statusFilter === 'RETIRED' && !retired) return false;
 
       if (!term) return true;
 
@@ -1213,14 +1223,18 @@ export default function OwnerBarbersPage() {
         barberBranchLabel(item).toLowerCase().includes(term)
       );
     });
-  }, [barbers, search, showInactive]);
+  }, [barbers, search, statusFilter]);
 
   const activeCount = useMemo(() => {
-    return barbers.filter((item) => item.activo !== false).length;
+    return barbers.filter((item) => !item.retiredAt && item.activo !== false).length;
   }, [barbers]);
 
   const inactiveCount = useMemo(() => {
-    return barbers.filter((item) => item.activo === false).length;
+    return barbers.filter((item) => !item.retiredAt && item.activo === false).length;
+  }, [barbers]);
+
+  const retiredCount = useMemo(() => {
+    return barbers.filter((item) => Boolean(item.retiredAt)).length;
   }, [barbers]);
 
   const salaryCount = useMemo(() => {
@@ -1408,17 +1422,7 @@ export default function OwnerBarbersPage() {
             options={branchOptions}
           />
 
-          <button
-            type="button"
-            onClick={() => setShowInactive((prev) => !prev)}
-            className={`rounded-2xl px-5 py-4 text-sm font-black transition ${
-              showInactive
-                ? 'bg-emerald-500 text-white'
-                : 'border border-neutral-200 bg-neutral-50 text-neutral-700 hover:bg-neutral-100'
-            }`}
-          >
-            {showInactive ? 'Todos (activos e inactivos)' : 'Solo activos'}
-          </button>
+          <label className="block"><span className="text-sm font-black text-neutral-700">Estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="mt-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-700"><option value="ALL">Todos</option><option value="ACTIVE">Activos</option><option value="INACTIVE">Inactivos</option><option value="RETIRED">Retirados ({retiredCount})</option></select></label>
 
           <button
             type="button"
