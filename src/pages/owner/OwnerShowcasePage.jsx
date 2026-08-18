@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Archive, ArrowDown, ArrowUp, Building2, Check, Eye, Heart, Image, MousePointerClick, PlayCircle, Plus, RefreshCw, RotateCcw, Search, Share2, SlidersHorizontal, Sparkles, Star, Trash2, Upload, X } from 'lucide-react';
 import { getOwnerBranches } from '../../api/ownerBranchesApi';
+import { getOwnerServices } from '../../api/ownerServicesApi';
 import { archiveOwnerShowcase, createOwnerCatalog, deleteOwnerShowcase, getOwnerShowcase, getOwnerShowcaseMetrics, getOwnerShowcaseReports, moderateOwnerShowcase, moveOwnerShowcaseFeatured, publishOwnerShowcase, resolveOwnerShowcaseReport, setOwnerShowcaseFeatured } from '../../api/ownerShowcaseApi';
 
 const filters = [['PENDING_APPROVAL','Pendientes'],['PUBLISHED','Publicados'],['REJECTED','Rechazados'],['ARCHIVED','Archivados']];
 const rejectionPresets = ['Calidad insuficiente', 'Falta autorización del cliente', 'Contenido incorrecto', 'Publicación duplicada'];
 const initialListFilters = { search:'', branchId:'', professionalId:'', mediaType:'', originType:'', date:'' };
-const initialForm = { title:'', description:'', category:'', collectionName:'', scheduledAt:'', visibilityScope:'ALL_BRANCHES', branchId:'', branchIds:[], mediaType:'IMAGE', durationSeconds:'', consent:false, file:null };
+const initialForm = { title:'', description:'', category:'', collectionName:'', serviceId:'', scheduledAt:'', visibilityScope:'ALL_BRANCHES', branchId:'', branchIds:[], mediaType:'IMAGE', durationSeconds:'', consent:false, file:null };
 const branchIdOf = (branch) => String(branch.id ?? branch.branchId ?? '');
 const branchNameOf = (branch) => branch.nombre || branch.name || branch.branchName || 'Sede';
 
@@ -15,6 +16,7 @@ export default function OwnerShowcasePage() {
   const [items,setItems]=useState([]);
   const [metrics,setMetrics]=useState({});
   const [branches,setBranches]=useState([]);
+  const [services,setServices]=useState([]);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState('');
   const [success,setSuccess]=useState('');
@@ -33,7 +35,11 @@ export default function OwnerShowcasePage() {
 
   async function load(){setLoading(true);setError('');try{const [content,summary]=await Promise.all([getOwnerShowcase(status),getOwnerShowcaseMetrics()]);setItems(content);setMetrics(Object.fromEntries(summary.map((entry)=>[String(entry.showcaseId),entry])));}catch(e){setError(e.message||'No se pudo cargar la vitrina.');}finally{setLoading(false);}}
   useEffect(()=>{load();},[status]);
-  useEffect(()=>{getOwnerBranches({onlyActive:true}).then((data)=>setBranches(Array.isArray(data)?data:[])).catch(()=>setBranches([]));},[]);
+  useEffect(()=>{
+    Promise.all([getOwnerBranches({onlyActive:true}),getOwnerServices({onlyActive:true})])
+      .then(([branchData,serviceData])=>{setBranches(Array.isArray(branchData)?branchData:[]);setServices(Array.isArray(serviceData)?serviceData:[]);})
+      .catch(()=>{setBranches([]);setServices([]);});
+  },[]);
   useEffect(()=>{
     if(!form.file){setPreviewUrl('');return undefined;}
     const url=URL.createObjectURL(form.file);setPreviewUrl(url);
@@ -74,7 +80,7 @@ export default function OwnerShowcasePage() {
       if(form.visibilityScope==='ORIGIN_BRANCH'&&!form.branchId) throw new Error('Selecciona la sede donde aparecerá.');
       if(form.visibilityScope==='SELECTED_BRANCHES'&&!form.branchIds.length) throw new Error('Selecciona al menos una sede.');
       const data=new FormData();
-      data.append('title',form.title);data.append('description',form.description);data.append('category',form.category);data.append('collectionName',form.collectionName);if(form.scheduledAt)data.append('scheduledAt',form.scheduledAt);data.append('visibilityScope',form.visibilityScope);data.append('mediaType',form.mediaType);data.append('consent',String(form.consent));data.append('file',form.file);
+      data.append('title',form.title);data.append('description',form.description);data.append('category',form.category);data.append('collectionName',form.collectionName);if(form.serviceId)data.append('serviceId',form.serviceId);if(form.scheduledAt)data.append('scheduledAt',form.scheduledAt);data.append('visibilityScope',form.visibilityScope);data.append('mediaType',form.mediaType);data.append('consent',String(form.consent));data.append('file',form.file);
       if(form.branchId)data.append('branchId',form.branchId);
       form.branchIds.forEach((id)=>data.append('branchIds',id));
       if(form.mediaType==='VIDEO')data.append('durationSeconds',form.durationSeconds||'1');
@@ -134,6 +140,7 @@ export default function OwnerShowcasePage() {
         <label className="text-sm font-black">Título<input required maxLength={120} value={form.title} onChange={(e)=>setForm({...form,title:e.target.value})} placeholder="Ej. Balayage caramelo" className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none focus:border-amber-400"/></label>
         <label className="text-sm font-black">Categoría<input maxLength={80} value={form.category} onChange={(e)=>setForm({...form,category:e.target.value})} placeholder="Ej. Color, barbería, uñas" className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none focus:border-amber-400"/></label>
         <label className="text-sm font-black">Colección<input list="showcase-collections" maxLength={80} value={form.collectionName} onChange={(e)=>setForm({...form,collectionName:e.target.value})} placeholder="Ej. Temporada verano" className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none focus:border-amber-400"/><datalist id="showcase-collections">{collectionOptions.map((name)=><option key={name} value={name}/>)}</datalist><span className="mt-2 block text-xs font-semibold text-neutral-500">Escribe una nueva o reutiliza una colección existente.</span></label>
+        <label className="text-sm font-black">Servicio relacionado <span className="font-semibold text-neutral-400">(opcional)</span><select value={form.serviceId} onChange={(e)=>setForm({...form,serviceId:e.target.value})} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white p-4"><option value="">Sin servicio relacionado</option>{services.map((service)=>{const id=String(service.serviceId??service.id??'');return <option key={id} value={id}>{service.nombre||service.name||'Servicio'}</option>})}</select><span className="mt-2 block text-xs font-semibold text-neutral-500">Al reservar desde esta inspiración, el servicio quedará preseleccionado.</span></label>
         <label className="text-sm font-black">Publicación<input type="datetime-local" value={form.scheduledAt} onChange={(e)=>setForm({...form,scheduledAt:e.target.value})} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white p-4 outline-none focus:border-amber-400"/><span className="mt-2 block text-xs font-semibold text-neutral-500">{form.scheduledAt?'Se publicará automáticamente en esa fecha.':'Vacío: publicar inmediatamente.'}</span></label>
         <label className="text-sm font-black">Tipo<select value={form.mediaType} onChange={(e)=>setForm({...form,mediaType:e.target.value})} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white p-4"><option value="IMAGE">Foto</option><option value="VIDEO">Video</option></select></label>
         <label className="text-sm font-black">Archivo<input required type="file" accept="image/*,video/*" onChange={(e)=>selectMediaFile(e.target.files?.[0]||null)} className="mt-2 block w-full cursor-pointer rounded-2xl border border-dashed border-amber-300 bg-amber-50 p-3 text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-neutral-950 file:px-4 file:py-2 file:font-black file:text-white"/><span className="mt-2 block text-xs font-semibold text-neutral-500">JPG, PNG, WEBP, MP4 o MOV. El tipo se detecta automaticamente.</span></label>
