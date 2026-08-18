@@ -33,3 +33,16 @@ export async function moveOwnerShowcaseFeatured(id, direction) { return apiReque
 export async function archiveOwnerShowcase(id) { return apiRequest(`/api/owner/showcase/${id}/archive`, { method: 'POST' }); }
 export async function publishOwnerShowcase(id) { return apiRequest(`/api/owner/showcase/${id}/publish`, { method: 'POST' }); }
 export async function deleteOwnerShowcase(id) { return apiRequest(`/api/owner/showcase/${id}`, { method: 'DELETE' }); }
+
+export async function getOwnerShowcaseReports(showcaseId = '') {
+  const query = showcaseId ? '?showcaseId=' + encodeURIComponent(showcaseId) : '';
+  const data = await apiRequest('/api/owner/showcase/reports' + query);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function resolveOwnerShowcaseReport(reportId, decision, note = '') {
+  return apiRequest('/api/owner/showcase/reports/' + reportId + '/resolve', {
+    method: 'POST',
+    body: JSON.stringify({ decision, note }),
+  });
+}
