@@ -54,6 +54,7 @@ import { exportCashHistoryExcel, exportCashHistoryPdf } from '../../utils/cashHi
 import { autoPrintApprovedSale } from '../../services/qzPrinterService';
 import { whatsappPhoneDigits } from '../../utils/internationalPhone';
 import InternationalPhoneField from '../../components/InternationalPhoneField';
+import { getElectronicInvoicingAccess, issueElectronicDocument } from '../../api/electronicInvoicingApi';
 
 function useAllowedServicesForBarber({ barberId, branchId, setSelectedServiceId }) {
   const [allowedServiceIds, setAllowedServiceIds] = useState(null);
@@ -3948,6 +3949,12 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const [cashReceived, setCashReceived] = useState('0');
   const [saleDate, setSaleDate] = useState(toDateInputValue(new Date()));
   const [payments, setPayments] = useState([createPaymentDraft('CASH', 0)]);
+  const [documentType, setDocumentType] = useState('NONE');
+  const [electronicInvoicingAvailable, setElectronicInvoicingAvailable] = useState(false);
+  const [receiverDocumentNumber, setReceiverDocumentNumber] = useState('');
+  const [receiverName, setReceiverName] = useState('');
+  const [receiverAddress, setReceiverAddress] = useState('');
+  const [receiverEmail, setReceiverEmail] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -3993,15 +4000,17 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
       setErrorMsg('');
 
       try {
-        const [serviceData, barberData, productData] = await Promise.all([
+        const [serviceData, barberData, productData, invoicingAccess] = await Promise.all([
           getCashServices(),
           getCashBarbers(branch.id),
           getCashProducts(branch.id).catch(() => []),
+          getElectronicInvoicingAccess().catch(() => ({ available: false })),
         ]);
 
         setServices(serviceData);
         setBarbers(mergeOwnerIntoBarbers(barberData, session));
         setProducts(productData);
+        setElectronicInvoicingAvailable(invoicingAccess?.available === true);
       } catch (error) {
         setErrorMsg(error.message || `No se pudieron cargar servicios, productos y ${labels.professionalsPlural}.`);
       } finally {
@@ -4080,6 +4089,8 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     setQuickCustomerLastName('');
     setCustomerResults([]);
     setCustomerSearching(false);
+    setReceiverName(customer.nombreCompleto || [customer.nombres, customer.apellidos].filter(Boolean).join(' ') || 'Cliente');
+    if (customer.email) setReceiverEmail(customer.email);
   }
 
   async function createQuickCustomerFromSale() {
@@ -4308,6 +4319,21 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
       return;
     }
 
+    if (documentType !== 'NONE') {
+      const digits = receiverDocumentNumber.replace(/\D/g, '');
+      if (total <= 0) { setErrorMsg('No se puede emitir comprobante electrónico para una venta gratuita.'); return; }
+      if (!receiverName.trim()) { setErrorMsg('Escribe el nombre o razón social del receptor.'); return; }
+      if (documentType === 'RECEIPT' && !/^\d{8}$/.test(digits)) {
+        setErrorMsg('La boleta de esta primera versión requiere un DNI válido de 8 dígitos.'); return;
+      }
+      if (documentType === 'INVOICE' && !/^\d{11}$/.test(digits)) {
+        setErrorMsg('La factura requiere un RUC válido de 11 dígitos.'); return;
+      }
+      if (documentType === 'INVOICE' && !receiverAddress.trim()) {
+        setErrorMsg('La dirección fiscal es obligatoria para la factura.'); return;
+      }
+    }
+
     const hasHaircut = items.some((item) => {
       const name = String(item.name || '').toLowerCase();
       return item.type === 'service' && (
@@ -4346,6 +4372,22 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         })),
       });
 
+      let electronicDocument = null;
+      let electronicDocumentError = null;
+      if (documentType !== 'NONE') {
+        try {
+          electronicDocument = await issueElectronicDocument({
+            saleId: saleIdOf(createdSale), branchId: branch.id, documentType,
+            receiverDocumentType: documentType === 'INVOICE' ? '6' : '1',
+            receiverDocumentNumber: receiverDocumentNumber.replace(/\D/g, ''),
+            receiverName: receiverName.trim(), receiverAddress: receiverAddress.trim() || '-',
+            receiverEmail: receiverEmail.trim() || null,
+          });
+        } catch (reason) {
+          electronicDocumentError = reason.message || 'No se pudo emitir el comprobante.';
+        }
+      }
+
       await autoPrintApprovedSale(createdSale, { branchId: branch.id });
       offerCustomerWhatsappFollowUp(
         saleWithWhatsappFallback(createdSale, {
@@ -4360,6 +4402,12 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
           canOpenWhatsapp: String(session?.role || '').trim().toUpperCase() === 'OWNER',
         }
       );
+      if (electronicDocument) {
+        const number = [electronicDocument.series, electronicDocument.sequence].filter(Boolean).join('-');
+        window.alert(`Venta guardada. ${documentType === 'INVOICE' ? 'Factura' : 'Boleta'} ${number || ''}: ${electronicDocument.status}.`);
+      } else if (electronicDocumentError) {
+        window.alert(`La venta fue guardada correctamente, pero el comprobante quedó pendiente: ${electronicDocumentError}`);
+      }
       onSaved();
     } catch (error) {
       setErrorMsg(error.message || 'No se pudo registrar la venta.');
@@ -4778,6 +4826,24 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
               </button>
 
               <div className="mt-5 space-y-4">
+                {electronicInvoicingAvailable && (
+                  <div className="rounded-[24px] border border-violet-200 bg-violet-50 p-4">
+                    <div className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">Comprobante electrónico</div>
+                    <p className="mt-1 text-xs font-bold text-violet-700/70">Emite mediante Mifact y SUNAT.</p>
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      {[['NONE','Sin comprobante'],['RECEIPT','Boleta'],['INVOICE','Factura']].map(([value,label]) => (
+                        <button key={value} type="button" onClick={() => setDocumentType(value)}
+                          className={`rounded-xl px-2 py-3 text-xs font-black ${documentType === value ? 'bg-neutral-950 text-white' : 'border border-violet-200 bg-white text-neutral-600'}`}>{label}</button>
+                      ))}
+                    </div>
+                    {documentType !== 'NONE' && <div className="mt-4 space-y-3">
+                      <InputField label={documentType === 'INVOICE' ? 'RUC (11 dígitos)' : 'DNI (8 dígitos)'} value={receiverDocumentNumber} onChange={(value) => setReceiverDocumentNumber(value.replace(/\D/g, '').slice(0, documentType === 'INVOICE' ? 11 : 8))} />
+                      <InputField label={documentType === 'INVOICE' ? 'Razón social' : 'Nombre del cliente'} value={receiverName} onChange={setReceiverName} />
+                      <InputField label={documentType === 'INVOICE' ? 'Dirección fiscal' : 'Dirección (opcional)'} value={receiverAddress} onChange={setReceiverAddress} />
+                      <InputField label="Correo opcional" value={receiverEmail} onChange={setReceiverEmail} type="email" />
+                    </div>}
+                  </div>
+                )}
                 <label className="block">
                   <span className="text-sm font-black text-neutral-700">Fecha de venta</span>
                   <input

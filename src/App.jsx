@@ -65,6 +65,7 @@ import OwnerPromotionsPage from './pages/owner/OwnerPromotionsPage';
 import OwnerSubscriptionPage from './pages/owner/OwnerSubscriptionPage';
 import OwnerLoyaltySettingsPage from './pages/owner/OwnerLoyaltySettingsPage';
 import OwnerWhatsappSettingsPage from './pages/owner/OwnerWhatsappSettingsPage';
+import OwnerElectronicInvoicingPage from './pages/owner/OwnerElectronicInvoicingPage';
 import OwnerPrinterSettingsPage from './pages/owner/OwnerPrinterSettingsPage';
 import { getPublicSubscriptionPrices } from './api/publicSubscriptionPricingApi';
 import {
@@ -2331,6 +2332,14 @@ export default function App() {
             element={
               <OwnerPermissionRoute ownerOnly>
                 <OwnerSubscriptionPage />
+              </OwnerPermissionRoute>
+            }
+          />
+          <Route
+            path="facturacion-electronica"
+            element={
+              <OwnerPermissionRoute ownerOnly>
+                <OwnerElectronicInvoicingPage />
               </OwnerPermissionRoute>
             }
           />

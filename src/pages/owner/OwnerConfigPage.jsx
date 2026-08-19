@@ -7,6 +7,7 @@ import {
     CreditCard,
     Gift,
     Image,
+    FileCheck2,
     Megaphone,
     MessageCircle,
     Package,
@@ -267,6 +268,14 @@ import {
             badge="Caja"
             tone="blue"
             onClick={() => navigate('/owner/impresora-gaveta')}
+          />
+          <ConfigTile
+            icon={FileCheck2}
+            title="Facturación electrónica"
+            subtitle="Configura SUNAT, Mifact, series y emisión de boletas o facturas desde cada venta."
+            badge="SUNAT"
+            tone="violet"
+            onClick={() => navigate('/owner/facturacion-electronica')}
           />
 
           <ConfigTile
