@@ -2697,11 +2697,15 @@ async function openElectronicPdfForPrint(document) {
   }
 }
 
-function ElectronicDocumentPanel({ saleId }) {
+function ElectronicDocumentPanel({ saleId, branchId }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
+  const [issueType, setIssueType] = useState('RECEIPT');
+  const [issueDocument, setIssueDocument] = useState('');
+  const [issueName, setIssueName] = useState('');
+  const [issueAddress, setIssueAddress] = useState('');
   async function load() {
     setLoading(true); setError('');
     try { const data = await getSaleElectronicDocuments(saleId); setDocuments(Array.isArray(data) ? data : []); }
@@ -2736,9 +2740,37 @@ function ElectronicDocumentPanel({ saleId }) {
     } catch (reason) { setError(reason.message || 'No se pudo actualizar el comprobante.'); }
     finally { setWorking(false); }
   }
+  async function issueMissingDocument() {
+    const digits = issueDocument.replace(/\D/g, '');
+    if (!branchId) { setError('No se pudo identificar la sede de esta venta.'); return; }
+    if (issueType === 'RECEIPT' && digits.length !== 8) { setError('Ingresa un DNI válido de 8 dígitos.'); return; }
+    if (issueType === 'INVOICE' && digits.length !== 11) { setError('Ingresa un RUC válido de 11 dígitos.'); return; }
+    if (!issueName.trim()) { setError('Ingresa el nombre o razón social.'); return; }
+    if (issueType === 'INVOICE' && !issueAddress.trim()) { setError('La dirección fiscal es obligatoria.'); return; }
+    setWorking(true); setError('');
+    try {
+      await issueElectronicDocument({ saleId, branchId, documentType: issueType, receiverDocumentType: issueType === 'INVOICE' ? '6' : '1', receiverDocumentNumber: digits, receiverName: issueName.trim(), receiverAddress: issueAddress.trim() || '-', receiverEmail: null });
+      await load();
+    } catch (reason) { setError(reason.message || 'No se pudo emitir el comprobante.'); }
+    finally { setWorking(false); }
+  }
+
   if (loading) return <div className="rounded-[28px] border border-violet-200 bg-violet-50 p-5 text-sm font-black text-violet-700">Consultando comprobante electrónico...</div>;
   if (error && documents.length === 0) return <div className="rounded-[28px] border border-neutral-200 bg-neutral-50 p-5 text-sm font-bold text-neutral-500">Comprobante electrónico no disponible: {error}</div>;
-  if (documents.length === 0) return <div className="rounded-[28px] border border-neutral-200 bg-neutral-50 p-5"><div className="font-black text-neutral-800">Sin comprobante electrónico</div><p className="mt-1 text-sm font-semibold text-neutral-500">Esta venta fue guardada sin boleta ni factura.</p></div>;
+  if (documents.length === 0) return <div className="rounded-[28px] border border-violet-200 bg-violet-50 p-5">
+    <div className="font-black text-neutral-900">Sin comprobante electrónico</div>
+    <p className="mt-1 text-sm font-semibold text-neutral-600">Puedes emitirlo sobre esta misma venta sin duplicar caja.</p>
+    <div className="mt-4 grid grid-cols-2 gap-2">
+      {[['RECEIPT','Boleta'],['INVOICE','Factura']].map(([value,label]) => <button key={value} type="button" onClick={() => { setIssueType(value); setIssueDocument(''); }} className={`rounded-xl px-3 py-3 text-xs font-black ${issueType === value ? 'bg-neutral-950 text-white' : 'border border-violet-200 bg-white text-neutral-700'}`}>{label}</button>)}
+    </div>
+    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <InputField label={issueType === 'INVOICE' ? 'RUC' : 'DNI'} value={issueDocument} onChange={(value) => setIssueDocument(value.replace(/\D/g, '').slice(0, issueType === 'INVOICE' ? 11 : 8))} />
+      <InputField label={issueType === 'INVOICE' ? 'Razón social' : 'Nombre del cliente'} value={issueName} onChange={setIssueName} />
+      {issueType === 'INVOICE' && <div className="sm:col-span-2"><InputField label="Dirección fiscal" value={issueAddress} onChange={setIssueAddress} /></div>}
+    </div>
+    {error && <div className="mt-3 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700">{error}</div>}
+    <button disabled={working} type="button" onClick={issueMissingDocument} className="mt-4 w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white disabled:opacity-50">{working ? 'Emitiendo...' : `Emitir ${issueType === 'INVOICE' ? 'factura' : 'boleta'} ahora`}</button>
+  </div>;
   return <div className="space-y-3">{documents.map((document) => {
     const accepted = document.status === 'ACCEPTED' || document.status === 'ACCEPTED_WITH_OBSERVATIONS';
     return <div key={document.id} className={`rounded-[28px] border p-5 ${accepted ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
@@ -2760,7 +2792,7 @@ function ElectronicDocumentPanel({ saleId }) {
   })}</div>;
 }
 
-function SaleDetailModal({ sale, onClose, labels = readBusinessLabels() }) {
+function SaleDetailModal({ sale, branchId, onClose, labels = readBusinessLabels() }) {
   const payments = salePaymentsOf(sale);
   const items = saleItemsOf(sale);
   const subtotal = Number(sale?.subtotal ?? 0);
@@ -2779,7 +2811,7 @@ function SaleDetailModal({ sale, onClose, labels = readBusinessLabels() }) {
       maxWidth="max-w-5xl"
     >
       <div className="space-y-5">
-        <ElectronicDocumentPanel saleId={saleId} />
+        <ElectronicDocumentPanel saleId={saleId} branchId={branchId ?? sale?.branchId ?? sale?.branch?.id ?? sale?.sedeId} />
         <div className="rounded-[28px] border border-neutral-200 bg-[linear-gradient(135deg,#F8FAFC_0%,#FFFFFF_70%)] p-5">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <DetailMetric label="Cliente" value={sale?.customerName || 'Cliente ocasional'} helper={sale?.customerId ? `ID cliente: ${sale.customerId}` : 'Sin cliente registrado'} />
@@ -7620,6 +7652,7 @@ export default function OwnerCashPage() {
       {viewingSale && (
         <SaleDetailModal
           sale={viewingSale}
+          branchId={selectedBranch?.id}
           onClose={() => setViewingSale(null)}
         />
       )}
