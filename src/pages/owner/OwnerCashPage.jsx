@@ -54,7 +54,7 @@ import { exportCashHistoryExcel, exportCashHistoryPdf } from '../../utils/cashHi
 import { autoPrintApprovedSale } from '../../services/qzPrinterService';
 import { whatsappPhoneDigits } from '../../utils/internationalPhone';
 import InternationalPhoneField from '../../components/InternationalPhoneField';
-import { getElectronicInvoicingAccess, issueElectronicDocument } from '../../api/electronicInvoicingApi';
+import { downloadBase64File, getElectronicDocumentFiles, getElectronicInvoicingAccess, getSaleElectronicDocuments, issueElectronicDocument, refreshElectronicDocument, retryElectronicDocument } from '../../api/electronicInvoicingApi';
 
 function useAllowedServicesForBarber({ barberId, branchId, setSelectedServiceId }) {
   const [allowedServiceIds, setAllowedServiceIds] = useState(null);
@@ -2670,6 +2670,64 @@ function DetailMetric({ label, value, tone = 'default', helper }) {
   );
 }
 
+function ElectronicDocumentPanel({ saleId }) {
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState('');
+  async function load() {
+    setLoading(true); setError('');
+    try { const data = await getSaleElectronicDocuments(saleId); setDocuments(Array.isArray(data) ? data : []); }
+    catch (reason) { setError(reason.message || 'No se pudo consultar el comprobante.'); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, [saleId]);
+  async function download(document, type) {
+    setWorking(true); setError('');
+    try {
+      const files = await getElectronicDocumentFiles(document.id);
+      const number = `${document.series || 'CPE'}-${document.sequence || document.id}`;
+      if (type === 'PDF') {
+        if (files.pdfBase64) downloadBase64File(files.pdfBase64, 'application/pdf', `${number}.pdf`);
+        else if (files.documentUrl) window.open(files.documentUrl, '_blank', 'noopener,noreferrer');
+        else throw new Error('El proveedor todavía no devolvió el PDF.');
+      } else if (type === 'XML') {
+        if (!downloadBase64File(files.xmlBase64, 'application/xml', `${number}.xml`)) throw new Error('XML todavía no disponible.');
+      } else if (!downloadBase64File(files.cdrBase64, 'application/zip', `${number}-CDR.zip`)) throw new Error('CDR todavía no disponible.');
+    } catch (reason) { setError(reason.message || 'No se pudo descargar el archivo.'); }
+    finally { setWorking(false); }
+  }
+  async function update(document) {
+    setWorking(true); setError('');
+    try {
+      if (document.status === 'ERROR') await retryElectronicDocument(document.id); else await refreshElectronicDocument(document.id);
+      await load();
+    } catch (reason) { setError(reason.message || 'No se pudo actualizar el comprobante.'); }
+    finally { setWorking(false); }
+  }
+  if (loading) return <div className="rounded-[28px] border border-violet-200 bg-violet-50 p-5 text-sm font-black text-violet-700">Consultando comprobante electrónico...</div>;
+  if (error && documents.length === 0) return <div className="rounded-[28px] border border-neutral-200 bg-neutral-50 p-5 text-sm font-bold text-neutral-500">Comprobante electrónico no disponible: {error}</div>;
+  if (documents.length === 0) return <div className="rounded-[28px] border border-neutral-200 bg-neutral-50 p-5"><div className="font-black text-neutral-800">Sin comprobante electrónico</div><p className="mt-1 text-sm font-semibold text-neutral-500">Esta venta fue guardada sin boleta ni factura.</p></div>;
+  return <div className="space-y-3">{documents.map((document) => {
+    const accepted = document.status === 'ACCEPTED' || document.status === 'ACCEPTED_WITH_OBSERVATIONS';
+    return <div key={document.id} className={`rounded-[28px] border p-5 ${accepted ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div>
+        <div className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">Comprobante electrónico</div>
+        <h3 className="mt-2 text-xl font-black text-neutral-950">{document.documentType === 'INVOICE' ? 'Factura' : 'Boleta'} {document.series}-{document.sequence}</h3>
+        <p className="mt-1 text-sm font-bold text-neutral-600">Estado: {accepted ? 'Aceptado por SUNAT' : document.status}</p>
+        {document.sunatDescription && <p className="mt-1 text-xs font-semibold text-neutral-500">{document.sunatDescription}</p>}
+      </div><span className={`rounded-full px-3 py-2 text-xs font-black ${accepted ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-neutral-950'}`}>{document.status}</span></div>
+      {error && <div className="mt-3 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700">{error}</div>}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {accepted && <><button disabled={working} type="button" onClick={() => download(document, 'PDF')} className="rounded-xl bg-neutral-950 px-4 py-3 text-xs font-black text-white disabled:opacity-50">Ver PDF</button>
+        <button disabled={working} type="button" onClick={() => download(document, 'XML')} className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-xs font-black text-neutral-800 disabled:opacity-50">Descargar XML</button>
+        <button disabled={working} type="button" onClick={() => download(document, 'CDR')} className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-xs font-black text-neutral-800 disabled:opacity-50">Descargar CDR</button></>}
+        {!accepted && <button disabled={working} type="button" onClick={() => update(document)} className="rounded-xl bg-amber-400 px-4 py-3 text-xs font-black text-neutral-950 disabled:opacity-50">{document.status === 'ERROR' ? 'Reintentar' : 'Actualizar estado'}</button>}
+      </div>
+    </div>;
+  })}</div>;
+}
+
 function SaleDetailModal({ sale, onClose, labels = readBusinessLabels() }) {
   const payments = salePaymentsOf(sale);
   const items = saleItemsOf(sale);
@@ -2689,6 +2747,7 @@ function SaleDetailModal({ sale, onClose, labels = readBusinessLabels() }) {
       maxWidth="max-w-5xl"
     >
       <div className="space-y-5">
+        <ElectronicDocumentPanel saleId={saleId} />
         <div className="rounded-[28px] border border-neutral-200 bg-[linear-gradient(135deg,#F8FAFC_0%,#FFFFFF_70%)] p-5">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <DetailMetric label="Cliente" value={sale?.customerName || 'Cliente ocasional'} helper={sale?.customerId ? `ID cliente: ${sale.customerId}` : 'Sin cliente registrado'} />
