@@ -3799,7 +3799,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                     { value: '', label: 'Selecciona servicio' },
                     ...availableServices.map((service) => ({
                       value: String(service.id),
-                      label: `${service.name} · ${servicePriceLabel(service)}`,
+                      label: `${service.name} · ${service.durationMinutes} min · ${servicePriceLabel(service)}`,
                     })),
                   ]}
                 />
@@ -4077,7 +4077,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                 disabled={saving || loadingAllowedServices}
                 className="min-h-14 flex-1 rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 shadow-[0_12px_28px_rgba(251,191,36,0.28)] transition hover:bg-amber-300 disabled:opacity-60"
               >
-                {saving ? 'Guardando venta...' : isCourtesy ? 'Guardar cortesía gratis' : 'Guardar nueva venta'}
+                {saving ? 'Guardando venta...' : 'Cobrar y guardar cita'}
               </button>
             </div>
           </div>
@@ -4836,7 +4836,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       { value: '', label: 'Selecciona servicio' },
                       ...availableServices.map((service) => ({
                         value: String(service.id),
-                        label: `${service.name} · ${servicePriceLabel(service)}`,
+                        label: `${service.name} · ${service.durationMinutes} min · ${servicePriceLabel(service)}`,
                       })),
                     ]}
                   />
