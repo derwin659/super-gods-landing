@@ -2670,6 +2670,33 @@ function DetailMetric({ label, value, tone = 'default', helper }) {
   );
 }
 
+async function openElectronicPdfForPrint(document) {
+  const popup = window.open('', '_blank');
+  if (!popup) {
+    window.alert('El navegador bloqueó la ventana. Permite ventanas emergentes para imprimir el comprobante.');
+    return false;
+  }
+  popup.document.write('<title>Preparando comprobante</title><p style="font-family:system-ui;padding:32px">Preparando PDF oficial...</p>');
+  try {
+    const files = await getElectronicDocumentFiles(document.id);
+    if (files.documentUrl) { popup.location.href = files.documentUrl; return true; }
+    if (files.pdfBase64) {
+      const binary = window.atob(files.pdfBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      popup.location.href = url;
+      window.setTimeout(() => URL.revokeObjectURL(url), 120000);
+      return true;
+    }
+    throw new Error('El PDF aún no está disponible.');
+  } catch (reason) {
+    popup.close();
+    window.alert(reason.message || 'No se pudo abrir el PDF.');
+    return false;
+  }
+}
+
 function ElectronicDocumentPanel({ saleId }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2687,7 +2714,11 @@ function ElectronicDocumentPanel({ saleId }) {
     try {
       const files = await getElectronicDocumentFiles(document.id);
       const number = `${document.series || 'CPE'}-${document.sequence || document.id}`;
-      if (type === 'PDF') {
+      if (type === 'SHARE') {
+        if (!files.documentUrl) throw new Error('El enlace público todavía no está disponible.');
+        if (navigator.share) await navigator.share({ title: `Comprobante ${number}`, text: 'Comprobante electrónico', url: files.documentUrl });
+        else { await navigator.clipboard.writeText(files.documentUrl); window.alert('Enlace del comprobante copiado.'); }
+      } else if (type === 'PDF') {
         if (files.pdfBase64) downloadBase64File(files.pdfBase64, 'application/pdf', `${number}.pdf`);
         else if (files.documentUrl) window.open(files.documentUrl, '_blank', 'noopener,noreferrer');
         else throw new Error('El proveedor todavía no devolvió el PDF.');
@@ -2719,7 +2750,8 @@ function ElectronicDocumentPanel({ saleId }) {
       </div><span className={`rounded-full px-3 py-2 text-xs font-black ${accepted ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-neutral-950'}`}>{document.status}</span></div>
       {error && <div className="mt-3 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700">{error}</div>}
       <div className="mt-4 flex flex-wrap gap-2">
-        {accepted && <><button disabled={working} type="button" onClick={() => download(document, 'PDF')} className="rounded-xl bg-neutral-950 px-4 py-3 text-xs font-black text-white disabled:opacity-50">Ver PDF</button>
+        {accepted && <><button disabled={working} type="button" onClick={() => download(document, 'PDF')} className="rounded-xl bg-neutral-950 px-4 py-3 text-xs font-black text-white disabled:opacity-50">Ver / imprimir PDF</button>
+        <button disabled={working} type="button" onClick={() => download(document, 'SHARE')} className="rounded-xl border border-violet-300 bg-violet-50 px-4 py-3 text-xs font-black text-violet-800 disabled:opacity-50">Compartir</button>
         <button disabled={working} type="button" onClick={() => download(document, 'XML')} className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-xs font-black text-neutral-800 disabled:opacity-50">Descargar XML</button>
         <button disabled={working} type="button" onClick={() => download(document, 'CDR')} className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-xs font-black text-neutral-800 disabled:opacity-50">Descargar CDR</button></>}
         {!accepted && <button disabled={working} type="button" onClick={() => update(document)} className="rounded-xl bg-amber-400 px-4 py-3 text-xs font-black text-neutral-950 disabled:opacity-50">{document.status === 'ERROR' ? 'Reintentar' : 'Actualizar estado'}</button>}
@@ -4463,7 +4495,13 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
       );
       if (electronicDocument) {
         const number = [electronicDocument.series, electronicDocument.sequence].filter(Boolean).join('-');
-        window.alert(`Venta guardada. ${documentType === 'INVOICE' ? 'Factura' : 'Boleta'} ${number || ''}: ${electronicDocument.status}.`);
+        const accepted = electronicDocument.status === 'ACCEPTED' || electronicDocument.status === 'ACCEPTED_WITH_OBSERVATIONS';
+        if (accepted) {
+          const printNow = window.confirm(`Venta guardada. ${documentType === 'INVOICE' ? 'Factura' : 'Boleta'} ${number} aceptada por SUNAT.\n\n¿Deseas abrir el PDF oficial para imprimirlo ahora?`);
+          if (printNow) await openElectronicPdfForPrint(electronicDocument);
+        } else {
+          window.alert(`Venta guardada. El comprobante ${number || 'sin número'} quedó en estado ${electronicDocument.status}. Puedes actualizarlo desde Ver detalle.`);
+        }
       } else if (electronicDocumentError) {
         window.alert(`La venta fue guardada correctamente, pero el comprobante quedó pendiente: ${electronicDocumentError}`);
       }
