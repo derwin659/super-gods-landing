@@ -2484,7 +2484,48 @@ function CourtesySummarySection({ summary, labels = readBusinessLabels() }) {
   );
 }
 
+function FiscalSaleCell({ document, onView }) {
+  if (!document) return <span className="text-xs font-bold text-neutral-400">Sin comprobante</span>;
+  const accepted = document.status === 'ACCEPTED' || document.status === 'ACCEPTED_WITH_OBSERVATIONS';
+  const label = `${document.documentType === 'INVOICE' ? 'Factura' : 'Boleta'} ${document.series || '}-${document.sequence || '}`;
+  if (!accepted) return <button type="button" onClick={onView} className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-black text-amber-700">{label} · {document.status}</button>;
+  return <div className="flex min-w-[155px] flex-col items-start gap-2">
+    <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black text-emerald-700">{label}</span>
+    <details className="relative">
+      <summary className="cursor-pointer list-none rounded-xl bg-neutral-950 px-3 py-2 text-xs font-black text-white">Imprimir ▾</summary>
+      <div className="absolute right-0 z-30 mt-2 w-52 rounded-2xl border border-neutral-200 bg-white p-2 shadow-xl">
+        <button type="button" onClick={() => openElectronicPdfForPrint(document)} className="w-full rounded-xl px-3 py-2 text-left text-xs font-black text-neutral-800 hover:bg-amber-50">Ticket térmico 80 mm</button>
+        <button type="button" onClick={() => openElectronicPdfForPrint(document)} className="w-full rounded-xl px-3 py-2 text-left text-xs font-black text-neutral-800 hover:bg-amber-50">PDF / impresora normal</button>
+        <button type="button" onClick={onView} className="w-full rounded-xl px-3 py-2 text-left text-xs font-black text-violet-700 hover:bg-violet-50">Ver archivos y compartir</button>
+      </div>
+    </details>
+  </div>;
+}
+
 function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), onView, onEdit, onDelete }) {
+  const [invoicingAvailable, setInvoicingAvailable] = useState(false);
+  const [fiscalBySale, setFiscalBySale] = useState({});
+  const saleIdsKey = sales.map((sale) => saleIdOf(sale)).filter(Boolean).join(',');
+
+  useEffect(() => {
+    let active = true;
+    async function loadFiscalState() {
+      try {
+        const access = await getElectronicInvoicingAccess();
+        if (!active || !access?.available) { if (active) setInvoicingAvailable(false); return; }
+        setInvoicingAvailable(true);
+        const entries = await Promise.all(sales.map(async (sale) => {
+          const saleId = saleIdOf(sale);
+          if (!saleId) return [saleId, null];
+          try { const documents = await getSaleElectronicDocuments(saleId); return [saleId, Array.isArray(documents) ? documents[0] || null : null]; }
+          catch { return [saleId, null]; }
+        }));
+        if (active) setFiscalBySale(Object.fromEntries(entries));
+      } catch { if (active) setInvoicingAvailable(false); }
+    }
+    loadFiscalState();
+    return () => { active = false; };
+  }, [saleIdsKey]);
   return (
     <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -2516,6 +2557,7 @@ function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), on
               <th className="px-5 py-4 font-black">Método</th>
               <th className="px-5 py-4 font-black">Total</th>
               <th className="px-5 py-4 font-black">Fecha</th>
+              {invoicingAvailable && <th className="px-5 py-4 font-black">Comprobante</th>}
               <th className="px-5 py-4 font-black text-right">Acciones</th>
             </tr>
           </thead>
@@ -2523,7 +2565,7 @@ function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), on
           <tbody>
             {sales.length === 0 ? (
               <tr>
-                <td className="px-5 py-6 text-neutral-500" colSpan="6">
+                <td className="px-5 py-6 text-neutral-500" colSpan={invoicingAvailable ? 7 : 6}>
                   Aún no hay ventas registradas hoy.
                 </td>
               </tr>
@@ -2560,6 +2602,8 @@ function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), on
                     {formatDateTime(saleDateOf(sale))}
                   </td>
 
+                  {invoicingAvailable && <td className="px-5 py-5">                     <FiscalSaleCell document={fiscalBySale[saleIdOf(sale)]} onView={() => onView(sale)} />                   </td>}
+
                   <td className="px-5 py-5">
                     <div className="flex flex-wrap justify-end gap-2">
                       <button
@@ -2568,7 +2612,7 @@ function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), on
                       >
                         Ver detalle
                       </button>
-                      {canManageSales && (
+                      {canManageSales && !(fiscalBySale[saleIdOf(sale)]?.status === 'ACCEPTED' || fiscalBySale[saleIdOf(sale)]?.status === 'ACCEPTED_WITH_OBSERVATIONS') && (
                         <>
                           <button
                             onClick={() => onEdit(sale)}
@@ -2583,6 +2627,9 @@ function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), on
                             Eliminar
                           </button>
                         </>
+                      )}
+                      {canManageSales && (fiscalBySale[saleIdOf(sale)]?.status === 'ACCEPTED' || fiscalBySale[saleIdOf(sale)]?.status === 'ACCEPTED_WITH_OBSERVATIONS') && (
+                        <span className="rounded-xl bg-emerald-50 px-3 py-2 text-[10px] font-black text-emerald-700">Protegida por SUNAT</span>
                       )}
                     </div>
                   </td>
