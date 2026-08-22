@@ -398,12 +398,16 @@ export async function printElectronicPdfOnThermal(files) {
   const config = qz.configs.create(printerName, {
     copies: 1,
     units: 'mm',
-    size: { width: paperWidth, height: 297 },
+    size: { width: paperWidth, height: 297, custom: true },
     margins: 0,
     orientation: 'portrait',
+    density: 203,
+    fallbackDensity: 203,
+    colorType: 'blackwhite',
     rasterize: true,
     scaleContent: true,
     interpolation: 'bicubic',
+    jobName: 'Comprobante electrónico SUNAT',
   });
 
   await qz.print(config, [{
@@ -413,6 +417,7 @@ export async function printElectronicPdfOnThermal(files) {
     data: pdfBase64 || documentUrl,
     options: {
       ignoreTransparency: true,
+      altFontRendering: true,
     },
   }]);
 
