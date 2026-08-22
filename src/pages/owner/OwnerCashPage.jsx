@@ -2485,7 +2485,10 @@ function CourtesySummarySection({ summary, labels = readBusinessLabels() }) {
 }
 
 function FiscalSaleCell({ document, onView }) {
-  if (!document) return <span className="text-xs font-bold text-neutral-400">Sin comprobante</span>;
+  if (!document) return <div className="flex min-w-[145px] flex-col items-start gap-2">
+    <span className="text-xs font-bold text-neutral-400">Sin comprobante</span>
+    <button type="button" onClick={onView} className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-black text-violet-700 hover:bg-violet-100">Emitir / recuperar</button>
+  </div>;
   const accepted = document.status === 'ACCEPTED' || document.status === 'ACCEPTED_WITH_OBSERVATIONS';
   const label = `${document.documentType === 'INVOICE' ? 'Factura' : 'Boleta'} ${document.series || '}-${document.sequence || '}`;
   if (!accepted) return <button type="button" onClick={onView} className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-black text-amber-700">{label} · {document.status}</button>;
@@ -2502,7 +2505,7 @@ function FiscalSaleCell({ document, onView }) {
   </div>;
 }
 
-function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), onView, onEdit, onDelete }) {
+function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), onView, onEdit, onDelete, fiscalRefreshKey = 0 }) {
   const [invoicingAvailable, setInvoicingAvailable] = useState(false);
   const [fiscalBySale, setFiscalBySale] = useState({});
   const saleIdsKey = sales.map((sale) => saleIdOf(sale)).filter(Boolean).join(',');
@@ -2525,7 +2528,7 @@ function SalesSection({ sales, canManageSales, labels = readBusinessLabels(), on
     }
     loadFiscalState();
     return () => { active = false; };
-  }, [saleIdsKey]);
+  }, [saleIdsKey, fiscalRefreshKey]);
   return (
     <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -2717,8 +2720,8 @@ function DetailMetric({ label, value, tone = 'default', helper }) {
   );
 }
 
-async function openElectronicPdfForPrint(document) {
-  const popup = window.open('', '_blank');
+async function openElectronicPdfForPrint(document, preparedPopup = null) {
+  const popup = preparedPopup || window.open('', '_blank');
   if (!popup) {
     window.alert('El navegador bloqueó la ventana. Permite ventanas emergentes para imprimir el comprobante.');
     return false;
@@ -2744,7 +2747,7 @@ async function openElectronicPdfForPrint(document) {
   }
 }
 
-function ElectronicDocumentPanel({ saleId, branchId }) {
+function ElectronicDocumentPanel({ saleId, branchId, onChanged }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
@@ -2784,6 +2787,7 @@ function ElectronicDocumentPanel({ saleId, branchId }) {
     try {
       if (document.status === 'ERROR') await retryElectronicDocument(document.id); else await refreshElectronicDocument(document.id);
       await load();
+      onChanged?.();
     } catch (reason) { setError(reason.message || 'No se pudo actualizar el comprobante.'); }
     finally { setWorking(false); }
   }
@@ -2798,12 +2802,12 @@ function ElectronicDocumentPanel({ saleId, branchId }) {
     try {
       await issueElectronicDocument({ saleId, branchId, documentType: issueType, receiverDocumentType: issueType === 'INVOICE' ? '6' : '1', receiverDocumentNumber: digits, receiverName: issueName.trim(), receiverAddress: issueAddress.trim() || '-', receiverEmail: null });
       await load();
+      onChanged?.();
     } catch (reason) { setError(reason.message || 'No se pudo emitir el comprobante.'); }
     finally { setWorking(false); }
   }
 
   if (loading) return <div className="rounded-[28px] border border-violet-200 bg-violet-50 p-5 text-sm font-black text-violet-700">Consultando comprobante electrónico...</div>;
-  if (error && documents.length === 0) return <div className="rounded-[28px] border border-neutral-200 bg-neutral-50 p-5 text-sm font-bold text-neutral-500">Comprobante electrónico no disponible: {error}</div>;
   if (documents.length === 0) return <div className="rounded-[28px] border border-violet-200 bg-violet-50 p-5">
     <div className="font-black text-neutral-900">Sin comprobante electrónico</div>
     <p className="mt-1 text-sm font-semibold text-neutral-600">Puedes emitirlo sobre esta misma venta sin duplicar caja.</p>
@@ -2839,7 +2843,7 @@ function ElectronicDocumentPanel({ saleId, branchId }) {
   })}</div>;
 }
 
-function SaleDetailModal({ sale, branchId, onClose, labels = readBusinessLabels() }) {
+function SaleDetailModal({ sale, branchId, onClose, onElectronicDocumentChanged, labels = readBusinessLabels() }) {
   const payments = salePaymentsOf(sale);
   const items = saleItemsOf(sale);
   const subtotal = Number(sale?.subtotal ?? 0);
@@ -2858,7 +2862,7 @@ function SaleDetailModal({ sale, branchId, onClose, labels = readBusinessLabels(
       maxWidth="max-w-5xl"
     >
       <div className="space-y-5">
-        <ElectronicDocumentPanel saleId={saleId} branchId={branchId ?? sale?.branchId ?? sale?.branch?.id ?? sale?.sedeId} />
+        <ElectronicDocumentPanel saleId={saleId} branchId={branchId ?? sale?.branchId ?? sale?.branch?.id ?? sale?.sedeId} onChanged={onElectronicDocumentChanged} />
         <div className="rounded-[28px] border border-neutral-200 bg-[linear-gradient(135deg,#F8FAFC_0%,#FFFFFF_70%)] p-5">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <DetailMetric label="Cliente" value={sale?.customerName || 'Cliente ocasional'} helper={sale?.customerId ? `ID cliente: ${sale.customerId}` : 'Sin cliente registrado'} />
@@ -4125,6 +4129,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const [receiverName, setReceiverName] = useState('');
   const [receiverAddress, setReceiverAddress] = useState('');
   const [receiverEmail, setReceiverEmail] = useState('');
+  const [printElectronicDocument, setPrintElectronicDocument] = useState(true);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -4516,6 +4521,13 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
       );
     });
 
+    const preparedPrintPopup = documentType !== 'NONE' && printElectronicDocument
+      ? window.open('', '_blank')
+      : null;
+    if (preparedPrintPopup) {
+      preparedPrintPopup.document.write('<title>Preparando comprobante</title><p style="font-family:system-ui;padding:32px">Guardando la venta y preparando el comprobante oficial...</p>');
+    }
+
     setSaving(true);
 
     try {
@@ -4558,7 +4570,9 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         }
       }
 
-      await autoPrintApprovedSale(createdSale, { branchId: branch.id });
+      if (documentType === 'NONE') {
+        await autoPrintApprovedSale(createdSale, { branchId: branch.id });
+      }
       offerCustomerWhatsappFollowUp(
         saleWithWhatsappFallback(createdSale, {
           customerName:
@@ -4576,16 +4590,22 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         const number = [electronicDocument.series, electronicDocument.sequence].filter(Boolean).join('-');
         const accepted = electronicDocument.status === 'ACCEPTED' || electronicDocument.status === 'ACCEPTED_WITH_OBSERVATIONS';
         if (accepted) {
-          const printNow = window.confirm(`Venta guardada. ${documentType === 'INVOICE' ? 'Factura' : 'Boleta'} ${number} aceptada por SUNAT.\n\n¿Deseas abrir el PDF oficial para imprimirlo ahora?`);
-          if (printNow) await openElectronicPdfForPrint(electronicDocument);
+          if (printElectronicDocument) {
+            await openElectronicPdfForPrint(electronicDocument, preparedPrintPopup);
+          } else {
+            window.alert(`Venta guardada. ${documentType === 'INVOICE' ? 'Factura' : 'Boleta'} ${number} aceptada por SUNAT.`);
+          }
         } else {
+          preparedPrintPopup?.close();
           window.alert(`Venta guardada. El comprobante ${number || 'sin número'} quedó en estado ${electronicDocument.status}. Puedes actualizarlo desde Ver detalle.`);
         }
       } else if (electronicDocumentError) {
+        preparedPrintPopup?.close();
         window.alert(`La venta fue guardada correctamente, pero el comprobante quedó pendiente: ${electronicDocumentError}`);
       }
-      onSaved();
+      onSaved(createdSale, { electronicDocumentError, requestedDocumentType: documentType });
     } catch (error) {
+      preparedPrintPopup?.close();
       setErrorMsg(error.message || 'No se pudo registrar la venta.');
     } finally {
       setSaving(false);
@@ -5017,6 +5037,13 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       <InputField label={documentType === 'INVOICE' ? 'Razón social' : 'Nombre del cliente'} value={receiverName} onChange={setReceiverName} />
                       <InputField label={documentType === 'INVOICE' ? 'Dirección fiscal' : 'Dirección (opcional)'} value={receiverAddress} onChange={setReceiverAddress} />
                       <InputField label="Correo opcional" value={receiverEmail} onChange={setReceiverEmail} type="email" />
+                      <label className="flex items-center justify-between gap-4 rounded-2xl border border-violet-200 bg-white px-4 py-3">
+                        <span>
+                          <span className="block text-sm font-black text-neutral-900">Imprimir al finalizar</span>
+                          <span className="mt-1 block text-xs font-bold text-neutral-500">Abrirá el PDF oficial aceptado por SUNAT para elegir la impresora.</span>
+                        </span>
+                        <input type="checkbox" checked={printElectronicDocument} onChange={(event) => setPrintElectronicDocument(event.target.checked)} className="h-6 w-6 shrink-0 accent-violet-600" />
+                      </label>
                     </div>}
                   </div>
                 )}
@@ -5201,7 +5228,19 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                 disabled={saving || loadingAllowedServices}
                 className="min-h-14 flex-1 rounded-2xl bg-amber-400 px-5 py-4 font-black text-neutral-950 shadow-[0_12px_28px_rgba(251,191,36,0.28)] transition hover:bg-amber-300 disabled:opacity-60"
               >
-                {saving ? 'Guardando venta...' : isCourtesy ? 'Guardar cortesía gratis' : 'Guardar nueva venta'}
+                {saving
+                  ? documentType === 'INVOICE'
+                    ? 'Emitiendo factura...'
+                    : documentType === 'RECEIPT'
+                      ? 'Emitiendo boleta...'
+                      : 'Guardando venta...'
+                  : isCourtesy
+                    ? 'Guardar cortesía gratis'
+                    : documentType === 'INVOICE'
+                      ? 'Cobrar y emitir factura' + (printElectronicDocument ? ' · Imprimir' : '')
+                      : documentType === 'RECEIPT'
+                        ? 'Cobrar y emitir boleta' + (printElectronicDocument ? ' · Imprimir' : '')
+                        : 'Cobrar y guardar venta'}
               </button>
             </div>
           </div>
@@ -6560,6 +6599,7 @@ export default function OwnerCashPage() {
   const [editingMovement, setEditingMovement] = useState(null);
   const [editingSale, setEditingSale] = useState(null);
   const [viewingSale, setViewingSale] = useState(null);
+  const [fiscalRefreshKey, setFiscalRefreshKey] = useState(0);
   const [pendingAppointment, setPendingAppointment] = useState(null);
   const [showAppointmentSaleModal, setShowAppointmentSaleModal] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
@@ -7552,6 +7592,7 @@ export default function OwnerCashPage() {
             onView={(sale) => setViewingSale(sale)}
             onEdit={(sale) => setEditingSale(sale)}
             onDelete={handleDeleteSale}
+            fiscalRefreshKey={fiscalRefreshKey}
           />
         </>
       )}
@@ -7616,9 +7657,13 @@ export default function OwnerCashPage() {
           labels={labels}
           session={session}
           onClose={() => setShowSaleModal(false)}
-          onSaved={async () => {
+          onSaved={async (createdSale, result = {}) => {
             setShowSaleModal(false);
             await loadCash(selectedBranchId);
+            setFiscalRefreshKey((value) => value + 1);
+            if (result.electronicDocumentError && createdSale) {
+              setViewingSale(createdSale);
+            }
           }}
         />
       )}
@@ -7701,6 +7746,7 @@ export default function OwnerCashPage() {
           sale={viewingSale}
           branchId={selectedBranch?.id}
           onClose={() => setViewingSale(null)}
+          onElectronicDocumentChanged={() => setFiscalRefreshKey((value) => value + 1)}
         />
       )}
 
