@@ -6981,9 +6981,12 @@ export default function OwnerCashPage() {
         saleId,
       });
 
-      // La aprobacion ya termino en el servidor. La impresora es un efecto
-      // secundario y nunca debe mantener la venta en estado "Procesando".
-      void autoPrintApprovedSale(approvedSale, { branchId: selectedBranch.id });
+      // La aprobación ya terminó en el servidor. Imprimir es opcional y
+      // nunca debe ocurrir automáticamente ni mantener la venta procesando.
+      const printTicket = window.confirm('Venta aprobada correctamente.\n\n¿Deseas imprimir el ticket ahora?');
+      if (printTicket) {
+        void autoPrintApprovedSale(approvedSale, { branchId: selectedBranch.id });
+      }
       offerCustomerWhatsappFollowUp(saleWithWhatsappFallback(approvedSale, sale), {
         canOpenWhatsapp: currentRole === 'OWNER',
       });
