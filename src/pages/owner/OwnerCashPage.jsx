@@ -4129,7 +4129,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const [receiverName, setReceiverName] = useState('');
   const [receiverAddress, setReceiverAddress] = useState('');
   const [receiverEmail, setReceiverEmail] = useState('');
-  const [printElectronicDocument, setPrintElectronicDocument] = useState(true);
+  const [printElectronicDocument, setPrintElectronicDocument] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -4570,7 +4570,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         }
       }
 
-      if (documentType === 'NONE') {
+      if (documentType === 'NONE' && printElectronicDocument) {
         await autoPrintApprovedSale(createdSale, { branchId: branch.id });
       }
       offerCustomerWhatsappFollowUp(
@@ -5028,7 +5028,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                     <p className="mt-1 text-xs font-bold text-violet-700/70">Emite mediante Mifact y SUNAT.</p>
                     <div className="mt-3 grid grid-cols-3 gap-2">
                       {[['NONE','Sin comprobante'],['RECEIPT','Boleta'],['INVOICE','Factura']].map(([value,label]) => (
-                        <button key={value} type="button" onClick={() => setDocumentType(value)}
+                        <button key={value} type="button" onClick={() => { setDocumentType(value); setPrintElectronicDocument(value !== 'NONE'); }}
                           className={`rounded-xl px-2 py-3 text-xs font-black ${documentType === value ? 'bg-neutral-950 text-white' : 'border border-violet-200 bg-white text-neutral-600'}`}>{label}</button>
                       ))}
                     </div>
@@ -5037,14 +5037,14 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       <InputField label={documentType === 'INVOICE' ? 'Razón social' : 'Nombre del cliente'} value={receiverName} onChange={setReceiverName} />
                       <InputField label={documentType === 'INVOICE' ? 'Dirección fiscal' : 'Dirección (opcional)'} value={receiverAddress} onChange={setReceiverAddress} />
                       <InputField label="Correo opcional" value={receiverEmail} onChange={setReceiverEmail} type="email" />
-                      <label className="flex items-center justify-between gap-4 rounded-2xl border border-violet-200 bg-white px-4 py-3">
-                        <span>
-                          <span className="block text-sm font-black text-neutral-900">Imprimir al finalizar</span>
-                          <span className="mt-1 block text-xs font-bold text-neutral-500">Abrirá el PDF oficial aceptado por SUNAT para elegir la impresora.</span>
-                        </span>
-                        <input type="checkbox" checked={printElectronicDocument} onChange={(event) => setPrintElectronicDocument(event.target.checked)} className="h-6 w-6 shrink-0 accent-violet-600" />
-                      </label>
                     </div>}
+                    <label className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-violet-200 bg-white px-4 py-3">
+                      <span>
+                        <span className="block text-sm font-black text-neutral-900">{documentType === 'NONE' ? 'Imprimir ticket al finalizar' : 'Imprimir al finalizar'}</span>
+                        <span className="mt-1 block text-xs font-bold text-neutral-500">{documentType === 'NONE' ? 'Opcional. Actívalo solo si el cliente solicita el ticket.' : 'Abrirá el PDF oficial aceptado por SUNAT para elegir la impresora.'}</span>
+                      </span>
+                      <input type="checkbox" checked={printElectronicDocument} onChange={(event) => setPrintElectronicDocument(event.target.checked)} className="h-6 w-6 shrink-0 accent-violet-600" />
+                    </label>
                   </div>
                 )}
                 <label className="block">
@@ -5240,7 +5240,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                       ? 'Cobrar y emitir factura' + (printElectronicDocument ? ' · Imprimir' : '')
                       : documentType === 'RECEIPT'
                         ? 'Cobrar y emitir boleta' + (printElectronicDocument ? ' · Imprimir' : '')
-                        : 'Cobrar y guardar venta'}
+                        : 'Cobrar y guardar venta' + (printElectronicDocument ? ' · Imprimir ticket' : '')}
               </button>
             </div>
           </div>
