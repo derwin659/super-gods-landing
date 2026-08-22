@@ -6972,6 +6972,20 @@ export default function OwnerCashPage() {
     );
     if (!ok) return;
 
+    let pendingElectronicDocument = null;
+    try {
+      const stored = window.sessionStorage.getItem(`gods.pending-electronic.${saleId}`);
+      pendingElectronicDocument = stored ? JSON.parse(stored) : null;
+    } catch {
+      pendingElectronicDocument = null;
+    }
+    const preparedPrintPopup = pendingElectronicDocument?.printAfterIssue
+      ? window.open('', '_blank')
+      : null;
+    if (preparedPrintPopup) {
+      preparedPrintPopup.document.write('<title>Preparando comprobante</title><p style="font-family:system-ui;padding:32px">Aprobando la venta y preparando el comprobante oficial...</p>');
+    }
+
     setErrorMsg('');
     setProcessingApprovalId(`sale-${saleId}`);
 
@@ -6981,17 +6995,50 @@ export default function OwnerCashPage() {
         saleId,
       });
 
-      // La aprobación ya terminó en el servidor. Imprimir es opcional y
-      // nunca debe ocurrir automáticamente ni mantener la venta procesando.
-      const printTicket = window.confirm('Venta aprobada correctamente.\n\n¿Deseas imprimir el ticket ahora?');
-      if (printTicket) {
-        void autoPrintApprovedSale(approvedSale, { branchId: selectedBranch.id });
+      if (pendingElectronicDocument) {
+        try {
+          const electronicDocument = await issueElectronicDocument({
+            saleId,
+            branchId: selectedBranch.id,
+            documentType: pendingElectronicDocument.documentType,
+            receiverDocumentType: pendingElectronicDocument.documentType === 'INVOICE' ? '6' : '1',
+            receiverDocumentNumber: pendingElectronicDocument.receiverDocumentNumber,
+            receiverName: pendingElectronicDocument.receiverName,
+            receiverAddress: pendingElectronicDocument.receiverAddress || '-',
+            receiverEmail: pendingElectronicDocument.receiverEmail || null,
+          });
+          window.sessionStorage.removeItem(`gods.pending-electronic.${saleId}`);
+          const accepted = electronicDocument?.status === 'ACCEPTED' || electronicDocument?.status === 'ACCEPTED_WITH_OBSERVATIONS';
+          if (accepted && pendingElectronicDocument.printAfterIssue) {
+            await openElectronicPdfForPrint(electronicDocument, preparedPrintPopup);
+          } else {
+            preparedPrintPopup?.close();
+            window.alert(`Venta aprobada. El comprobante quedó en estado ${electronicDocument?.status || 'PENDIENTE'}; puedes actualizarlo desde Ver detalle.`);
+          }
+        } catch (reason) {
+          preparedPrintPopup?.close();
+          const electronicDocumentError = reason.message || 'No se pudo emitir el comprobante después de aprobar la venta.';
+          setViewingSale({
+            ...approvedSale,
+            electronicDocumentError,
+            pendingElectronicDocument,
+          });
+          window.alert(`La venta fue aprobada, pero el comprobante no pudo emitirse: ${electronicDocumentError}`);
+        }
+      } else {
+        const printTicket = window.confirm('Venta aprobada correctamente.\n\n¿Deseas imprimir el ticket convencional ahora?');
+        if (printTicket) {
+          void autoPrintApprovedSale(approvedSale, { branchId: selectedBranch.id });
+        }
       }
+
       offerCustomerWhatsappFollowUp(saleWithWhatsappFallback(approvedSale, sale), {
         canOpenWhatsapp: currentRole === 'OWNER',
       });
       await loadCash(selectedBranchId);
+      setFiscalRefreshKey((value) => value + 1);
     } catch (error) {
+      preparedPrintPopup?.close();
       setErrorMsg(error.message || 'No se pudo aprobar la venta pendiente.');
     } finally {
       setProcessingApprovalId(null);
@@ -7692,6 +7739,13 @@ export default function OwnerCashPage() {
             await loadCash(selectedBranchId);
             setFiscalRefreshKey((value) => value + 1);
             if (result.electronicDocumentError && createdSale) {
+              const createdSaleId = saleIdOf(createdSale);
+              if (createdSaleId && result.pendingElectronicDocument) {
+                window.sessionStorage.setItem(
+                  `gods.pending-electronic.${createdSaleId}`,
+                  JSON.stringify(result.pendingElectronicDocument)
+                );
+              }
               setViewingSale({
                 ...createdSale,
                 electronicDocumentError: result.electronicDocumentError,
