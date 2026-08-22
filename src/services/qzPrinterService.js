@@ -412,11 +412,12 @@ export async function printElectronicPdfOnThermal(files) {
       data: pdfBase64 || documentUrl,
       options: {
         language: 'ESCPOS',
-        dotDensity: 'double',
-        imageEncoding: 'esc_asterisk',
-        // Un umbral alto conserva como negro los trazos grises y finos del PDF oficial.
-        quantization: 'black',
-        threshold: 215,
+        // Máxima densidad y raster continuo para conservar caracteres pequeños.
+        dotDensity: 'triple',
+        imageEncoding: 'gs_v_0',
+        // La luminancia y un umbral alto engrosan los trazos finos del PDF oficial.
+        quantization: 'luma',
+        threshold: 245,
         pageWidth,
         ignoreTransparency: true,
         altFontRendering: true,
