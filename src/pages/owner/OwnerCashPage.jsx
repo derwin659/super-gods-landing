@@ -2497,8 +2497,8 @@ function FiscalSaleCell({ document, onView }) {
     <details className="relative">
       <summary className="cursor-pointer list-none rounded-xl bg-neutral-950 px-3 py-2 text-xs font-black text-white">Imprimir ▾</summary>
       <div className="absolute right-0 z-30 mt-2 w-52 rounded-2xl border border-neutral-200 bg-white p-2 shadow-xl">
-        <button type="button" onClick={() => openElectronicPdfForPrint(document)} className="w-full rounded-xl px-3 py-2 text-left text-xs font-black text-neutral-800 hover:bg-amber-50">Ticket térmico 80 mm</button>
-        <button type="button" onClick={() => openElectronicPdfForPrint(document)} className="w-full rounded-xl px-3 py-2 text-left text-xs font-black text-neutral-800 hover:bg-amber-50">PDF / impresora normal</button>
+        <button type="button" onClick={() => openElectronicPdfForPrint(document)} className="w-full rounded-xl px-3 py-2 text-left text-xs font-black text-neutral-800 hover:bg-amber-50">Imprimir en ticketera</button>
+        <button type="button" onClick={() => openElectronicPdfForPrint(document, null, { thermal: false })} className="w-full rounded-xl px-3 py-2 text-left text-xs font-black text-neutral-800 hover:bg-amber-50">Abrir PDF / impresora normal</button>
         <button type="button" onClick={onView} className="w-full rounded-xl px-3 py-2 text-left text-xs font-black text-violet-700 hover:bg-violet-50">Ver archivos y compartir</button>
       </div>
     </details>
@@ -2720,7 +2720,7 @@ function DetailMetric({ label, value, tone = 'default', helper }) {
   );
 }
 
-async function openElectronicPdfForPrint(document, preparedPopup = null) {
+async function openElectronicPdfForPrint(document, preparedPopup = null, { thermal = true } = {}) {
   const popup = preparedPopup || window.open('', '_blank');
   if (!popup) {
     window.alert('El navegador bloqueó la ventana. Permite ventanas emergentes para imprimir el comprobante.');
@@ -2729,15 +2729,17 @@ async function openElectronicPdfForPrint(document, preparedPopup = null) {
   popup.document.write('<title>Preparando comprobante</title><p style="font-family:system-ui;padding:32px">Preparando PDF oficial...</p>');
   try {
     const files = await getElectronicDocumentFiles(document.id);
-    try {
-      const thermalResult = await printElectronicPdfOnThermal(files);
-      if (thermalResult?.printed) {
-        popup.close();
-        return true;
+    if (thermal) {
+      try {
+        const thermalResult = await printElectronicPdfOnThermal(files);
+        if (thermalResult?.printed) {
+          popup.close();
+          return true;
+        }
+      } catch (thermalError) {
+        console.error('No se pudo imprimir el comprobante oficial por QZ Tray:', thermalError);
+        window.alert(`No se pudo imprimir directamente en la ticketera: ${thermalError.message || 'error de impresora'}. Se abrirá el PDF para impresión manual.`);
       }
-    } catch (thermalError) {
-      console.error('No se pudo imprimir el comprobante oficial por QZ Tray:', thermalError);
-      window.alert(`No se pudo imprimir directamente en la ticketera: ${thermalError.message || 'error de impresora'}. Se abrirá el PDF para impresión manual.`);
     }
     if (files.documentUrl) { popup.location.href = files.documentUrl; return true; }
     if (files.pdfBase64) {

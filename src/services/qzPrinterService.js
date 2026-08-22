@@ -410,16 +410,20 @@ export async function printElectronicPdfOnThermal(files) {
     jobName: 'Comprobante electrónico SUNAT',
   });
 
-  await qz.print(config, [{
-    type: 'pixel',
-    format: 'pdf',
-    flavor: pdfBase64 ? 'base64' : 'file',
-    data: pdfBase64 || documentUrl,
-    options: {
-      ignoreTransparency: true,
-      altFontRendering: true,
-    },
-  }]);
+  await withTimeout(
+    qz.print(config, [{
+      type: 'pixel',
+      format: 'pdf',
+      flavor: pdfBase64 ? 'base64' : 'file',
+      data: pdfBase64 || documentUrl,
+      options: {
+        ignoreTransparency: true,
+        altFontRendering: true,
+      },
+    }]),
+    AUTO_PRINT_TIMEOUT_MS,
+    'La ticketera no respondió en 12 segundos.'
+  );
 
   return { printed: true, printerName, paperWidth };
 }
