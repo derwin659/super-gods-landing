@@ -395,28 +395,28 @@ export async function printElectronicPdfOnThermal(files) {
   await connectQz();
 
   const paperWidth = Number(settings.paperWidth) === 58 ? 58 : 80;
+  // Enviar el PDF como imagen ESC/POS evita que el driver de Windows deje el
+  // trabajo gráfico en estado "procesando" en impresoras térmicas genéricas.
+  const pageWidth = paperWidth === 58 ? 384 : 576;
   const config = qz.configs.create(printerName, {
     copies: 1,
-    units: 'mm',
-    size: { width: paperWidth, height: 297, custom: true },
-    margins: 0,
-    orientation: 'portrait',
-    density: 203,
-    fallbackDensity: 203,
-    colorType: 'blackwhite',
-    rasterize: true,
-    scaleContent: true,
-    interpolation: 'bicubic',
+    encoding: 'UTF-8',
     jobName: 'Comprobante electrónico SUNAT',
   });
 
   await withTimeout(
     qz.print(config, [{
-      type: 'pixel',
+      type: 'raw',
       format: 'pdf',
       flavor: pdfBase64 ? 'base64' : 'file',
       data: pdfBase64 || documentUrl,
       options: {
+        language: 'ESCPOS',
+        dotDensity: 'double',
+        imageEncoding: 'esc_asterisk',
+        quantization: 'black',
+        threshold: 170,
+        pageWidth,
         ignoreTransparency: true,
         altFontRendering: true,
       },
@@ -425,7 +425,7 @@ export async function printElectronicPdfOnThermal(files) {
     'La ticketera no respondió en 12 segundos.'
   );
 
-  return { printed: true, printerName, paperWidth };
+  return { printed: true, printerName, paperWidth, mode: 'ESCPOS_PDF' };
 }
 
 export async function autoPrintApprovedSale(sale, { branchId = null } = {}) {
