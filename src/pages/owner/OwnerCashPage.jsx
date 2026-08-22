@@ -2747,17 +2747,19 @@ async function openElectronicPdfForPrint(document, preparedPopup = null) {
   }
 }
 
-function ElectronicDocumentPanel({ saleId, branchId, onChanged }) {
+function ElectronicDocumentPanel({ saleId, branchId, onChanged, initialDraft = null, initialError = '' }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
-  const [error, setError] = useState('');
-  const [issueType, setIssueType] = useState('RECEIPT');
-  const [issueDocument, setIssueDocument] = useState('');
-  const [issueName, setIssueName] = useState('');
-  const [issueAddress, setIssueAddress] = useState('');
+  const [error, setError] = useState(initialError);
+  const [issueType, setIssueType] = useState(initialDraft?.documentType || 'RECEIPT');
+  const [issueDocument, setIssueDocument] = useState(initialDraft?.receiverDocumentNumber || '');
+  const [issueName, setIssueName] = useState(initialDraft?.receiverName || '');
+  const [issueAddress, setIssueAddress] = useState(initialDraft?.receiverAddress || '');
+  const [issueEmail, setIssueEmail] = useState(initialDraft?.receiverEmail || '');
+  const [printAfterIssue, setPrintAfterIssue] = useState(initialDraft?.printAfterIssue !== false);
   async function load() {
-    setLoading(true); setError('');
+    setLoading(true);
     try { const data = await getSaleElectronicDocuments(saleId); setDocuments(Array.isArray(data) ? data : []); }
     catch (reason) { setError(reason.message || 'No se pudo consultar el comprobante.'); }
     finally { setLoading(false); }
@@ -2798,13 +2800,22 @@ function ElectronicDocumentPanel({ saleId, branchId, onChanged }) {
     if (issueType === 'INVOICE' && digits.length !== 11) { setError('Ingresa un RUC válido de 11 dígitos.'); return; }
     if (!issueName.trim()) { setError('Ingresa el nombre o razón social.'); return; }
     if (issueType === 'INVOICE' && !issueAddress.trim()) { setError('La dirección fiscal es obligatoria.'); return; }
+    const preparedPrintPopup = printAfterIssue ? window.open('', '_blank') : null;
+    if (preparedPrintPopup) {
+      preparedPrintPopup.document.write('<title>Preparando comprobante</title><p style="font-family:system-ui;padding:32px">Emitiendo comprobante y preparando PDF oficial...</p>');
+    }
     setWorking(true); setError('');
     try {
-      await issueElectronicDocument({ saleId, branchId, documentType: issueType, receiverDocumentType: issueType === 'INVOICE' ? '6' : '1', receiverDocumentNumber: digits, receiverName: issueName.trim(), receiverAddress: issueAddress.trim() || '-', receiverEmail: null });
+      const issuedDocument = await issueElectronicDocument({ saleId, branchId, documentType: issueType, receiverDocumentType: issueType === 'INVOICE' ? '6' : '1', receiverDocumentNumber: digits, receiverName: issueName.trim(), receiverAddress: issueAddress.trim() || '-', receiverEmail: issueEmail.trim() || null });
+      const accepted = issuedDocument?.status === 'ACCEPTED' || issuedDocument?.status === 'ACCEPTED_WITH_OBSERVATIONS';
+      if (accepted && printAfterIssue) await openElectronicPdfForPrint(issuedDocument, preparedPrintPopup);
+      else preparedPrintPopup?.close();
       await load();
       onChanged?.();
-    } catch (reason) { setError(reason.message || 'No se pudo emitir el comprobante.'); }
-    finally { setWorking(false); }
+    } catch (reason) {
+      preparedPrintPopup?.close();
+      setError(reason.message || 'No se pudo emitir el comprobante.');
+    } finally { setWorking(false); }
   }
 
   if (loading) return <div className="rounded-[28px] border border-violet-200 bg-violet-50 p-5 text-sm font-black text-violet-700">Consultando comprobante electrónico...</div>;
@@ -2818,8 +2829,13 @@ function ElectronicDocumentPanel({ saleId, branchId, onChanged }) {
       <InputField label={issueType === 'INVOICE' ? 'RUC' : 'DNI'} value={issueDocument} onChange={(value) => setIssueDocument(value.replace(/\D/g, '').slice(0, issueType === 'INVOICE' ? 11 : 8))} />
       <InputField label={issueType === 'INVOICE' ? 'Razón social' : 'Nombre del cliente'} value={issueName} onChange={setIssueName} />
       {issueType === 'INVOICE' && <div className="sm:col-span-2"><InputField label="Dirección fiscal" value={issueAddress} onChange={setIssueAddress} /></div>}
+      <div className="sm:col-span-2"><InputField label="Correo opcional" value={issueEmail} onChange={setIssueEmail} type="email" /></div>
     </div>
-    {error && <div className="mt-3 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700">{error}</div>}
+    <label className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-violet-200 bg-white px-4 py-3">
+      <span><span className="block text-sm font-black text-neutral-900">Imprimir al emitir</span><span className="mt-1 block text-xs font-bold text-neutral-500">Abre el PDF oficial aceptado por SUNAT.</span></span>
+      <input type="checkbox" checked={printAfterIssue} onChange={(event) => setPrintAfterIssue(event.target.checked)} className="h-6 w-6 shrink-0 accent-violet-600" />
+    </label>
+    {error && <div className="mt-3 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700"><div className="font-black">No se pudo emitir al guardar la venta</div><div className="mt-1">{error}</div></div>}
     <button disabled={working} type="button" onClick={issueMissingDocument} className="mt-4 w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white disabled:opacity-50">{working ? 'Emitiendo...' : `Emitir ${issueType === 'INVOICE' ? 'factura' : 'boleta'} ahora`}</button>
   </div>;
   return <div className="space-y-3">{documents.map((document) => {
@@ -2862,7 +2878,7 @@ function SaleDetailModal({ sale, branchId, onClose, onElectronicDocumentChanged,
       maxWidth="max-w-5xl"
     >
       <div className="space-y-5">
-        <ElectronicDocumentPanel saleId={saleId} branchId={branchId ?? sale?.branchId ?? sale?.branch?.id ?? sale?.sedeId} onChanged={onElectronicDocumentChanged} />
+        <ElectronicDocumentPanel saleId={saleId} branchId={branchId ?? sale?.branchId ?? sale?.branch?.id ?? sale?.sedeId} onChanged={onElectronicDocumentChanged} initialDraft={sale?.pendingElectronicDocument} initialError={sale?.electronicDocumentError || ''} />
         <div className="rounded-[28px] border border-neutral-200 bg-[linear-gradient(135deg,#F8FAFC_0%,#FFFFFF_70%)] p-5">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <DetailMetric label="Cliente" value={sale?.customerName || 'Cliente ocasional'} helper={sale?.customerId ? `ID cliente: ${sale.customerId}` : 'Sin cliente registrado'} />
@@ -4603,7 +4619,18 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
         preparedPrintPopup?.close();
         window.alert(`La venta fue guardada correctamente, pero el comprobante quedó pendiente: ${electronicDocumentError}`);
       }
-      onSaved(createdSale, { electronicDocumentError, requestedDocumentType: documentType });
+      onSaved(createdSale, {
+        electronicDocumentError,
+        requestedDocumentType: documentType,
+        pendingElectronicDocument: electronicDocumentError ? {
+          documentType,
+          receiverDocumentNumber: receiverDocumentNumber.replace(/\D/g, ''),
+          receiverName: receiverName.trim(),
+          receiverAddress: receiverAddress.trim(),
+          receiverEmail: receiverEmail.trim(),
+          printAfterIssue: printElectronicDocument,
+        } : null,
+      });
     } catch (error) {
       preparedPrintPopup?.close();
       setErrorMsg(error.message || 'No se pudo registrar la venta.');
@@ -7662,7 +7689,11 @@ export default function OwnerCashPage() {
             await loadCash(selectedBranchId);
             setFiscalRefreshKey((value) => value + 1);
             if (result.electronicDocumentError && createdSale) {
-              setViewingSale(createdSale);
+              setViewingSale({
+                ...createdSale,
+                electronicDocumentError: result.electronicDocumentError,
+                pendingElectronicDocument: result.pendingElectronicDocument,
+              });
             }
           }}
         />
