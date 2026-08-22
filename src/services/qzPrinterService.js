@@ -412,9 +412,9 @@ export async function printElectronicPdfOnThermal(files) {
       data: pdfBase64 || documentUrl,
       options: {
         language: 'ESCPOS',
-        // Máxima densidad y raster continuo para conservar caracteres pequeños.
+        // Máxima densidad con el modo ESC/POS compatible de la ticketera.
         dotDensity: 'triple',
-        imageEncoding: 'gs_v_0',
+        imageEncoding: 'esc_asterisk',
         // La luminancia y un umbral alto engrosan los trazos finos del PDF oficial.
         quantization: 'luma',
         threshold: 245,
