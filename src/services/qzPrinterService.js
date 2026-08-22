@@ -414,8 +414,9 @@ export async function printElectronicPdfOnThermal(files) {
         language: 'ESCPOS',
         dotDensity: 'double',
         imageEncoding: 'esc_asterisk',
+        // Un umbral alto conserva como negro los trazos grises y finos del PDF oficial.
         quantization: 'black',
-        threshold: 170,
+        threshold: 215,
         pageWidth,
         ignoreTransparency: true,
         altFontRendering: true,
