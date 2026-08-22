@@ -375,6 +375,50 @@ export async function printSaleReceipt(
   return { printed: true };
 }
 
+export async function printElectronicPdfOnThermal(files) {
+  const settings = readPrinterSettings();
+  const printerName = String(settings.printerName || '').trim();
+  const pdfBase64 = String(files?.pdfBase64 || '').trim();
+  const documentUrl = String(files?.documentUrl || '').trim();
+
+  if (!settings.enabled || !printerName) {
+    return { skipped: true, reason: 'PRINTER_NOT_CONFIGURED' };
+  }
+  if (isVirtualPrinter(printerName)) {
+    return { skipped: true, reason: 'VIRTUAL_PRINTER' };
+  }
+  if (!pdfBase64 && !documentUrl) {
+    throw new Error('El proveedor todavía no devolvió el PDF oficial.');
+  }
+
+  const qz = getQz();
+  await connectQz();
+
+  const paperWidth = Number(settings.paperWidth) === 58 ? 58 : 80;
+  const config = qz.configs.create(printerName, {
+    copies: 1,
+    units: 'mm',
+    size: { width: paperWidth, height: 297 },
+    margins: 0,
+    orientation: 'portrait',
+    rasterize: true,
+    scaleContent: true,
+    interpolation: 'bicubic',
+  });
+
+  await qz.print(config, [{
+    type: 'pixel',
+    format: 'pdf',
+    flavor: pdfBase64 ? 'base64' : 'file',
+    data: pdfBase64 || documentUrl,
+    options: {
+      ignoreTransparency: true,
+    },
+  }]);
+
+  return { printed: true, printerName, paperWidth };
+}
+
 export async function autoPrintApprovedSale(sale, { branchId = null } = {}) {
   const settings = readPrinterSettings();
   const status = String(sale?.paymentValidationStatus || '').trim().toUpperCase();

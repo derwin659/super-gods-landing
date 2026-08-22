@@ -51,7 +51,7 @@ import { getBusinessLabels, readBusinessLabels } from '../../utils/businessLabel
 import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 import { exportCashHistoryExcel, exportCashHistoryPdf } from '../../utils/cashHistoryExport';
-import { autoPrintApprovedSale } from '../../services/qzPrinterService';
+import { autoPrintApprovedSale, printElectronicPdfOnThermal } from '../../services/qzPrinterService';
 import { whatsappPhoneDigits } from '../../utils/internationalPhone';
 import InternationalPhoneField from '../../components/InternationalPhoneField';
 import { downloadBase64File, getElectronicDocumentFiles, getElectronicInvoicingAccess, getSaleElectronicDocuments, issueElectronicDocument, refreshElectronicDocument, retryElectronicDocument } from '../../api/electronicInvoicingApi';
@@ -2729,6 +2729,16 @@ async function openElectronicPdfForPrint(document, preparedPopup = null) {
   popup.document.write('<title>Preparando comprobante</title><p style="font-family:system-ui;padding:32px">Preparando PDF oficial...</p>');
   try {
     const files = await getElectronicDocumentFiles(document.id);
+    try {
+      const thermalResult = await printElectronicPdfOnThermal(files);
+      if (thermalResult?.printed) {
+        popup.close();
+        return true;
+      }
+    } catch (thermalError) {
+      console.error('No se pudo imprimir el comprobante oficial por QZ Tray:', thermalError);
+      window.alert(`No se pudo imprimir directamente en la ticketera: ${thermalError.message || 'error de impresora'}. Se abrirá el PDF para impresión manual.`);
+    }
     if (files.documentUrl) { popup.location.href = files.documentUrl; return true; }
     if (files.pdfBase64) {
       const binary = window.atob(files.pdfBase64);
@@ -2774,6 +2784,10 @@ function ElectronicDocumentPanel({ saleId, branchId, onChanged, initialDraft = n
         if (!files.documentUrl) throw new Error('El enlace público todavía no está disponible.');
         if (navigator.share) await navigator.share({ title: `Comprobante ${number}`, text: 'Comprobante electrónico', url: files.documentUrl });
         else { await navigator.clipboard.writeText(files.documentUrl); window.alert('Enlace del comprobante copiado.'); }
+      } else if (type === 'THERMAL') {
+        const result = await printElectronicPdfOnThermal(files);
+        if (!result?.printed) throw new Error('Configura y conecta la ticketera en Configuración > Impresora.');
+        window.alert(`Comprobante enviado a ${result.printerName} en papel de ${result.paperWidth} mm.`);
       } else if (type === 'PDF') {
         if (files.pdfBase64) downloadBase64File(files.pdfBase64, 'application/pdf', `${number}.pdf`);
         else if (files.documentUrl) window.open(files.documentUrl, '_blank', 'noopener,noreferrer');
@@ -2849,7 +2863,8 @@ function ElectronicDocumentPanel({ saleId, branchId, onChanged, initialDraft = n
       </div><span className={`rounded-full px-3 py-2 text-xs font-black ${accepted ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-neutral-950'}`}>{document.status}</span></div>
       {error && <div className="mt-3 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700">{error}</div>}
       <div className="mt-4 flex flex-wrap gap-2">
-        {accepted && <><button disabled={working} type="button" onClick={() => download(document, 'PDF')} className="rounded-xl bg-neutral-950 px-4 py-3 text-xs font-black text-white disabled:opacity-50">Ver / imprimir PDF</button>
+        {accepted && <><button disabled={working} type="button" onClick={() => download(document, 'THERMAL')} className="rounded-xl bg-neutral-950 px-4 py-3 text-xs font-black text-white disabled:opacity-50">Imprimir en ticketera</button>
+        <button disabled={working} type="button" onClick={() => download(document, 'PDF')} className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-xs font-black text-neutral-800 disabled:opacity-50">Ver / descargar PDF</button>
         <button disabled={working} type="button" onClick={() => download(document, 'SHARE')} className="rounded-xl border border-violet-300 bg-violet-50 px-4 py-3 text-xs font-black text-violet-800 disabled:opacity-50">Compartir</button>
         <button disabled={working} type="button" onClick={() => download(document, 'XML')} className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-xs font-black text-neutral-800 disabled:opacity-50">Descargar XML</button>
         <button disabled={working} type="button" onClick={() => download(document, 'CDR')} className="rounded-xl border border-neutral-300 bg-white px-4 py-3 text-xs font-black text-neutral-800 disabled:opacity-50">Descargar CDR</button></>}
