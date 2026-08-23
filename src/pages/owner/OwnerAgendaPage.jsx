@@ -1443,7 +1443,6 @@ function AppointmentFormModal({
             )}
 
             {errorMsg && <ErrorBox message={errorMsg} />}
-
             <button
               disabled={saving}
               className="w-full rounded-2xl bg-neutral-950 px-5 py-4 font-black text-white transition hover:scale-[1.01] disabled:opacity-60"
@@ -1484,6 +1483,7 @@ export default function OwnerAgendaPage() {
   }, [selectedDate]);
 
   const [items, setItems] = useState([]);
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState('');
   const [productOrders, setProductOrders] = useState([]);
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [loadingAgenda, setLoadingAgenda] = useState(false);
@@ -1500,7 +1500,30 @@ export default function OwnerAgendaPage() {
     );
   }, [branches, selectedBranchId]);
 
-  const pendingCount = countBy(items, (item) => {
+  const agendaProfessionals = useMemo(() => {
+    const grouped = new Map();
+    items.forEach((item) => {
+      const id = String(item.barberUserId || '').trim();
+      if (!id) return;
+      const current = grouped.get(id);
+      grouped.set(id, {
+        id,
+        name: String(item.barbero || item.barberName || 'Profesional').trim(),
+        count: (current?.count || 0) + 1,
+      });
+    });
+    return Array.from(grouped.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+    );
+  }, [items]);
+
+  const visibleItems = useMemo(
+    () => selectedProfessionalId
+      ? items.filter((item) => String(item.barberUserId) === selectedProfessionalId)
+      : items,
+    [items, selectedProfessionalId]
+  );
+  const pendingCount = countBy(visibleItems, (item) => {
     const code = statusCode(item);
     const estado = String(item.estado || '').trim().toUpperCase();
     return (
@@ -1513,11 +1536,11 @@ export default function OwnerAgendaPage() {
   });
 
   const inProgressCount = countBy(
-    items,
+    visibleItems,
     (item) => String(item.estado || '').trim().toUpperCase() === 'IN_PROGRESS'
   );
 
-  const doneCount = countBy(items, (item) => {
+  const doneCount = countBy(visibleItems, (item) => {
     const estado = String(item.estado || '').trim().toUpperCase();
     return (
       estado === 'ATENDIDO' ||
@@ -1527,7 +1550,7 @@ export default function OwnerAgendaPage() {
   });
 
   const pendingDepositCount = countBy(
-    items,
+    visibleItems,
     (item) => statusCode(item) === 'PENDING_DEPOSIT'
   );
 
@@ -1830,10 +1853,33 @@ export default function OwnerAgendaPage() {
         </div>
       </section>
 
-      {errorMsg && <ErrorBox message={errorMsg} />}
+      {!loadingAgenda && !errorMsg && (
+        <section className="rounded-[26px] border border-neutral-200 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-neutral-900">Agendas de la sede</div>
+              <div className="mt-1 text-sm font-bold text-neutral-500">Consulta todos los profesionales o revisa uno individualmente.</div>
+            </div>
+            <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
+              <button type="button" onClick={() => setSelectedProfessionalId('')} className={`shrink-0 rounded-full border px-4 py-2.5 text-xs font-black transition ${!selectedProfessionalId ? 'border-neutral-950 bg-neutral-950 text-white' : 'border-neutral-300 bg-neutral-50 text-neutral-700 hover:border-neutral-500'}`}>
+                Todos ({items.length})
+              </button>
+              {agendaProfessionals.map((professional) => {
+                const active = selectedProfessionalId === professional.id;
+                return (
+                  <button key={professional.id} type="button" onClick={() => setSelectedProfessionalId(professional.id)} className={`shrink-0 rounded-full border px-4 py-2.5 text-xs font-black transition ${active ? 'border-neutral-950 bg-neutral-950 text-white' : 'border-neutral-300 bg-neutral-50 text-neutral-700 hover:border-neutral-500'}`}>
+                    {professional.name} ({professional.count})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
+      {errorMsg && <ErrorBox message={errorMsg} />}
       <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-        <StatBox label="Citas del día" value={items.length} />
+        <StatBox label="Citas visibles" value={visibleItems.length} />
         <StatBox label="Pendientes" value={pendingCount} tone="blue" />
         <StatBox label="En curso" value={inProgressCount} tone="violet" />
         <StatBox label="Finalizadas" value={doneCount} tone="green" />
@@ -1849,11 +1895,18 @@ export default function OwnerAgendaPage() {
         <div className="rounded-[28px] border border-neutral-200 bg-white p-6 font-bold text-neutral-700 shadow-sm">
           Cargando agenda...
         </div>
-      ) : items.length === 0 ? (
-        <EmptyCard onCreate={openCreateAppointment} />
+      ) : visibleItems.length === 0 ? (
+        items.length === 0 ? (
+          <EmptyCard onCreate={openCreateAppointment} />
+        ) : (
+          <div className="rounded-[28px] border border-neutral-200 bg-white p-8 text-center shadow-sm">
+            <div className="text-lg font-black text-neutral-950">Sin citas para este profesional</div>
+            <div className="mt-2 text-sm font-bold text-neutral-500">Selecciona “Todos” u otro profesional para continuar.</div>
+          </div>
+        )
       ) : (
         <section className="space-y-4">
-          {items.map((item) => {
+          {visibleItems.map((item) => {
             const highlighted = String(item.appointmentId) === requestedAppointmentId;
             return (
               <div
