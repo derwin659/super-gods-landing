@@ -331,12 +331,14 @@ export async function searchAgendaCustomers(query) {
     .map((item) => ({
       id: toNumber(item.id ?? item.customerId),
       name: String(
-        item.nombres ??
-          item.nombre ??
-          item.name ??
-          item.nombreCompleto ??
+        item.nombreCompleto ??
           item.fullName ??
-          'Cliente'
+          ([item.nombres ?? item.nombre ?? item.firstName, item.apellidos ?? item.apellido ?? item.lastName]
+            .filter(Boolean)
+            .join(' ')
+            .trim() ||
+            item.name ||
+            'Cliente')
       ),
       phone:
         item.telefono !== null && item.telefono !== undefined
