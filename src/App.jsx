@@ -37,6 +37,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import GoogleLogo from './components/GoogleLogo';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicBookingPage from './pages/public/PublicBookingPage';
+import SoftwareDevelopmentPage from './pages/public/SoftwareDevelopmentPage';
 import PublicShowcaseDetailPage from './pages/public/PublicShowcaseDetailPage';
 import OwnerPermissionRoute from './routes/OwnerPermissionRoute';
 import OwnerAdjustPointsPage from './pages/owner/OwnerAdjustPointsPage';
@@ -441,6 +442,7 @@ function PublicHomePage() {
             <a href="#producto" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Producto</a>
             <a href="#app" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">App</a>
             <a href="#planes" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Planes</a>
+            <a href="/desarrollo-software" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Software a medida</a>
             <a href="#preguntas" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">FAQ</a>
             <a href="#contacto" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Contacto</a>
           </div>
@@ -669,7 +671,7 @@ function PublicHomePage() {
                 Gods Technologies S.A.C.
               </h2>
               <p className="mt-5 text-lg font-medium leading-8 text-slate-300">
-                Somos una empresa peruana de tecnología enfocada en crear soluciones digitales para negocios de belleza, estética y bienestar.
+                Somos una empresa peruana de tecnología que desarrolla productos propios y software a medida para empresas, emprendimientos y negocios que necesitan digitalizar su operación.
               </p>
             </div>
 
@@ -2109,6 +2111,10 @@ export default function App() {
         <Route path="/" element={<PublicHomePage />} />
         <Route path="/registro-negocio" element={<PublicBusinessSignupPage />} />
         <Route path="/demo" element={<PublicBusinessSignupPage />} />
+        <Route path="/desarrollo-software" element={<SoftwareDevelopmentPage />} />
+        <Route path="/empresa" element={<SoftwareDevelopmentPage />} />
+        <Route path="/portafolio" element={<SoftwareDevelopmentPage />} />
+        <Route path="/contacto" element={<SoftwareDevelopmentPage />} />
         <Route path="/soporte" element={<SimplePublicPage title="Soporte Super Gods App" />} />
         <Route path="/terms" element={<LegalPage type="terms" />} />
         <Route path="/privacy" element={<LegalPage type="privacy" />} />
