@@ -435,16 +435,12 @@ function PublicHomePage() {
 </a>
      
 
-          <div className="hidden min-w-0 flex-1 items-center justify-center gap-4 xl:flex 2xl:gap-6">
-            <a href="#nosotros" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Nosotros</a>
-            <a href="#rubros" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Rubros</a>
-            <a href="#servicios" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Servicios</a>
-            <a href="#producto" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Producto</a>
-            <a href="#app" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">App</a>
-            <a href="#planes" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Planes</a>
-            <a href="/desarrollo-software" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Software a medida</a>
-            <a href="#preguntas" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">FAQ</a>
-            <a href="#contacto" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB] 2xl:text-sm">Contacto</a>
+          <div className="hidden min-w-0 flex-1 items-center justify-center gap-5 xl:flex">
+            <a href="#nosotros" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB]">Empresa</a>
+            <a href="#producto" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB]">Agenda+</a>
+            <a href="#planes" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB]">Planes</a>
+            <a href="/desarrollo-software" className="whitespace-nowrap rounded-xl bg-blue-50 px-3 py-2 text-[13px] font-black text-[#1D4ED8] transition hover:bg-blue-100">Software a medida</a>
+            <a href="#contacto" className="whitespace-nowrap text-[13px] font-black text-[#334155] transition hover:text-[#2563EB]">Contacto</a>
           </div>
 
           <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">

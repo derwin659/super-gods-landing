@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { createElement, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -160,9 +160,9 @@ export default function SoftwareDevelopmentPage() {
                   [Cloud, 'Servicios en la nube'],
                   [ShieldCheck, 'Roles y auditoría'],
                   [Workflow, 'Integraciones'],
-                ].map(([Icon, label]) => (
+                ].map(([icon, label]) => (
                   <div key={label} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <Icon size={20} className="text-blue-300" />
+                    {createElement(icon, { size: 20, className: 'text-blue-300' })}
                     <span className="text-sm font-black">{label}</span>
                   </div>
                 ))}
