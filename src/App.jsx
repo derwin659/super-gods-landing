@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { demoRequestApi } from './api/demoRequestApi';
+import { getPublicFeaturedCustomers } from './api/publicFeaturedCustomersApi';
 import { googleSignupUrl } from './api/authApi';
 import OwnerSecurityPage from './pages/owner/OwnerSecurityPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -87,6 +88,7 @@ import {
   SuperAdminTenants,
   SuperAdminDemoRequests,
   SuperAdminReviewModeration,
+  SuperAdminFeaturedCustomers,
 } from './pages/super-admin';
 
 const WHATSAPP_NUMBER = '51958062847';
@@ -98,6 +100,7 @@ const buildWhatsAppUrl = (message) => {
 function PublicHomePage() {
   const [pricingCountry, setPricingCountry] = useState(getInitialPricingCountry);
   const [remotePrices, setRemotePrices] = useState([]);
+  const [featuredCustomers, setFeaturedCustomers] = useState([]);
   const publicPriceMap = useMemo(() => buildPriceMap(remotePrices), [remotePrices]);
 
   useEffect(() => {
@@ -114,6 +117,13 @@ function PublicHomePage() {
     };
   }, [pricingCountry]);
 
+  useEffect(() => {
+    let active = true;
+    getPublicFeaturedCustomers()
+      .then((items) => { if (active) setFeaturedCustomers(Array.isArray(items) ? items : []); })
+      .catch(() => { if (active) setFeaturedCustomers([]); });
+    return () => { active = false; };
+  }, []);
   const whatsappUrl = buildWhatsAppUrl(
     'Hola, quiero una demo gratis de Super Gods App.\n\n' +
       'Empresa: Gods Technologies S.A.C.\n' +
@@ -511,6 +521,35 @@ function PublicHomePage() {
           </div>
         </section>
 
+        {featuredCustomers.length > 0 && (
+          <section aria-labelledby="featured-customers-title" className="px-4 py-12">
+            <div className="mx-auto max-w-7xl rounded-[38px] border border-slate-200 bg-white px-6 py-10 shadow-[0_24px_70px_rgba(15,23,42,0.08)] md:px-10">
+              <div className="mx-auto max-w-3xl text-center">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-700">Confianza que crece</p>
+                <h2 id="featured-customers-title" className="mt-3 text-3xl font-black tracking-[-0.04em] text-slate-950 md:text-5xl">Negocios que confían en Super Gods App</h2>
+                <p className="mt-4 font-medium leading-7 text-slate-600">Salones, barberías y centros de belleza que están digitalizando su atención y gestión con nuestra plataforma.</p>
+              </div>
+              <div className="mt-8 flex flex-wrap items-stretch justify-center gap-4">
+                {featuredCustomers.map((customer) => {
+                  const content = (
+                    <>
+                      <div className="flex h-24 items-center justify-center rounded-2xl bg-slate-50 p-3">
+                        <img src={customer.logoUrl} alt={`Logo de ${customer.businessName}`} loading="lazy" className="max-h-full max-w-full object-contain" />
+                      </div>
+                      <h3 className="mt-4 text-center text-base font-black text-slate-950">{customer.businessName}</h3>
+                      <p className="mt-1 text-center text-xs font-bold text-slate-500">{[customer.businessType, customer.city].filter(Boolean).join(' · ') || 'Cliente Super Gods App'}</p>
+                      {customer.testimonial && <p className="mt-3 line-clamp-3 text-center text-xs font-semibold leading-5 text-slate-600">“{customer.testimonial}”</p>}
+                    </>
+                  );
+                  const classes = "w-full max-w-[230px] rounded-[26px] border border-slate-200 bg-white p-4 transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg";
+                  return customer.website && /^https?:\/\//i.test(customer.website)
+                    ? <a key={customer.id} href={customer.website} target="_blank" rel="noreferrer" className={classes}>{content}</a>
+                    : <article key={customer.id} className={classes}>{content}</article>;
+                })}
+              </div>
+            </div>
+          </section>
+        )}
         {Boolean(import.meta.env.VITE_SHOW_OLD_HERO) && (
         <section className="hidden">
           <div className="absolute inset-x-0 top-0 h-[720px] bg-[radial-gradient(circle_at_20%_10%,#DCEBFF_0,#F5F7FB_42%,transparent_70%),radial-gradient(circle_at_85%_22%,rgba(34,197,94,0.16),transparent_30%)]" />
@@ -2379,6 +2418,7 @@ export default function App() {
           <Route path="crear-barberia" element={<SuperAdminCreateBarbershop />} />
           <Route path="solicitudes-demo" element={<SuperAdminDemoRequests />} />
           <Route path="moderacion-resenas" element={<SuperAdminReviewModeration />} />
+          <Route path="clientes-destacados" element={<SuperAdminFeaturedCustomers />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

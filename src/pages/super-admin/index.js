@@ -4,3 +4,5 @@ export { default as SuperAdminPayments } from './SuperAdminPayments';
 export { default as SuperAdminTenants } from './SuperAdminTenants';
 export { default as SuperAdminDemoRequests } from './SuperAdminDemoRequests';
 export { default as SuperAdminReviewModeration } from './SuperAdminReviewModeration';
+
+export { default as SuperAdminFeaturedCustomers } from './SuperAdminFeaturedCustomers';

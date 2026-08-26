@@ -8,6 +8,7 @@ import {
   MessageSquareWarning,
   ShieldCheck,
   Sparkles,
+  Award,
 } from 'lucide-react';
 
 const navItems = [
@@ -15,6 +16,7 @@ const navItems = [
   { to: '/super-admin/barberias', label: 'Cuentas', detail: 'CRUD completo', icon: Building2 },
   { to: '/super-admin/pagos', label: 'Pagos', detail: 'Aprobacion manual', icon: CreditCard },
   { to: '/super-admin/moderacion-resenas', label: 'Moderación', detail: 'Reseñas reportadas', icon: MessageSquareWarning },
+  { to: '/super-admin/clientes-destacados', label: 'Clientes destacados', detail: 'Logos en la portada', icon: Award },
   { to: '/super-admin/solicitudes-demo', label: 'Demos', detail: 'Leads y pruebas', icon: Sparkles },
   { to: '/super-admin/crear-barberia', label: 'Crear cuenta', detail: 'Alta guiada', icon: PlusCircle },
 ];

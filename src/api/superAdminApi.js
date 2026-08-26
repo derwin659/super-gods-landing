@@ -43,7 +43,26 @@ async function request(path, options = {}) {
   return body;
 }
 
+
+async function requestForm(path, method, form) {
+  const token = getToken();
+  const data = new FormData();
+  Object.entries(form).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && key !== 'id' && key !== 'logoUrl') data.append(key, value);
+  });
+  if (form.logo) { data.delete('logo'); data.append('logo', form.logo); }
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method, body: data, headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.message || body?.error || `Error HTTP ${response.status}`);
+  return body;
+}
 export const superAdminApi = {
+  getFeaturedCustomers() { return request("/api/super-admin/featured-customers"); },
+  createFeaturedCustomer(form) { return requestForm("/api/super-admin/featured-customers", "POST", form); },
+  updateFeaturedCustomer(id, form) { return requestForm(`/api/super-admin/featured-customers/${id}`, "PUT", form); },
+  deleteFeaturedCustomer(id) { return request(`/api/super-admin/featured-customers/${id}`, { method: "DELETE" }); },
   getDashboard() {
     return request("/api/super-admin/dashboard");
   },
