@@ -7274,6 +7274,17 @@ export default function OwnerCashPage() {
               >
                 Historial
               </button>
+              {canManageFund && (
+                <button
+                  onClick={() => setShowHistoryModal(true)}
+                  disabled={!selectedBranch}
+                  title="Abrir historial de fondos acumulados"
+                  className="inline-flex items-center gap-2 rounded-xl border border-amber-300/25 bg-amber-300/10 px-3.5 py-2.5 text-xs font-black text-amber-200 transition hover:bg-amber-300/15 disabled:opacity-50"
+                >
+                  <span aria-hidden="true">◷</span>
+                  Historial fondo
+                </button>
+              )}
               <button
                 onClick={() => setShowAuditActivityModal(true)}
                 disabled={!selectedBranch}
