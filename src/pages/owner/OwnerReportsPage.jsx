@@ -114,6 +114,14 @@ function shortDate(value) {
   });
 }
 
+function fullDateTime(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  const part = (number) => String(number).padStart(2, '0');
+  return `${part(date.getDate())}/${part(date.getMonth() + 1)}/${date.getFullYear()} ${part(date.getHours())}:${part(date.getMinutes())}`;
+}
+
 function normalizeMethodCode(value) {
   const code = String(value || '').trim().toUpperCase().replaceAll(' ', '_');
   return {
@@ -644,7 +652,7 @@ function BarberDetailModal({ barber, loading, errorMsg, items, onClose, labels =
                 {items.map((item) => (
                   <tr key={`${item.saleId}-${item.createdAt}`}>
                     <td className="px-4 py-4 font-bold text-neutral-600">
-                      {item.createdAt || '-'}
+                      {fullDateTime(item.createdAt)}
                     </td>
                     <td className="px-4 py-4 font-black text-neutral-950">
                       {item.customerName || 'Cliente'}
@@ -1340,9 +1348,19 @@ export default function OwnerReportsPage() {
 
   const totalIncome = n(profitability?.totalSales) + n(profitability?.additionalIncome);
   async function exportReports(format) {
-    const payload = { from, to, branchName: branchOptions.find((option) => String(option.value) === String(branchId))?.label || "Todas las sedes", profitability, salesReport, barbers, productReport, expenseReport, fundMovementReport, professionalPaymentReport, periodComparison };
     setExporting(format);
-    try { if (format === "pdf") await exportOwnerReportsPdf(payload); else exportOwnerReportsExcel(payload); }
+    try {
+      const barberSalesDetails = (await Promise.all(barbers.map(async (barber) => {
+        const items = await getBarberDetail({ barberId: barber.barberId, ...query });
+        return (Array.isArray(items) ? items : []).map((item) => ({
+          ...item,
+          barberId: barber.barberId,
+          barberName: barber.barberName || labels.professionalDisplay,
+        }));
+      }))).flat();
+      const payload = { from, to, branchName: branchOptions.find((option) => String(option.value) === String(branchId))?.label || "Todas las sedes", profitability, salesReport, barbers, barberSalesDetails, productReport, expenseReport, fundMovementReport, professionalPaymentReport, periodComparison };
+      if (format === "pdf") await exportOwnerReportsPdf(payload); else exportOwnerReportsExcel(payload);
+    }
     finally { setExporting(""); }
   }
   const totalExpenses =
