@@ -52,7 +52,7 @@ import { hasAnyOwnerPermission } from '../../utils/ownerPermissions';
 import { formatTenantMoney, getTenantCurrencySymbol } from '../../utils/tenantMoney';
 import { exportCashHistoryExcel, exportCashHistoryPdf } from '../../utils/cashHistoryExport';
 import { autoPrintApprovedSale, printElectronicPdfOnThermal } from '../../services/qzPrinterService';
-import { whatsappPhoneDigits } from '../../utils/internationalPhone';
+import { normalizePhoneE164, parsePhoneValue, whatsappPhoneDigits } from '../../utils/internationalPhone';
 import InternationalPhoneField from '../../components/InternationalPhoneField';
 import { downloadBase64File, getElectronicDocumentFiles, getElectronicInvoicingAccess, getSaleElectronicDocuments, issueElectronicDocument, refreshElectronicDocument, retryElectronicDocument } from '../../api/electronicInvoicingApi';
 
@@ -294,6 +294,11 @@ function saleWithWhatsappFallback(primary, fallback) {
 
 function normalizeWhatsappPhone(value) {
   return whatsappPhoneDigits(value);
+}
+
+function looksLikePhoneSearch(value) {
+  const text = String(value || '').trim();
+  return /^[+()\d\s-]+$/.test(text) && text.replace(/\D/g, '').length >= 6;
 }
 
 async function offerCustomerWhatsappFollowUp(sale, { canOpenWhatsapp = false } = {}) {
@@ -3582,6 +3587,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
   function handleCustomerSearchChange(value) {
     setCustomerName(value);
 
+
     if (selectedCustomer && value.trim() !== selectedCustomer.nombreCompleto) {
       setSelectedCustomer(null);
     }
@@ -4147,6 +4153,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const [quickCustomerPhone, setQuickCustomerPhone] = useState('');
   const [quickCustomerPhoneValid, setQuickCustomerPhoneValid] = useState(false);
   const [quickCustomerLastName, setQuickCustomerLastName] = useState('');
+  const lastAutoSyncedQuickPhoneRef = useRef('');
   const [creatingCustomer, setCreatingCustomer] = useState(false);
   const [isCourtesy, setIsCourtesy] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
@@ -4257,7 +4264,19 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
       try {
         const data = await getOwnerCustomers({ query: q, limit: 8 });
         if (cancelled) return;
-        setCustomerResults(Array.isArray(data) ? data : []);
+        const results = Array.isArray(data) ? data : [];
+        setCustomerResults(results);
+
+        if (customerSearchMode === 'name' && results.length === 0 && looksLikePhoneSearch(q)) {
+          const autoPhone = normalizePhoneE164(q);
+          const canReplace = !quickCustomerPhone
+            || quickCustomerPhone === lastAutoSyncedQuickPhoneRef.current;
+          if (autoPhone && canReplace) {
+            setQuickCustomerPhone(autoPhone);
+            setQuickCustomerPhoneValid(parsePhoneValue(autoPhone).isValid);
+            lastAutoSyncedQuickPhoneRef.current = autoPhone;
+          }
+        }
       } catch {
         if (cancelled) return;
         setCustomerResults([]);
@@ -4270,10 +4289,18 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [customerName, selectedCustomer, customerSearchMode, customerSearchPhoneValid]);
+  }, [customerName, selectedCustomer, customerSearchMode, customerSearchPhoneValid, quickCustomerPhone]);
 
   function handleCustomerSearchChange(value) {
     setCustomerName(value);
+
+    if (!looksLikePhoneSearch(value)
+      && lastAutoSyncedQuickPhoneRef.current
+      && quickCustomerPhone === lastAutoSyncedQuickPhoneRef.current) {
+      setQuickCustomerPhone('');
+      setQuickCustomerPhoneValid(false);
+      lastAutoSyncedQuickPhoneRef.current = '';
+    }
 
     if (selectedCustomer) {
       const selectedName = selectedCustomer.nombreCompleto || selectedCustomer.nombres || 'Cliente';
@@ -4283,7 +4310,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     }
 
     if (value.trim() && !selectedCustomer) {
-      setQuickCustomerFirstName(value.trim());
+      setQuickCustomerFirstName(looksLikePhoneSearch(value) ? '' : value.trim());
     }
   }
 
@@ -4294,6 +4321,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
     setCustomerSearchPhoneValid(false);
     setQuickCustomerFirstName('');
     setQuickCustomerPhone(customer.telefono || '');
+    lastAutoSyncedQuickPhoneRef.current = '';
     setQuickCustomerLastName('');
     setCustomerResults([]);
     setCustomerSearching(false);
@@ -4304,16 +4332,24 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   async function createQuickCustomerFromSale() {
     setErrorMsg('');
 
-    const name = (quickCustomerFirstName.trim() || (customerSearchMode === 'name' ? customerName.trim() : '')).trim();
+    const searchedName = customerSearchMode === 'name' && !looksLikePhoneSearch(customerName)
+      ? customerName.trim()
+      : '';
+    const name = (quickCustomerFirstName.trim() || searchedName).trim();
     const lastName = quickCustomerLastName.trim();
-    const phone = quickCustomerPhone;
+    const phone = customerSearchMode === 'phone'
+      ? customerName.trim()
+      : quickCustomerPhone;
+    const phoneIsValid = customerSearchMode === 'phone'
+      ? customerSearchPhoneValid
+      : quickCustomerPhoneValid;
 
     if (!name) {
       setErrorMsg('Escribe el nombre del cliente para crearlo.');
       return;
     }
 
-    if (!quickCustomerPhoneValid || !phone) {
+    if (!phoneIsValid || !phone) {
       setErrorMsg('Ingresa un teléfono válido para crear el cliente.');
       return;
     }
@@ -4799,7 +4835,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                         Cliente no encontrado
                       </div>
                       <p className="mt-2 text-xs font-bold leading-5 text-amber-800">
-                        Puedes guardar la venta como cliente ocasional o crear el cliente ahora agregando su teléfono.
+                        Completa su nombre y apellido. Si buscaste por WhatsApp, conservaremos ese mismo número automáticamente.
                       </p>
 
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -4816,16 +4852,30 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                           placeholder="Apellido del cliente"
                           className="w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm font-black text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-amber-500"
                         />
-                        <InternationalPhoneField
-                          label="WhatsApp del cliente"
-                          value={quickCustomerPhone}
-                          compact
-                          className="sm:col-span-2"
-                          onChange={(e164, meta) => {
-                            setQuickCustomerPhone(e164);
-                            setQuickCustomerPhoneValid(meta.isValid);
-                          }}
-                        />
+                        {customerSearchMode === 'phone' ? (
+                          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 sm:col-span-2">
+                            <div className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">
+                              WhatsApp confirmado
+                            </div>
+                            <div className="mt-1 text-base font-black text-emerald-950">
+                              {customerName}
+                            </div>
+                            <div className="mt-1 text-xs font-bold text-emerald-700">
+                              Se usará automáticamente al crear el cliente.
+                            </div>
+                          </div>
+                        ) : (
+                          <InternationalPhoneField
+                            label="WhatsApp del cliente"
+                            value={quickCustomerPhone}
+                            compact
+                            className="sm:col-span-2"
+                            onChange={(e164, meta) => {
+                              setQuickCustomerPhone(e164);
+                              setQuickCustomerPhoneValid(meta.isValid);
+                            }}
+                          />
+                        )}
 
                         <button
                           type="button"
