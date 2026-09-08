@@ -1224,9 +1224,9 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
   const statuses = [
     ['ALL', 'Todos', 'Base completa con los filtros activos', summary?.totalFiltered],
     ['NEW', 'Nuevos', 'Clientes recientes o con pocas visitas', summary?.newCustomers],
-    ['FREQUENT', 'Frecuentes', '3+ visitas y buen retorno', summary?.frequentCustomers],
-    ['VIP', 'VIP', '10+ visitas o 500+ pts acum.', summary?.vipCustomers],
-    ['INACTIVE', 'Inactivos +60d', 'Ultima visita hace mas de 60 dias', summary?.inactiveCustomers],
+    ['FREQUENT', 'Frecuentes', 'Según las visitas configuradas', summary?.frequentCustomers],
+    ['VIP', 'VIP', 'Según visitas o puntos configurados', summary?.vipCustomers],
+    ['INACTIVE', 'Inactivos', 'Según los días configurados', summary?.inactiveCustomers],
   ];
   const variation = Number(summary?.registeredVariationPercent || 0);
   const variationLabel = `${variation > 0 ? '+' : ''}${variation.toFixed(1)}%`;
@@ -1354,9 +1354,9 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
           <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/45">Criterios de segmento</p>
             <div className="mt-3 grid gap-2 text-xs font-bold leading-5 text-white/75">
-              <div className="flex items-start gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-amber-300" /><span><b className="text-white">VIP:</b> 10+ visitas o 500+ puntos acumulados.</span></div>
-              <div className="flex items-start gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-emerald-300" /><span><b className="text-white">Frecuente:</b> 3+ visitas completadas.</span></div>
-              <div className="flex items-start gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-red-300" /><span><b className="text-white">Inactivo:</b> ultima visita mayor a 60 dias.</span></div>
+              <div className="flex items-start gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-amber-300" /><span><b className="text-white">VIP:</b> usa los límites de visitas o puntos definidos por el dueño.</span></div>
+              <div className="flex items-start gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-emerald-300" /><span><b className="text-white">Frecuente:</b> usa el mínimo de visitas configurado.</span></div>
+              <div className="flex items-start gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-red-300" /><span><b className="text-white">Inactivo:</b> usa los días sin visita configurados.</span></div>
             </div>
           </div>
         </div>

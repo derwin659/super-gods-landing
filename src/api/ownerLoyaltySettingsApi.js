@@ -15,6 +15,11 @@ function normalizeSettings(raw = {}) {
     welcomeBonusPoints: toNumber(raw.welcomeBonusPoints, 100),
     activationBonusEnabled: raw.activationBonusEnabled !== false,
     activationBonusPoints: toNumber(raw.activationBonusPoints, 50),
+    segmentNewMaxVisits: toNumber(raw.segmentNewMaxVisits, 2),
+    segmentFrequentMinVisits: toNumber(raw.segmentFrequentMinVisits, 3),
+    segmentVipMinVisits: toNumber(raw.segmentVipMinVisits, 10),
+    segmentVipMinPoints: toNumber(raw.segmentVipMinPoints, 500),
+    segmentInactiveDays: toNumber(raw.segmentInactiveDays, 60),
     tiers: Array.isArray(raw.tiers)
       ? raw.tiers.map((tier, index) => ({
           id: String(tier.id || `tier-${index}`),
@@ -41,6 +46,11 @@ export async function updateOwnerLoyaltySettings(settings) {
       pointsPerCurrencyUnit: Number(settings.pointsPerCurrencyUnit),
       welcomeBonusPoints: Number(settings.welcomeBonusPoints),
       activationBonusPoints: Number(settings.activationBonusPoints),
+      segmentNewMaxVisits: Number(settings.segmentNewMaxVisits),
+      segmentFrequentMinVisits: Number(settings.segmentFrequentMinVisits),
+      segmentVipMinVisits: Number(settings.segmentVipMinVisits),
+      segmentVipMinPoints: Number(settings.segmentVipMinPoints),
+      segmentInactiveDays: Number(settings.segmentInactiveDays),
       tiers: settings.tiers.map((tier) => ({ ...tier, minPoints: Number(tier.minPoints) })),
     }),
   });

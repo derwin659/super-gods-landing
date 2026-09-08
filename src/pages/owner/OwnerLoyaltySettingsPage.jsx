@@ -28,7 +28,7 @@ function Toggle({ checked, onChange, label, help }) {
 }
 
 export default function OwnerLoyaltySettingsPage() {
-  const [form, setForm] = useState({ pointsPerCurrencyUnit: 5, currency: 'PEN', welcomeBonusEnabled: true, welcomeBonusPoints: 100, activationBonusEnabled: true, activationBonusPoints: 50, tiers: DEFAULT_TIERS });
+  const [form, setForm] = useState({ pointsPerCurrencyUnit: 5, currency: 'PEN', welcomeBonusEnabled: true, welcomeBonusPoints: 100, activationBonusEnabled: true, activationBonusPoints: 50, segmentNewMaxVisits: 2, segmentFrequentMinVisits: 3, segmentVipMinVisits: 10, segmentVipMinPoints: 500, segmentInactiveDays: 60, tiers: DEFAULT_TIERS });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
@@ -56,6 +56,7 @@ export default function OwnerLoyaltySettingsPage() {
     if (new Set(tiers.map((tier) => tier.name.trim().toLowerCase())).size !== tiers.length) return 'No repitas nombres de categorías.';
     if (new Set(tiers.map((tier) => Number(tier.minPoints))).size !== tiers.length) return 'Cada categoría debe comenzar en una cantidad de puntos diferente.';
     if (Number(form.pointsPerCurrencyUnit) < 0 || Number(form.welcomeBonusPoints) < 0 || Number(form.activationBonusPoints) < 0) return 'Los puntos no pueden ser negativos.';
+    if (Number(form.segmentNewMaxVisits) < 0 || Number(form.segmentFrequentMinVisits) < 1 || Number(form.segmentVipMinVisits) < 1 || Number(form.segmentVipMinPoints) < 0 || Number(form.segmentInactiveDays) < 7) return 'Revisa las reglas de segmentación.';
     return null;
   }
 
@@ -106,6 +107,15 @@ export default function OwnerLoyaltySettingsPage() {
       </div>
     </section>
 
+    <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">
+      <h2 className="text-xl font-black text-neutral-950">Segmentos de comportamiento</h2>
+      <p className="mt-2 text-sm font-semibold text-neutral-500">Estas reglas clasifican visitas y audiencias de marketing.</p>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        {[
+          ['segmentNewMaxVisits', 'Nuevo hasta', 'visitas', 0], ['segmentFrequentMinVisits', 'Frecuente desde', 'visitas', 1], ['segmentVipMinVisits', 'VIP desde', 'visitas', 1], ['segmentVipMinPoints', 'VIP desde', 'puntos', 0], ['segmentInactiveDays', 'Inactivo después de', 'días', 7],
+        ].map(([key, label, unit, min]) => <label key={key} className="text-xs font-black text-neutral-600">{label}<input type="number" min={min} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-base font-black text-neutral-950" /><span className="mt-1 block text-[11px] text-neutral-400">{unit}</span></label>)}
+      </div>
+    </section>
     <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-xl font-black text-neutral-950">Categorías por puntos</h2><p className="mt-2 text-sm font-semibold text-neutral-500">Puedes usar cualquier nombre. La categoría cambia automáticamente según los puntos acumulados.</p></div><button type="button" onClick={() => setForm({ ...form, tiers: [...form.tiers, newTier()] })} disabled={form.tiers.length >= 20} className="rounded-2xl border border-neutral-300 px-4 py-3 text-sm font-black">+ Agregar categoría</button></div>
       <div className="mt-5 space-y-4">{form.tiers.map((tier, index) => <div key={tier.id} className="rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
