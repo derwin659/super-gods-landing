@@ -1334,7 +1334,12 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
     }
   }
   return (
-    <section className="overflow-hidden rounded-[34px] border border-amber-200/80 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+    <details className="overflow-hidden rounded-[34px] border border-amber-200/80 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 bg-white px-5 py-4 marker:hidden">
+        <div><p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">Marketing y retención</p><h3 className="mt-1 text-xl font-black text-neutral-950">Visitas y segmentos de clientes</h3><p className="mt-1 text-sm font-semibold text-neutral-500">Ábrelo para filtrar, exportar o crear campañas.</p></div>
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-neutral-950 text-xl font-black text-white">⌄</span>
+      </summary>
+      '
       <div className="grid gap-5 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#ecfeff_100%)] p-5 lg:grid-cols-[280px_1fr] xl:grid-cols-[320px_1fr]">
         <div className="rounded-[28px] bg-neutral-950 p-5 text-white shadow-[0_18px_44px_rgba(15,23,42,0.22)]">
           <div className="inline-flex rounded-full bg-amber-300 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-950">
@@ -1466,7 +1471,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
           ) : null}
         </div>
       </div>
-    </section>
+    </details>
   );
 }
 

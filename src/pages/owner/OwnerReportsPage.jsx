@@ -618,8 +618,7 @@ function BarberDetailModal({ barber, loading, errorMsg, items, onClose, labels =
             Cargando detalle...
           </div>
         )}
-
-        <ErrorBox message={errorMsg} />
+<ErrorBox message={errorMsg} />
 
         {!loading && !errorMsg && items.length === 0 && (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-8 text-center text-sm font-bold text-neutral-500">
@@ -1414,6 +1413,16 @@ export default function OwnerReportsPage() {
         </div>
       </section>
 
+      <details className="overflow-hidden rounded-[26px] border border-amber-200 bg-white shadow-[0_14px_35px_rgba(15,23,42,0.05)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 marker:hidden">
+          <div><p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">Marketing y retención</p><h3 className="mt-1 text-xl font-black text-neutral-950">Visitas de clientes</h3><p className="mt-1 text-sm font-semibold text-neutral-500">Abre solo cuando necesites analizar frecuencia, VIP, nuevos o inactivos.</p></div>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-neutral-950 text-xl font-black text-white">⌄</span>
+        </summary>
+        <div className="border-t border-neutral-100 bg-amber-50/40 p-5">
+          <p className="text-sm font-semibold leading-6 text-neutral-600">El reporte completo permite revisar última visita, total de visitas, gasto, puntos y permiso de WhatsApp; también exportar y preparar campañas.</p>
+          <a href="/owner/clientes" className="mt-4 inline-flex rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white">Abrir reporte de clientes</a>
+        </div>
+      </details>
       <ErrorBox message={errorMsg} />
 
       {loading ? (
