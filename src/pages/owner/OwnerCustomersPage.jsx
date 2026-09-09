@@ -1334,7 +1334,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
     }
   }
   return (
-    <details className="overflow-hidden rounded-[34px] border border-amber-200/80 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+    <details defaultOpen={Boolean(lastVisitFrom || lastVisitTo)} className="overflow-hidden rounded-[34px] border border-amber-200/80 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 bg-white px-5 py-4 marker:hidden">
         <div><p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">Marketing y retención</p><h3 className="mt-1 text-xl font-black text-neutral-950">Visitas y segmentos de clientes</h3><p className="mt-1 text-sm font-semibold text-neutral-500">Ábrelo para filtrar, exportar o crear campañas.</p></div>
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-neutral-950 text-xl font-black text-white">⌄</span>
@@ -1349,7 +1349,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
             Reporte inteligente de clientes
           </h3>
           <p className="mt-3 text-sm font-semibold leading-6 text-white/65">
-            Filtra por registro, sede, ultima visita y segmento. Los resultados muestran clientes reales para campañas o seguimiento.
+            Filtra por registro, sede, visitas realizadas y segmento. El rango de visitas recalcula clientes, visitas y gasto del periodo.
           </p>
           <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/45">Criterios de segmento</p>
@@ -1383,11 +1383,11 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
               </select>
             </label>
             <label className="min-w-0 text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
-              Visita desde
+              Visitó desde
               <input type="date" value={lastVisitFrom} onChange={(event) => onLastVisitFromChange(event.target.value)} className={fieldClass} />
             </label>
             <label className="min-w-0 text-[11px] font-black uppercase tracking-[0.14em] text-neutral-500">
-              Visita hasta
+              Visitó hasta
               <input type="date" value={lastVisitTo} onChange={(event) => onLastVisitToChange(event.target.value)} className={fieldClass} />
             </label>
           </div>
@@ -1563,11 +1563,12 @@ export default function OwnerCustomersPage() {
   const [customerReportLoading, setCustomerReportLoading] = useState(true);
   const [customerReportError, setCustomerReportError] = useState('');
   const [customerReportStatus, setCustomerReportStatus] = useState('ALL');
+  const reportUrlParams = useMemo(() => new URLSearchParams(window.location.search), []);
   const [customerReportFrom, setCustomerReportFrom] = useState('');
   const [customerReportTo, setCustomerReportTo] = useState('');
-  const [customerReportBranchId, setCustomerReportBranchId] = useState('');
-  const [customerReportLastVisitFrom, setCustomerReportLastVisitFrom] = useState('');
-  const [customerReportLastVisitTo, setCustomerReportLastVisitTo] = useState('');
+  const [customerReportBranchId, setCustomerReportBranchId] = useState(() => reportUrlParams.get('branchId') || '');
+  const [customerReportLastVisitFrom, setCustomerReportLastVisitFrom] = useState(() => reportUrlParams.get('visitFrom') || '');
+  const [customerReportLastVisitTo, setCustomerReportLastVisitTo] = useState(() => reportUrlParams.get('visitTo') || '');
   const [branches, setBranches] = useState([]);
 
   const [showForm, setShowForm] = useState(false);

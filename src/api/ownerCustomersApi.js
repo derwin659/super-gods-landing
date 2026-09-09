@@ -305,6 +305,8 @@ export async function getOwnerCustomersReport({
       to,
       branchId,
       status: status && status !== 'ALL' ? status : '',
+      visitFrom: lastVisitFrom,
+      visitTo: lastVisitTo,
       lastVisitFrom,
       lastVisitTo,
       limit,

@@ -1420,7 +1420,7 @@ export default function OwnerReportsPage() {
         </summary>
         <div className="border-t border-neutral-100 bg-amber-50/40 p-5">
           <p className="text-sm font-semibold leading-6 text-neutral-600">El reporte completo permite revisar última visita, total de visitas, gasto, puntos y permiso de WhatsApp; también exportar y preparar campañas.</p>
-          <a href="/owner/clientes" className="mt-4 inline-flex rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white">Abrir reporte de clientes</a>
+          <a href={`/owner/clientes?visitFrom=${encodeURIComponent(from)}&visitTo=${encodeURIComponent(to)}${branchId ? `&branchId=${encodeURIComponent(branchId)}` : ""}`} className="mt-4 inline-flex rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-black text-white">Abrir clientes de este período</a>
         </div>
       </details>
       <ErrorBox message={errorMsg} />
