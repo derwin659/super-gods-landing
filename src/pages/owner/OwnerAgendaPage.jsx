@@ -888,15 +888,6 @@ function AppointmentFormModal({
         const results = data.slice(0, 8);
         setCustomers(results);
 
-        if (customerSearchMode === 'name' && results.length === 0 && looksLikePhoneSearch(q)) {
-          const autoPhone = normalizePhoneE164(q);
-          const canReplace = !quickPhone || quickPhone === lastAutoSyncedQuickPhoneRef.current;
-          if (autoPhone && canReplace) {
-            setQuickPhone(autoPhone);
-            setQuickPhoneValid(parsePhoneValue(autoPhone).isValid);
-            lastAutoSyncedQuickPhoneRef.current = autoPhone;
-          }
-        }
       } catch {
         if (!alive) return;
         setCustomers([]);
@@ -1091,8 +1082,16 @@ function AppointmentFormModal({
                     value={customerSearch}
                     onChange={(value) => {
                       setCustomerSearch(value);
-                      if (!looksLikePhoneSearch(value)
-                        && lastAutoSyncedQuickPhoneRef.current
+                      if (looksLikePhoneSearch(value)) {
+                        const autoPhone = normalizePhoneE164(value);
+                        const canReplace = !quickPhone
+                          || quickPhone === lastAutoSyncedQuickPhoneRef.current;
+                        if (autoPhone && canReplace) {
+                          setQuickPhone(autoPhone);
+                          setQuickPhoneValid(parsePhoneValue(autoPhone).isValid);
+                          lastAutoSyncedQuickPhoneRef.current = autoPhone;
+                        }
+                      } else if (lastAutoSyncedQuickPhoneRef.current
                         && quickPhone === lastAutoSyncedQuickPhoneRef.current) {
                         setQuickPhone('');
                         setQuickPhoneValid(false);
