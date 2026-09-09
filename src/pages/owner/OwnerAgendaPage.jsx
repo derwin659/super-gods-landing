@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PremiumButton, PremiumEmptyState, PremiumErrorState, premiumConfirm, premiumPrompt } from '../../components/PremiumUi';
 import InternationalPhoneField from '../../components/InternationalPhoneField';
 import { Package } from 'lucide-react';
@@ -23,7 +23,12 @@ import { getBarberServiceAssignment } from '../../api/ownerBarbersApi';
 import { formatTenantMoney } from '../../utils/tenantMoney';
 import { useBusinessLabels } from '../../hooks/useBusinessLabels';
 import { bookingEndTime, bookingIntervalLabel, validDuration } from '../../utils/bookingTime';
+import { normalizePhoneE164, parsePhoneValue } from '../../utils/internationalPhone';
 
+function looksLikePhoneSearch(value) {
+  const text = String(value || '').trim();
+  return /^[+()\d\s-]+$/.test(text) && text.replace(/\D/g, '').length >= 6;
+}
 function toDateInputValue(date) {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -697,6 +702,7 @@ function AppointmentFormModal({
   const [quickLastName, setQuickLastName] = useState('');
   const [quickPhone, setQuickPhone] = useState('');
   const [quickPhoneValid, setQuickPhoneValid] = useState(false);
+  const lastAutoSyncedQuickPhoneRef = useRef('');
 
   const [serviceId, setServiceId] = useState(
     appointment?.serviceId ? String(appointment.serviceId) : ''
@@ -879,7 +885,18 @@ function AppointmentFormModal({
       try {
         const data = await searchAgendaCustomers(q);
         if (!alive) return;
-        setCustomers(data.slice(0, 8));
+        const results = data.slice(0, 8);
+        setCustomers(results);
+
+        if (customerSearchMode === 'name' && results.length === 0 && looksLikePhoneSearch(q)) {
+          const autoPhone = normalizePhoneE164(q);
+          const canReplace = !quickPhone || quickPhone === lastAutoSyncedQuickPhoneRef.current;
+          if (autoPhone && canReplace) {
+            setQuickPhone(autoPhone);
+            setQuickPhoneValid(parsePhoneValue(autoPhone).isValid);
+            lastAutoSyncedQuickPhoneRef.current = autoPhone;
+          }
+        }
       } catch {
         if (!alive) return;
         setCustomers([]);
@@ -1072,7 +1089,16 @@ function AppointmentFormModal({
                   <InputField
                     label="Buscar cliente"
                     value={customerSearch}
-                    onChange={setCustomerSearch}
+                    onChange={(value) => {
+                      setCustomerSearch(value);
+                      if (!looksLikePhoneSearch(value)
+                        && lastAutoSyncedQuickPhoneRef.current
+                        && quickPhone === lastAutoSyncedQuickPhoneRef.current) {
+                        setQuickPhone('');
+                        setQuickPhoneValid(false);
+                        lastAutoSyncedQuickPhoneRef.current = '';
+                      }
+                    }}
                     placeholder="Nombre o apellido"
                   />
                 )}
@@ -1189,6 +1215,7 @@ function AppointmentFormModal({
                       onChange={(e164, meta) => {
                         setQuickPhone(e164);
                         setQuickPhoneValid(meta.isValid);
+                        lastAutoSyncedQuickPhoneRef.current = '';
                       }}
                       helperText="Se guardará con bandera y prefijo internacional."
                     />
