@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { premiumConfirm } from '../../components/PremiumUi';
 import {
   buildCustomerWhatsappUrl,
   createOwnerCustomer,
+  deleteOwnerCustomer,
   createOwnerCustomerFollowUp,
   downloadOwnerCustomersExcel,
   getInactiveOwnerCustomers,
@@ -1094,6 +1096,9 @@ function InactiveCustomersPanel({
   loading,
   errorMsg,
   onRefresh,
+  onEdit,
+  onDelete,
+  busyCustomerId,
 }) {
   const dayOptions = [15, 30, 60, 90];
 
@@ -1213,6 +1218,27 @@ function InactiveCustomersPanel({
                         Sin teléfono
                       </span>
                     )}
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-neutral-200 pt-3">
+                    <button
+                      type="button"
+                      disabled={busyCustomerId !== null}
+                      onClick={() => onEdit(customer)}
+                      aria-label={`Editar a ${customer.nombre}`}
+                      className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-bold text-neutral-800 hover:bg-amber-50 disabled:opacity-50"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busyCustomerId !== null}
+                      onClick={() => onDelete(customer)}
+                      aria-label={`Eliminar a ${customer.nombre}`}
+                      className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      Eliminar
+                    </button>
+                    {busyCustomerId === customer.id && <span role="status" className="self-center text-xs text-neutral-500">Procesando...</span>}
                   </div>
                 </div>
               );
@@ -1593,6 +1619,8 @@ export default function OwnerCustomersPage() {
   const [inactiveDays, setInactiveDays] = useState(30);
   const [inactiveCustomers, setInactiveCustomers] = useState([]);
   const [inactiveLoading, setInactiveLoading] = useState(false);
+  const [inactiveBusyId, setInactiveBusyId] = useState(null);
+  const inactiveActionRef = useRef(false);
   const [inactiveErrorMsg, setInactiveErrorMsg] = useState('');
 
   const totalPoints = useMemo(() => {
@@ -1792,6 +1820,47 @@ export default function OwnerCustomersPage() {
     finally { setExporting(false); }
   }
 
+  async function editInactiveCustomer(customer) {
+    if (inactiveActionRef.current) return;
+    inactiveActionRef.current = true;
+    setInactiveBusyId(customer.id);
+    setInactiveErrorMsg('');
+    try {
+      // The inactive summary lacks separate names and other editable fields.
+      const detail = await getOwnerCustomerDetail(customer.id);
+      setEditingCustomer(detail);
+      setShowForm(true);
+    } catch (error) {
+      setInactiveErrorMsg(error.message || 'No se pudo abrir el cliente.');
+    } finally {
+      inactiveActionRef.current = false;
+      setInactiveBusyId(null);
+    }
+  }
+
+  async function deleteInactiveCustomer(customer) {
+    if (inactiveActionRef.current) return;
+    inactiveActionRef.current = true;
+    setInactiveBusyId(customer.id);
+    setInactiveErrorMsg('');
+    try {
+      if (!await premiumConfirm(`¿Eliminar a ${customer.nombre}? Dejará de aparecer en la lista de clientes activos.`)) return;
+      await deleteOwnerCustomer(customer.id);
+      setInactiveCustomers((items) => items.filter((item) => item.id !== customer.id));
+      setCustomers((items) => items.filter((item) => item.id !== customer.id));
+      await Promise.all([
+        loadCustomers(query, { refreshTotal: true }),
+        loadInactiveCustomers(inactiveDays),
+        loadCustomerReport(),
+      ]);
+    } catch (error) {
+      setInactiveErrorMsg(error.message || 'No se pudo eliminar el cliente.');
+    } finally {
+      inactiveActionRef.current = false;
+      setInactiveBusyId(null);
+    }
+  }
+
   function openCreateForm() {
     setEditingCustomer(null);
     setShowForm(true);
@@ -1816,7 +1885,11 @@ export default function OwnerCustomersPage() {
       setCustomerDetail((prev) => (prev ? { ...prev, ...saved } : prev));
     }
 
-    await loadCustomers(query, { refreshTotal: !query.trim() });
+    await Promise.all([
+      loadCustomers(query, { refreshTotal: !query.trim() }),
+      loadInactiveCustomers(inactiveDays),
+      loadCustomerReport(),
+    ]);
   }
 
   function createAppointmentForCustomer(customer) {
@@ -2203,6 +2276,9 @@ export default function OwnerCustomersPage() {
           loading={inactiveLoading}
           errorMsg={inactiveErrorMsg}
           onRefresh={() => loadInactiveCustomers(inactiveDays)}
+          onEdit={editInactiveCustomer}
+          onDelete={deleteInactiveCustomer}
+          busyCustomerId={inactiveBusyId}
         />
       )}
 

@@ -586,3 +586,7 @@ export async function getOwnerCustomersTotal() {
   const data = await apiRequest('/api/owner/customers/export-count');
   return Number(data?.total || 0);
 }
+
+export async function deleteOwnerCustomer(customerId) {
+  return apiRequest(`/api/owner/customers/${customerId}`, { method: 'DELETE' });
+}
