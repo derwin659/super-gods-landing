@@ -185,6 +185,7 @@ function TextAreaField({ label, value, onChange, placeholder, rows = 3 }) {
 function CustomerFormModal({ customer, onClose, onSaved }) {
   const labels = readBusinessLabels();
   const isEdit = Boolean(customer?.id);
+  const canEditPhone = !isEdit || !customer?.phoneHidden;
 
   const [nombres, setNombres] = useState(customer?.nombres || customer?.nombreCompleto || '');
   const [apellidos, setApellidos] = useState(customer?.apellidos || '');
@@ -209,7 +210,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
       return;
     }
 
-    if (!phoneValid || !telefono) {
+    if (canEditPhone && (!phoneValid || !telefono)) {
       setErrorMsg('Revisa el país y escribe un WhatsApp válido.');
       return;
     }
@@ -222,7 +223,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
             customerId: customer.id,
             nombres,
             apellidos,
-            telefono,
+            telefono: canEditPhone ? telefono : null,
             email,
             customerNotes,
             preferredServices,
@@ -276,7 +277,12 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
           />
         </div>
 
-        <InternationalPhoneField
+        {!canEditPhone ? (
+          <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-600">
+            <strong>Teléfono oculto</strong>
+            <p>Puedes editar nombre y apellido. Tu permiso no permite ver ni cambiar el teléfono.</p>
+          </div>
+        ) : <InternationalPhoneField
           label="WhatsApp del cliente"
           value={telefono}
           onChange={(e164, meta) => {
@@ -284,7 +290,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
             setPhoneValid(meta.isValid);
           }}
           helperText="Selecciona el país. Se guardará con su prefijo internacional."
-        />
+        />}
 
         <InputField
           label="Correo"

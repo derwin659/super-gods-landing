@@ -64,6 +64,7 @@ function normalizeCustomer(raw = {}) {
     nombres: text(raw.nombres ?? raw.nombre ?? raw.firstName ?? name, 'Cliente'),
     apellidos: text(raw.apellidos ?? raw.apellido ?? raw.lastName ?? ''),
     nombreCompleto: text(name, 'Cliente').trim() || 'Cliente',
+    phoneHidden: raw.phoneHidden === true || /[＊*]|oculto/i.test(String(raw.telefono ?? raw.phone ?? '')),
     telefono: text(raw.telefono ?? raw.phone ?? raw.phoneNumber ?? ''),
     email: text(raw.email ?? raw.correo ?? ''),
     whatsappTransactionalEnabled: raw.whatsappTransactionalEnabled !== false,
