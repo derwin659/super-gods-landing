@@ -4154,6 +4154,12 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const [quickCustomerPhoneValid, setQuickCustomerPhoneValid] = useState(false);
   const [quickCustomerLastName, setQuickCustomerLastName] = useState('');
   const lastAutoSyncedQuickPhoneRef = useRef('');
+  const quickCustomerPhoneRef = useRef(quickCustomerPhone);
+
+  // Keep async search results aware of edits without restarting the search.
+  useEffect(() => {
+    quickCustomerPhoneRef.current = quickCustomerPhone;
+  }, [quickCustomerPhone]);
   const [creatingCustomer, setCreatingCustomer] = useState(false);
   const [isCourtesy, setIsCourtesy] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
@@ -4269,8 +4275,8 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
 
         if (customerSearchMode === 'name' && results.length === 0 && looksLikePhoneSearch(q)) {
           const autoPhone = normalizePhoneE164(q);
-          const canReplace = !quickCustomerPhone
-            || quickCustomerPhone === lastAutoSyncedQuickPhoneRef.current;
+          const canReplace = !quickCustomerPhoneRef.current
+            || quickCustomerPhoneRef.current === lastAutoSyncedQuickPhoneRef.current;
           if (autoPhone && canReplace) {
             setQuickCustomerPhone(autoPhone);
             setQuickCustomerPhoneValid(parsePhoneValue(autoPhone).isValid);
@@ -4289,7 +4295,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [customerName, selectedCustomer, customerSearchMode, customerSearchPhoneValid, quickCustomerPhone]);
+  }, [customerName, selectedCustomer, customerSearchMode, customerSearchPhoneValid]);
 
   function handleCustomerSearchChange(value) {
     setCustomerName(value);
