@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   LayoutDashboard,
+  GraduationCap,
   CalendarDays,
   Banknote,
   ChartNoAxesCombined,
@@ -50,6 +51,11 @@ const navGroups = [
     title: 'Resumen',
     subtitle: 'Vista general',
     items: [
+      {
+        to: '/owner/academy', roles: ['OWNER', 'ADMIN'], label: 'GODS Academy', description: 'Aprende a usar GODS',
+        icon: GraduationCap, permissions: [],
+        tone: { soft: 'bg-amber-50 text-amber-700 ring-amber-100', active: 'from-amber-500 to-yellow-400', glow: 'shadow-amber-300/60' },
+      },
       {
         to: '/owner/dashboard',
         label: 'Dashboard',
@@ -336,6 +342,7 @@ const navGroups = [
 function canSeeItem(item, session, permissions) {
   const role = String(session?.role || '').toUpperCase();
 
+  if (item.roles && !item.roles.includes(role)) return false;
   if (role === 'OWNER') return true;
   if (item.ownerOnly) return false;
   if (!item.permissions || item.permissions.length === 0) return true;

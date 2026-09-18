@@ -9,9 +9,11 @@ import {
   ShieldCheck,
   Sparkles,
   Award,
+  GraduationCap,
 } from 'lucide-react';
 
 const navItems = [
+  { to: '/super-admin/academy', label: 'GODS Academy', detail: 'Guías y videos', icon: GraduationCap },
   { to: '/super-admin', label: 'Vista ejecutiva', detail: 'Metricas y alertas', icon: BarChart3 },
   { to: '/super-admin/barberias', label: 'Cuentas', detail: 'CRUD completo', icon: Building2 },
   { to: '/super-admin/pagos', label: 'Pagos', detail: 'Aprobacion manual', icon: CreditCard },

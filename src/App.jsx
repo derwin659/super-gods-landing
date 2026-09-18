@@ -1,3 +1,5 @@
+import SuperAdminAcademyPage from './pages/super-admin/SuperAdminAcademyPage';
+import AcademyPage from './pages/AcademyPage';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Scissors,
@@ -2143,6 +2145,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/academy" element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}><AcademyPage /></ProtectedRoute>} />
         <Route path="/" element={<PublicHomePage />} />
         <Route path="/registro-negocio" element={<PublicBusinessSignupPage />} />
         <Route path="/demo" element={<PublicBusinessSignupPage />} />
@@ -2173,6 +2176,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="/owner/dashboard" replace />} />
           <Route path="dashboard" element={<OwnerDashboardPage />} />
+          <Route path="academy" element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}><AcademyPage /></ProtectedRoute>} />
 
           <Route
             path="caja"
@@ -2418,6 +2422,7 @@ export default function App() {
           <Route path="crear-barberia" element={<SuperAdminCreateBarbershop />} />
           <Route path="solicitudes-demo" element={<SuperAdminDemoRequests />} />
           <Route path="moderacion-resenas" element={<SuperAdminReviewModeration />} />
+          <Route path="academy" element={<SuperAdminAcademyPage />} />
           <Route path="clientes-destacados" element={<SuperAdminFeaturedCustomers />} />
         </Route>
 
