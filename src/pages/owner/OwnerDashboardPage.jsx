@@ -41,7 +41,7 @@ function MetricCard({ title, value, helper, tone = 'default' }) {
   };
 
   return (
-    <div className={`rounded-[30px] border p-6 ${styles[tone]}`}>
+    <div className={`min-w-0 rounded-[30px] border p-5 [container-type:inline-size] sm:p-6 ${styles[tone]}`}>
       <div
         className={
           tone === 'dark'
@@ -55,9 +55,13 @@ function MetricCard({ title, value, helper, tone = 'default' }) {
       <div
         className={
           tone === 'dark'
-            ? 'mt-3 text-3xl font-black text-white'
-            : 'mt-3 text-3xl font-black text-neutral-950'
+            ? 'mt-3 font-black leading-tight tracking-tight tabular-nums text-white [overflow-wrap:anywhere]'
+            : 'mt-3 font-black leading-tight tracking-tight tabular-nums text-neutral-950 [overflow-wrap:anywhere]'
         }
+        style={{
+          // Size against the card's content width, including long currency values.
+          fontSize: `clamp(1rem, ${Math.min(14, 145 / Math.max(String(value).length, 1))}cqw, 1.875rem)`,
+        }}
       >
         {value}
       </div>
@@ -66,7 +70,7 @@ function MetricCard({ title, value, helper, tone = 'default' }) {
         <div
           className={
             tone === 'dark'
-              ? 'mt-2 text-sm text-white/45'
+              ? 'mt-2 text-sm text-white/70'
               : 'mt-2 text-sm text-neutral-500'
           }
         >
@@ -112,7 +116,7 @@ function ExecutivePulse({ dashboard, branches }) {
   ];
 
   return (
-    <section className="grid gap-5 xl:grid-cols-[1.4fr_0.6fr]">
+    <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)]">
       <div className="rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_16px_45px_rgba(15,23,42,0.05)]">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -121,7 +125,7 @@ function ExecutivePulse({ dashboard, branches }) {
           </div>
           <span className="rounded-full bg-amber-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Hoy</span>
         </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-3">
           <MetricCard title="Caja esperada" value={formatMoney(expectedCash)} helper="Efectivo neto estimado" tone="gold" />
           <MetricCard title="Pagado al equipo" value={formatMoney(professionalPayments)} helper="Pagos profesionales de hoy" />
           <MetricCard title="Pagos pendientes" value={formatMoney(pendingPayments)} helper="Saldos registrados por completar" tone="dark" />
@@ -883,7 +887,7 @@ export default function OwnerDashboardPage() {
 
           <BookingQrCard bookingLinks={bookingLinks} />
 
-          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+          <section className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15.5rem),1fr))] gap-5">
             <MetricCard
               title="Ventas de hoy"
               value={formatMoney(totalSales)}
