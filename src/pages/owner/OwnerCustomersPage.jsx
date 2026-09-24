@@ -1173,7 +1173,7 @@ function InactiveCustomersPanel({
             </p>
           </div>
         ) : (
-          <div className="grid gap-3 xl:grid-cols-2">
+          <div className="overflow-hidden rounded-2xl border border-neutral-200 divide-y divide-neutral-200">
             {customers.map((customer) => {
               const whatsappUrl = buildCustomerWhatsappUrl({
                 telefono: customer.telefono,
@@ -1183,49 +1183,52 @@ function InactiveCustomersPanel({
               return (
                 <div
                   key={customer.customerId || customer.id}
-                  className="rounded-[24px] border border-neutral-200 bg-neutral-50 p-4"
+                  className="flex flex-col gap-3 bg-white px-4 py-3 transition hover:bg-amber-50/40 lg:flex-row lg:items-center lg:gap-4"
                 >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-sm font-black text-amber-700">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-sm font-black text-amber-700">
                         {initials(customer.nombre)}
                       </div>
 
-                      <div className="min-w-0">
-                        <div className="truncate text-lg font-black text-neutral-950">
+                      <div className="min-w-0 flex-1">
+                        <div className="break-words text-sm font-bold text-neutral-950">
                           {customer.nombre || 'Cliente'}
                         </div>
-                        <div className="mt-1 text-sm font-bold text-neutral-500">
+                        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-600">
+                        <span className="tabular-nums">
                           {customer.telefono || 'Sin teléfono'}
-                        </div>
-                        <div className="mt-1 text-xs font-black uppercase tracking-[0.12em] text-neutral-400">
+                        </span>
+                        <span>
                           Última visita: {prettyDate(customer.ultimaVisita)}
+                        </span>
                         </div>
                       </div>
                     </div>
 
+                  </div>
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
                     {whatsappUrl ? (
                       <a
                         href={whatsappUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="shrink-0 rounded-2xl bg-emerald-500 px-5 py-3 text-center text-sm font-black text-white shadow-[0_14px_28px_rgba(16,185,129,0.18)] transition hover:scale-[1.01] hover:bg-emerald-600"
+                        className="inline-flex min-h-10 items-center rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-800"
                       >
                         WhatsApp
                       </a>
                     ) : (
-                      <span className="shrink-0 rounded-2xl border border-neutral-200 bg-white px-5 py-3 text-center text-sm font-black text-neutral-400">
+                      <span className="px-3 py-2 text-xs text-neutral-500">
                         Sin teléfono
                       </span>
                     )}
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2 border-t border-neutral-200 pt-3">
+
                     <button
                       type="button"
                       disabled={busyCustomerId !== null}
                       onClick={() => onEdit(customer)}
                       aria-label={`Editar a ${customer.nombre}`}
-                      className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-bold text-neutral-800 hover:bg-amber-50 disabled:opacity-50"
+                      className="min-h-10 rounded-xl border border-neutral-300 bg-white px-3 py-2 text-xs font-bold text-neutral-800 hover:bg-amber-50 disabled:opacity-50"
                     >
                       Editar
                     </button>
@@ -1234,11 +1237,11 @@ function InactiveCustomersPanel({
                       disabled={busyCustomerId !== null}
                       onClick={() => onDelete(customer)}
                       aria-label={`Eliminar a ${customer.nombre}`}
-                      className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      className="min-h-10 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"
                     >
                       Eliminar
                     </button>
-                    {busyCustomerId === customer.id && <span role="status" className="self-center text-xs text-neutral-500">Procesando...</span>}
+                    {busyCustomerId === (customer.customerId || customer.id) && <span role="status" className="self-center text-xs text-neutral-500">Procesando...</span>}
                   </div>
                 </div>
               );

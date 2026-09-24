@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { premiumConfirm } from '../../components/PremiumUi';
 
+import { getOwnerServices } from '../../api/ownerServicesApi';
 import { getOwnerBranches } from '../../api/ownerBranchesApi';
 import {
   createOwnerPromotion,
@@ -268,6 +269,23 @@ function PromotionFormModal({ promotion, branches, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const [services, setServices] = useState([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+  const [servicesError, setServicesError] = useState('');
+  const [servicesReload, setServicesReload] = useState(0);
+  useEffect(() => {
+    if (redirectType !== 'SERVICE') return;
+    let cancelled = false;
+    setServicesLoading(true);
+    setServicesError('');
+    getOwnerServices({ onlyActive: true }).then((data) => {
+      if (!cancelled) setServices(Array.isArray(data) ? data : []);
+    }).catch(() => {
+      if (!cancelled) setServicesError('No se pudieron cargar los servicios. Reintenta para elegir el correcto.');
+    }).finally(() => { if (!cancelled) setServicesLoading(false); });
+    return () => { cancelled = true; };
+  }, [redirectType, servicesReload]);
+
   const previewUrl = imageFile ? URL.createObjectURL(imageFile) : imageUrl;
 
   const branchOptions = [
@@ -279,6 +297,7 @@ function PromotionFormModal({ promotion, branches, onClose, onSaved }) {
   ];
 
   function validate() {
+    if (redirectType === 'SERVICE' && (servicesLoading || servicesError || !services.some((service) => String(service.serviceId) === String(redirectValue)))) return 'Selecciona un servicio activo del listado antes de guardar la oferta.';
     if (!titulo.trim()) return 'Ingresa el título de la promoción.';
 
     if (!tipo) return 'Selecciona el tipo de promoción.';
@@ -577,13 +596,15 @@ function PromotionFormModal({ promotion, branches, onClose, onSaved }) {
             <button
               type="button"
               onClick={() => setDestacado((prev) => !prev)}
+              aria-pressed={destacado}
+              title="Con una imagen, aparece en el carrusel del inicio de clientes. Se muestran hasta cinco promociones destacadas y vigentes."
               className={`rounded-2xl px-4 py-4 text-sm font-black ${
                 destacado
                   ? 'bg-amber-500 text-white'
                   : 'border border-neutral-200 bg-neutral-50 text-neutral-700'
               }`}
             >
-              {destacado ? 'Destacada' : 'No destacada'}
+              {destacado ? 'Destacada en inicio' : 'Destacar en inicio'}
             </button>
 
             <button
@@ -656,11 +677,34 @@ function PromotionFormModal({ promotion, branches, onClose, onSaved }) {
               <SelectField
                 label="Acción al tocar"
                 value={redirectType}
-                onChange={setRedirectType}
+                onChange={(value) => { setRedirectType(value); setRedirectValue(''); }}
                 options={REDIRECT_TYPES}
               />
 
-              {redirectType !== 'NONE' && (
+              {redirectType === 'SERVICE' && (
+                <div>
+                  <label className="block text-sm font-black text-neutral-800">
+                    Servicio incluido en la oferta
+                    <select value={redirectValue} onChange={(event) => setRedirectValue(event.target.value)}
+                      disabled={servicesLoading || Boolean(servicesError)}
+                      className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 font-bold text-neutral-950 disabled:opacity-60">
+                      <option value="">{servicesLoading ? 'Cargando servicios…' : 'Selecciona un servicio'}</option>
+                      {redirectValue && !services.some((service) => String(service.serviceId) === String(redirectValue)) &&
+                        <option value={redirectValue}>Servicio vinculado no disponible: selecciona otro</option>}
+                      {services.map((service) => <option key={service.serviceId} value={String(service.serviceId)}>
+                        {service.nombre} · {service.duracionMinutos} min · {formatTenantMoney(service.precio)}
+                      </option>)}
+                    </select>
+                  </label>
+                  <p className="mt-2 text-sm text-neutral-600">Para Corte + barba, selecciona el servicio combinado con su duración total. Configura el importe de la oferta en Precio final promocional.</p>
+                  {servicesError && <p role="alert" className="mt-2 text-sm text-red-700">{servicesError}</p>}
+                  {!servicesLoading && !servicesError && services.length === 0 &&
+                    <p className="mt-2 text-sm text-amber-800">No hay servicios activos. Crea el servicio en Servicios y después actualiza esta lista.</p>}
+                  <button type="button" disabled={servicesLoading} onClick={() => setServicesReload((value) => value + 1)}
+                    className="mt-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-bold">Actualizar servicios</button>
+                </div>
+              )}
+              {redirectType !== 'NONE' && redirectType !== 'SERVICE' && (
                 <InputField
                   label="Valor de acción"
                   value={redirectValue}
