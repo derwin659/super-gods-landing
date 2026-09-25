@@ -14,6 +14,7 @@ import {
   Phone,
   Plus,
   Scissors,
+  Search,
   ShieldCheck,
   Sparkles,
   Store,
@@ -234,6 +235,7 @@ export default function PublicBookingPage() {
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [selectedServiceIds, setSelectedServiceIds] = useState([]);
   const [serviceSearch, setServiceSearch] = useState('');
+  const [serviceLimit, setServiceLimit] = useState(12);
   const [selectedServiceCategory, setSelectedServiceCategory] = useState('');
   const [selectedDate, setSelectedDate] = useState(todayDateInput());
   const [selectedTime, setSelectedTime] = useState('');
@@ -951,16 +953,16 @@ export default function PublicBookingPage() {
               icon={Scissors}
             >
               <div className="mb-4 space-y-3">
-                <label className="block">
-                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                    {t('searchService')}
+                <label className="block rounded-2xl border-2 border-amber-400 bg-amber-50 p-4">
+                  <span className="mb-3 flex items-center gap-2 text-base font-black text-slate-950">
+                    <Search size={22} aria-hidden="true" /> {t('searchService')}
                   </span>
                   <input
                     type="search"
                     value={serviceSearch}
-                    onChange={(event) => setServiceSearch(event.target.value)}
-                    placeholder="Ej. facial, limpieza, piercing, profesional"
-                    className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black text-slate-950 outline-none ring-blue-100 placeholder:text-slate-400 focus:border-blue-600 focus:ring-4"
+                    onChange={(event) => { setServiceSearch(event.target.value); setServiceLimit(12); }}
+                    placeholder="Escribe el nombre del servicio que buscas…"
+                    className="h-14 w-full rounded-xl border-2 border-slate-400 bg-white px-4 text-base font-semibold text-slate-950 outline-none placeholder:text-slate-600 focus:border-slate-950 focus:ring-4 focus:ring-amber-200"
                   />
                 </label>
 
@@ -968,7 +970,7 @@ export default function PublicBookingPage() {
                   <div className="flex gap-2 overflow-x-auto pb-1">
                     <button
                       type="button"
-                      onClick={() => setSelectedServiceCategory('')}
+                      onClick={() => { setSelectedServiceCategory(''); setServiceLimit(12); }}
                       className={
                         !selectedServiceCategory
                           ? 'shrink-0 rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white'
@@ -981,7 +983,7 @@ export default function PublicBookingPage() {
                       <button
                         key={category}
                         type="button"
-                        onClick={() => setSelectedServiceCategory(category)}
+                        onClick={() => { setSelectedServiceCategory(category); setServiceLimit(12); }}
                         className={
                           selectedServiceCategory === category
                             ? 'shrink-0 rounded-full bg-slate-950 px-4 py-2 text-xs font-black text-white'
@@ -995,9 +997,13 @@ export default function PublicBookingPage() {
                 ) : null}
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p role="status" className="text-sm font-semibold text-slate-700">{bookableFilteredServices.length} servicios encontrados · Mostrando {Math.min(serviceLimit, bookableFilteredServices.length)}</p>
+                {(serviceSearch || selectedServiceCategory) && <button type="button" onClick={() => { setServiceSearch(''); setSelectedServiceCategory(''); setServiceLimit(12); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold text-slate-950">Limpiar filtros</button>}
+              </div>
+              <div className="grid min-w-0 gap-3 xl:grid-cols-2">
                 {!selectedBranchId ? (
-                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-800 md:col-span-2">
+                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-800 xl:col-span-2">
                     Primero selecciona una sede para mostrar servicios compatibles con sus profesionales.
                   </div>
                 ) : null}
@@ -1021,16 +1027,16 @@ export default function PublicBookingPage() {
                   </SelectableCard>
                 ) : null}
                 {selectedServices.length > 0 ? (
-                  <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm font-black text-emerald-900 md:col-span-2">
+                  <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm font-black text-emerald-900 xl:col-span-2">
                     {selectedServices.length} servicio{selectedServices.length === 1 ? '' : 's'} seleccionado{selectedServices.length === 1 ? '' : 's'} · {selectedServicesDuration} min · {money(selectedServicesTotal)}
                   </div>
                 ) : null}
-                {filteredServices.length === 0 ? (
-                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-700 md:col-span-2">
+                {bookableFilteredServices.length === 0 ? (
+                  <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm font-black text-amber-700 xl:col-span-2">
                     No encontramos servicios con esa busqueda. Prueba con otra palabra o categoria.
                   </div>
                 ) : null}
-                {bookableFilteredServices.map((service) => (
+                {bookableFilteredServices.slice(0, serviceLimit).map((service) => (
                   <SelectableCard
                     key={service.id}
                     selected={selectedServiceIds.includes(String(service.id))}
@@ -1039,13 +1045,13 @@ export default function PublicBookingPage() {
                   >
                     <ImageThumb src={service.imageUrl} fallbackIcon={Scissors} />
                     <div className="min-w-0 flex-1">
-                      <div className="flex gap-3">
-                        <p className="min-w-0 flex-1 truncate text-base font-black">{service.name}</p>
-                        <p className="shrink-0 text-base font-black text-emerald-700">
+                      <div className="flex flex-col gap-1">
+                        <p className="break-words text-base font-black">{service.name}</p>
+                        <p className={`text-base font-black ${selectedServiceIds.includes(String(service.id)) ? 'text-emerald-300' : 'text-emerald-800'}`}>
                           {service.variablePrice ? 'Desde ' : ''}{money(service.price)}
                         </p>
                       </div>
-                      <p className="mt-1 line-clamp-2 text-xs font-bold text-slate-500">
+                      <p className={`mt-1 line-clamp-2 text-xs font-semibold ${selectedServiceIds.includes(String(service.id)) ? 'text-slate-200' : 'text-slate-600'}`}>
                         {service.description || 'Servicio disponible para reserva online.'}
                       </p>
                       <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
@@ -1066,6 +1072,7 @@ export default function PublicBookingPage() {
                   </SelectableCard>
                 ))}
               </div>
+              {bookableFilteredServices.length > serviceLimit && <button type="button" onClick={() => setServiceLimit((value) => value + 12)} className="mt-4 min-h-12 w-full rounded-xl bg-slate-950 px-4 py-3 font-bold text-white">Ver más servicios ({bookableFilteredServices.length - serviceLimit} restantes)</button>}
             </PremiumSection>
 
             {isWalkInMode && selectedServiceIds.length === 0 ? (
@@ -1482,7 +1489,7 @@ export default function PublicBookingPage() {
 
 function PremiumSection({ number, title, subtitle, icon, children }) {
   return (
-    <section className="rounded-[34px] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.06)] md:p-6">
+    <section className="min-w-0 rounded-[34px] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.06)] md:p-6">
       <div className="mb-5 flex items-start gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white">
           {createElement(icon, { size: 22 })}
@@ -1509,7 +1516,7 @@ function SelectableCard({ selected, disabled = false, onClick, children, large =
       onClick={onClick}
       disabled={disabled}
       className={[
-        'flex w-full items-center gap-3 rounded-3xl border p-3 text-left transition',
+        'flex min-w-0 w-full items-center gap-3 rounded-3xl border p-3 text-left transition',
         large ? 'min-h-[112px]' : 'min-h-[92px]',
         selected
           ? 'border-slate-950 bg-slate-950 text-white shadow-xl shadow-slate-900/15'
