@@ -57,7 +57,7 @@ function reportRows(payload = {}) {
     { Campo: 'Registro desde', Valor: text(payload.from, 'Todos') },
     { Campo: 'Registro hasta', Valor: text(payload.to, 'Todos') },
     { Campo: 'Sede', Valor: text(payload.branchName, 'Todas') },
-    { Campo: 'Segmento', Valor: text(payload.statusLabel, 'Todos') },
+    { Campo: 'Segmento comercial', Valor: text(payload.statusLabel, 'Todos') },
     { Campo: 'Ultima visita desde', Valor: text(payload.lastVisitFrom, 'Todos') },
     { Campo: 'Ultima visita hasta', Valor: text(payload.lastVisitTo, 'Todos') },
   ];
@@ -67,7 +67,7 @@ function reportRows(payload = {}) {
     { Metrica: 'Periodo anterior', Valor: number(summary.previousRegistered) },
     { Metrica: 'Variacion %', Valor: `${number(summary.registeredVariationPercent).toFixed(1)}%` },
     { Metrica: 'Filtrados visibles', Valor: number(summary.totalFiltered) },
-    { Metrica: 'VIP', Valor: number(summary.vipCustomers) },
+    { Metrica: 'VIP comercial', Valor: number(summary.vipCustomers) },
     { Metrica: 'Frecuentes', Valor: number(summary.frequentCustomers) },
     { Metrica: 'Nuevos', Valor: number(summary.newCustomers) },
     { Metrica: 'Inactivos +60 dias', Valor: number(summary.inactiveCustomers) },
@@ -80,7 +80,8 @@ function reportRows(payload = {}) {
   const customerRows = items.map((item) => ({
     Cliente: text(item.fullName, 'Cliente'),
     Telefono: text(item.phone, 'Sin telefono'),
-    Segmento: statusLabel(item.status),
+    'Categoría de fidelización': text(item.loyaltyTierName, 'Sin categoría configurada'),
+    'Segmento comercial': statusLabel(item.status),
     Sede: text(item.branchName, 'Sin sede'),
     'Fecha registro': text(item.registeredAt, '-').slice(0, 10),
     'Ultima visita': text(item.lastVisit, '-').slice(0, 10),

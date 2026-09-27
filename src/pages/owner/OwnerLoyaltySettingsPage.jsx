@@ -28,7 +28,7 @@ function Toggle({ checked, onChange, label, help }) {
 }
 
 export default function OwnerLoyaltySettingsPage() {
-  const [form, setForm] = useState({ pointsPerCurrencyUnit: 5, currency: 'PEN', welcomeBonusEnabled: true, welcomeBonusPoints: 100, activationBonusEnabled: true, activationBonusPoints: 50, segmentNewMaxVisits: 2, segmentFrequentMinVisits: 3, segmentVipMinVisits: 10, segmentVipMinPoints: 500, segmentInactiveDays: 60, tiers: DEFAULT_TIERS });
+  const [form, setForm] = useState({ pointsExpirationEnabled: false, pointsExpirationDays: 180, pointsPerCurrencyUnit: 5, currency: 'PEN', welcomeBonusEnabled: true, welcomeBonusPoints: 100, activationBonusEnabled: true, activationBonusPoints: 50, segmentNewMaxVisits: 2, segmentFrequentMinVisits: 3, segmentVipMinVisits: 10, segmentVipMinPoints: 500, segmentInactiveDays: 60, tiers: DEFAULT_TIERS });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
@@ -37,7 +37,7 @@ export default function OwnerLoyaltySettingsPage() {
     let active = true;
     getOwnerLoyaltySettings().then((data) => {
       if (!active) return;
-      setForm({ ...data, tiers: data.tiers?.length ? data.tiers.sort((a, b) => a.minPoints - b.minPoints) : DEFAULT_TIERS });
+      setForm({ pointsExpirationEnabled: false, pointsExpirationDays: 180, ...data, tiers: data.tiers?.length ? data.tiers.sort((a, b) => a.minPoints - b.minPoints) : DEFAULT_TIERS });
       saveTenantMoneySettings(data);
     }).catch((error) => active && setMessage({ error: true, text: error.message || 'No se pudo cargar la configuración.' }))
       .finally(() => active && setLoading(false));
@@ -49,6 +49,7 @@ export default function OwnerLoyaltySettingsPage() {
   const updateTier = (index, field, value) => setForm((current) => ({ ...current, tiers: current.tiers.map((tier, i) => i === index ? { ...tier, [field]: value } : tier) }));
 
   function validate() {
+    if (form.pointsExpirationEnabled && (!Number.isInteger(Number(form.pointsExpirationDays)) || Number(form.pointsExpirationDays) < 1 || Number(form.pointsExpirationDays) > 3650)) return 'El vencimiento debe ser de 1 a 3650 días.';
     const tiers = [...form.tiers].sort((a, b) => Number(a.minPoints) - Number(b.minPoints));
     if (!tiers.length) return 'Agrega al menos una categoría.';
     if (Number(tiers[0].minPoints) !== 0) return 'La primera categoría debe comenzar en 0 puntos.';
@@ -66,9 +67,9 @@ export default function OwnerLoyaltySettingsPage() {
     if (error) return setMessage({ error: true, text: error });
     setSaving(true); setMessage(null);
     try {
-      const payload = { ...form, pointsPerCurrencyUnit: Number(form.pointsPerCurrencyUnit), welcomeBonusPoints: Number(form.welcomeBonusPoints), activationBonusPoints: Number(form.activationBonusPoints), tiers: [...form.tiers].sort((a, b) => Number(a.minPoints) - Number(b.minPoints)).map((tier) => ({ ...tier, minPoints: Number(tier.minPoints) })) };
+      const payload = { ...form, pointsExpirationDays: Number(form.pointsExpirationDays || 180), pointsPerCurrencyUnit: Number(form.pointsPerCurrencyUnit), welcomeBonusPoints: Number(form.welcomeBonusPoints), activationBonusPoints: Number(form.activationBonusPoints), tiers: [...form.tiers].sort((a, b) => Number(a.minPoints) - Number(b.minPoints)).map((tier) => ({ ...tier, minPoints: Number(tier.minPoints) })) };
       const data = await updateOwnerLoyaltySettings(payload);
-      setForm({ ...data, tiers: data.tiers }); saveTenantMoneySettings(data);
+      setForm({ pointsExpirationEnabled: false, pointsExpirationDays: 180, ...data, tiers: data.tiers }); saveTenantMoneySettings(data);
       setMessage({ error: false, text: 'Programa de fidelización actualizado correctamente.' });
     } catch (error) { setMessage({ error: true, text: error.message || 'No se pudo guardar la configuración.' }); }
     finally { setSaving(false); }
@@ -97,6 +98,14 @@ export default function OwnerLoyaltySettingsPage() {
         <p className="mt-3 text-sm font-semibold text-neutral-500">Los puntos por venta se calculan sobre servicios.</p>
       </div>
       <aside className="rounded-[30px] border border-amber-200 bg-amber-50 p-6"><div className="text-xs font-black uppercase tracking-[.2em] text-amber-700">Ejemplo</div><p className="mt-4 text-sm font-bold text-neutral-600">Por una compra de {symbol} 10:</p><div className="mt-2 text-4xl font-black text-neutral-950">{preview} pts</div></aside>
+    </section>
+
+    <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">
+      <h2 className="mb-4 text-xl font-black text-neutral-950">Vencimiento de puntos por ventas</h2>
+      <Toggle checked={form.pointsExpirationEnabled} onChange={(value) => setForm({ ...form, pointsExpirationEnabled: value })} label="Activar vencimiento automático" help={form.pointsExpirationEnabled ? 'Cada venta tendrá el plazo que definas.' : 'Sin vencimiento: los puntos no se descuentan por antigüedad.'} />
+      {form.pointsExpirationEnabled && <label className="mt-4 block text-sm font-bold text-neutral-800">Vencen después de (días)<input type="number" min="1" max="3650" step="1" required value={form.pointsExpirationDays} onChange={(e) => setForm({ ...form, pointsExpirationDays: e.target.value })} className="mt-2 block w-full rounded-2xl border border-neutral-300 p-3 text-neutral-950" /></label>}
+      <p className="mt-3 text-sm text-neutral-700">Al activar o cambiar el plazo, los puntos de ventas aún disponibles tendrán ese plazo desde hoy. Las ventas nuevas cuentan desde su fecha. No se borran todos los puntos periódicamente. Los bonos y ajustes manuales no vencen.</p>
+      <p className="mt-2 text-sm text-neutral-700">Desactivar no devuelve puntos ya vencidos. Cada vencimiento queda registrado en el historial.</p>
     </section>
 
     <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">

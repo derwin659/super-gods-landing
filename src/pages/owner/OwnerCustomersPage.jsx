@@ -1,3 +1,4 @@
+import { customerLoyaltyTier } from '../../utils/customerLoyaltyTier';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { premiumConfirm } from '../../components/PremiumUi';
@@ -503,6 +504,14 @@ function CutHistoryCard({ item }) {
   );
 }
 
+function LoyaltyTierBadge({ customer }) {
+  const tier = customerLoyaltyTier(customer);
+  return <span title="Categoría de fidelización según puntos acumulados" className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2 py-1 text-[10px] font-black text-neutral-900">
+    <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: tier.color }} />
+    {tier.name}
+  </span>;
+}
+
 function customerStatusMeta(status) {
   const code = String(status || "NEW").toUpperCase();
   const values = {
@@ -699,9 +708,8 @@ function CustomerDetailModal({
                       {customer?.nombreCompleto}
                     </h3>
 
-                    <span className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusMeta.className}`}>
-                      {statusMeta.label}
-                    </span>
+                    <div className="mt-3"><LoyaltyTierBadge customer={loyalty} /></div>
+                    <p className="mt-2 text-xs text-white/80">Segmento comercial: {statusMeta.label}</p>
 
                     <div className="mt-2 text-sm font-bold text-white/65">
                       {customer?.telefono || 'Sin teléfono'}
@@ -1260,7 +1268,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
     ['ALL', 'Todos', 'Base completa con los filtros activos', summary?.totalFiltered],
     ['NEW', 'Nuevos', 'Clientes recientes o con pocas visitas', summary?.newCustomers],
     ['FREQUENT', 'Frecuentes', 'Según las visitas configuradas', summary?.frequentCustomers],
-    ['VIP', 'VIP', 'Según visitas o puntos configurados', summary?.vipCustomers],
+    ['VIP', 'VIP comercial', 'Segmento por visitas o puntos; no es la categoría de fidelización', summary?.vipCustomers],
     ['INACTIVE', 'Inactivos', 'Según los días configurados', summary?.inactiveCustomers],
   ];
   const variation = Number(summary?.registeredVariationPercent || 0);
@@ -1389,7 +1397,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
           <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/45">Criterios de segmento</p>
             <div className="mt-3 grid gap-2 text-xs font-bold leading-5 text-white/75">
-              <div className="flex items-start gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-amber-300" /><span><b className="text-white">VIP:</b> usa los límites de visitas o puntos definidos por el dueño.</span></div>
+              <div className="flex items-start gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-amber-300" /><span><b className="text-white">VIP comercial:</b> usa los límites de visitas o puntos definidos por el dueño.</span></div>
               <div className="flex items-start gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-emerald-300" /><span><b className="text-white">Frecuente:</b> usa el mínimo de visitas configurado.</span></div>
               <div className="flex items-start gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-red-300" /><span><b className="text-white">Inactivo:</b> usa los días sin visita configurados.</span></div>
             </div>
@@ -1427,6 +1435,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
             </label>
           </div>
 
+          <p className="text-sm text-neutral-600"><strong>Filtros de seguimiento comercial.</strong> Son independientes de las categorías por puntos. La etiqueta junto al nombre muestra la categoría configurada en Fidelización.</p>
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
             {statuses.map(([value, label, description, count]) => (
               <button
@@ -1461,7 +1470,7 @@ function CustomerReportPanel({ report, loading, error, status, onStatusChange, f
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-2">
-                  <SegmentPill label="VIP" value={summary.vipCustomers} />
+                  <SegmentPill label="VIP comercial" value={summary.vipCustomers} />
                   <SegmentPill label="Frecuentes" value={summary.frequentCustomers} />
                   <SegmentPill label="Nuevos" value={summary.newCustomers} />
                   <SegmentPill label="Inactivos" value={summary.inactiveCustomers} />
@@ -1519,7 +1528,7 @@ function CustomerReportResults({ items, activeStatus, loading }) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.16em] text-neutral-400">Clientes encontrados</p>
-          <h4 className="text-lg font-black text-neutral-950">{activeStatus === 'ALL' ? 'Resultado del filtro' : `Segmento ${activeLabel}`}</h4>
+          <h4 className="text-lg font-black text-neutral-950">{activeStatus === 'ALL' ? 'Resultado del filtro' : `Segmento comercial: ${activeLabel}`}</h4>
         </div>
         <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-black text-neutral-700">{items.length} visibles</span>
       </div>
@@ -1531,13 +1540,13 @@ function CustomerReportResults({ items, activeStatus, loading }) {
       ) : (
         <div className="mt-4 grid gap-2">
           {visible.map((item) => {
-            const meta = customerStatusMeta(item.status);
+
             return (
               <div key={`${item.customerId}-${item.status}`} className="grid gap-3 rounded-2xl border border-neutral-100 bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate text-sm font-black text-neutral-950">{item.fullName}</p>
-                    <span className={`rounded-full border px-2 py-1 text-[10px] font-black ${meta.className}`}>{meta.label}</span>
+                    <LoyaltyTierBadge customer={item} />
                   </div>
                   <p className="mt-1 truncate text-xs font-bold text-neutral-500">
                     {item.branchName || 'Sin sede'} · {item.visits} visitas · Ult. visita {item.lastVisit ? item.lastVisit.slice(0, 10) : 'sin venta'}
