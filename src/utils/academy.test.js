@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { academyLessons, academyProgressKey, readAcademyProgress } from './academy.js';
+import { academyLessons, academyProgressKey, readAcademyProgress, academyGroups } from './academy.js';
 const catalog = JSON.parse(readFileSync(new URL('../data/gods_academy.json', import.meta.url)));
 test('web academy is limited to owner and administrator', () => {
   for (const role of ['CLIENT', 'BARBER', 'CASHIER', 'SUPER_ADMIN', '']) assert.deepEqual(academyLessons(catalog.lessons, role), []);
@@ -29,4 +29,12 @@ test('catalog has unique lessons and only HTTPS published media', () => {
     assert(lesson.steps.length >= 3);
     for (const url of [lesson.videoUrl, lesson.captionUrl]) if (url) assert.equal(new URL(url).protocol, 'https:');
   }
+});
+test('groups legacy lessons and sorts modules before lesson order without mutating input', () => {
+  const lessons = [{id:'cash',category:'Caja',sortOrder:0},{id:'later',moduleId:1,sortOrder:3},{id:'first',moduleId:1,sortOrder:1}];
+  const before = JSON.stringify(lessons);
+  const groups = academyGroups(lessons);
+  assert.deepEqual(groups.map(group => group.id), [1,4]);
+  assert.deepEqual(groups[0].lessons.map(lesson => lesson.id), ['first','later']);
+  assert.equal(JSON.stringify(lessons),before);
 });

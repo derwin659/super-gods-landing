@@ -3,7 +3,7 @@ export const getAcademyCatalog = () => apiRequest('/api/academy?platform=web');
 export const getAcademyAdmin = () => apiRequest('/api/super-admin/academy');
 export const saveAcademyDraft = (id, draft) => apiRequest(`/api/super-admin/academy${id ? `/${encodeURIComponent(id)}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(draft) });
 export const publishAcademyLesson = (id, version, published) => apiRequest(`/api/super-admin/academy/${encodeURIComponent(id)}/${published ? 'publish' : 'unpublish'}`, { method: 'POST', body: JSON.stringify({ version }) });
-export function uploadAcademyVideo(id, version, file, onProgress) {
+export function uploadAcademyVideo(id, version, file, onProgress, platform = 'web') {
   if (file.size > 35 * 1024 * 1024 || !/\.mp4$/i.test(file.name) || file.type !== 'video/mp4') return Promise.reject(new Error('Selecciona un MP4 de hasta 35 MB.'));
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -18,6 +18,6 @@ export function uploadAcademyVideo(id, version, file, onProgress) {
       else reject(new Error(data.message || data.detail || data.error || 'No se pudo subir el video.'));
     };
     xhr.onerror = xhr.ontimeout = () => reject(new Error('Se perdió la conexión. Recarga la lección para comprobar si el video se guardó antes de volver a subirlo.'));
-    const form = new FormData(); form.append('version', String(version)); form.append('video', file); xhr.send(form);
+    const form = new FormData(); form.append('version', String(version)); form.append('video', file); form.append('platform', platform); xhr.send(form);
   });
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { BookOpen, GraduationCap, CheckCircle2, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getAcademyCatalog } from '../api/academyApi';
-import { academyProgressKey, readAcademyProgress } from '../utils/academy';
+import { academyProgressKey, readAcademyProgress, academyGroups } from '../utils/academy';
 
 export default function AcademyPage() {
   const { session } = useAuth();
@@ -16,6 +16,7 @@ function AcademyContent({ session }) {
   const [catalogError, setCatalogError] = useState(false);
   const [retry, setRetry] = useState(0);
   const [query, setQuery] = useState('');
+  const [initialOnly, setInitialOnly] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const key = academyProgressKey(session);
   const [completed, setCompleted] = useState(() => readAcademyProgress(key));
@@ -31,7 +32,7 @@ function AcademyContent({ session }) {
   }, [role, retry]);
   function refresh() { setLoading(true); setRetry((value) => value + 1); }
   const lessons = catalog.lessons;
-  const visible = lessons.filter((lesson) => `${lesson.title} ${lesson.category}`.toLocaleLowerCase().includes(query.toLocaleLowerCase().trim()));
+  const visible = lessons.filter(lesson => !initialOnly || lesson.initialRoute).filter((lesson) => `${lesson.title} ${lesson.category}`.toLocaleLowerCase().includes(query.toLocaleLowerCase().trim()));
   const selected = lessons.find((lesson) => lesson.id === selectedId);
   const done = lessons.filter((lesson) => completed.includes(lesson.id)).length;
   function toggleComplete(id) {
@@ -57,17 +58,18 @@ function AcademyContent({ session }) {
       <button type="button" onClick={() => setSelectedId(null)} className="mb-5 font-bold text-amber-800">← Volver a las guías</button>
       <p className="text-xs font-bold uppercase tracking-widest text-amber-700">{selected.category} · {selected.minutes} min de lectura</p>
       <h2 className="mt-2 text-2xl font-black">{selected.title}</h2>
-      {selected.videoUrl ? <video key={selected.id} controls playsInline preload="metadata" className="mt-5 w-full rounded-2xl bg-black" src={selected.videoUrl}>{selected.captionUrl && <track default kind="captions" srcLang="es" label="Español" src={selected.captionUrl}/>}</video> : <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Guía disponible. El video de esta lección aún no está publicado.</p>}
+      {selected.videoUrl ? <video key={`${selected.id}:${selected.videoUrl}`} controls playsInline preload="metadata" className="mt-5 w-full rounded-2xl bg-black" src={selected.videoUrl}>{selected.captionUrl && <track default kind="captions" srcLang="es" label="Español" src={selected.captionUrl}/>}</video> : <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Guía disponible. El video de esta lección aún no está publicado.</p>}
       <ol className="mt-6 space-y-4">{selected.steps.map((step, index) => <li key={step} className="flex gap-4 rounded-2xl bg-neutral-50 p-4"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-200 font-bold">{index + 1}</span><p className="leading-7">{step}</p></li>)}</ol>
       <button type="button" aria-pressed={completed.includes(selected.id)} onClick={() => toggleComplete(selected.id)} className="mt-6 rounded-2xl bg-neutral-950 px-5 py-3 font-bold text-white">{completed.includes(selected.id) ? 'Completada · Marcar como pendiente' : 'Marcar como completada'}</button>
     </article> : <>
       <label className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3"><Search aria-hidden="true" size={20}/><input aria-label="Buscar guía" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="¿Qué quieres aprender?" className="min-w-0 flex-1 bg-transparent outline-none"/></label>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{visible.map((lesson) => <button key={lesson.id} type="button" onClick={() => setSelectedId(lesson.id)} className="rounded-[24px] border border-neutral-200 bg-white p-5 text-left shadow-sm transition hover:border-amber-400 focus-visible:outline-amber-500">
+      <div className="flex gap-3"><button type="button" aria-pressed={initialOnly} onClick={() => setInitialOnly(true)} className={'rounded-xl px-4 py-3 font-bold ' + (initialOnly ? 'bg-amber-300' : 'bg-neutral-100')}>Empieza aquí</button><button type="button" aria-pressed={!initialOnly} onClick={() => setInitialOnly(false)} className={'rounded-xl px-4 py-3 font-bold ' + (!initialOnly ? 'bg-amber-300' : 'bg-neutral-100')}>Todos los módulos</button></div>
+      {academyGroups(visible).map(group => <details key={group.id} open className="rounded-2xl border border-neutral-200 bg-white p-4"><summary className="cursor-pointer text-lg font-black">{group.title}<span className="ml-3 text-sm font-normal">{group.lessons.filter(lesson => completed.includes(lesson.id)).length}/{group.lessons.length} completadas</span></summary><div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{group.lessons.map((lesson) => <button key={lesson.id} type="button" onClick={() => setSelectedId(lesson.id)} className="rounded-[24px] border border-neutral-200 bg-white p-5 text-left shadow-sm transition hover:border-amber-400 focus-visible:outline-amber-500">
         <div className="flex items-center justify-between"><BookOpen className="text-amber-700"/><span className="text-xs font-semibold text-neutral-500">{lesson.minutes} min · Guía</span></div>
         <p className="mt-5 text-xs font-bold uppercase tracking-widest text-amber-700">{lesson.category}</p><h2 className="mt-2 text-xl font-black">{lesson.title}</h2><p className="mt-3 text-sm leading-6 text-neutral-600">{lesson.summary}</p>
         <span className="mt-5 flex items-center gap-2 text-sm font-bold">{completed.includes(lesson.id) ? <><CheckCircle2 size={18} className="text-emerald-600"/>Completada</> : 'Comenzar →'}</span>
-      </button>)}</div>
-      {!visible.length && <p className="rounded-2xl bg-neutral-100 p-6">No encontramos guías para esta búsqueda y tu rol.</p>}
+      </button>)}</div></details>)}
+      {!visible.length && <p className="rounded-2xl bg-neutral-100 p-6">{initialOnly ? 'No hay lecciones de ruta inicial publicadas para esta búsqueda y tu rol. Consulta Todos los módulos.' : 'No encontramos guías para esta búsqueda y tu rol.'}</p>}
     </>}
   </main>;
 }
