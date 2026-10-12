@@ -186,6 +186,29 @@ function ServiceAvatar({ service }) {
 function ServiceFormModal({ service, onClose, onSaved }) {
   const isEdit = Boolean(service?.serviceId);
 
+  const [isPackage, setIsPackage] = useState(Boolean(service?.packageServiceIds?.length));
+  const [packageServiceIds, setPackageServiceIds] = useState(service?.packageServiceIds || []);
+  const [components, setComponents] = useState([]);
+  const [componentsLoading, setComponentsLoading] = useState(true);
+  const [componentsError, setComponentsError] = useState('');
+  const [catalogAttempt, setCatalogAttempt] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    getOwnerServices({ onlyActive: true }).then((data) => {
+      if (!cancelled) {
+        setComponents((Array.isArray(data) ? data : []).filter((item) =>
+          item.activo !== false && !item.packageServiceIds?.length && item.serviceId !== service?.serviceId));
+        setComponentsError('');
+      }
+    }).catch(() => {
+      if (!cancelled) setComponentsError('No se pudieron cargar los servicios del paquete.');
+    }).finally(() => {
+      if (!cancelled) setComponentsLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [service?.serviceId, catalogAttempt]);
+
   const [nombre, setNombre] = useState(service?.nombre || '');
   const [descripcion, setDescripcion] = useState(service?.descripcion || '');
   const [duracionMinutos, setDuracionMinutos] = useState(
@@ -218,6 +241,7 @@ function ServiceFormModal({ service, onClose, onSaved }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (saving) return;
     setErrorMsg('');
 
     if (!String(nombre).trim()) {
@@ -234,8 +258,14 @@ function ServiceFormModal({ service, onClose, onSaved }) {
 
     const price = Number(String(precio).replace(',', '.'));
 
-    if (Number.isNaN(price) || price < 0) {
+    if (!String(precio).trim() || !Number.isFinite(price) || price < 0) {
       setErrorMsg('Ingresa un precio válido.');
+      return;
+    }
+
+    if (isPackage && (componentsLoading || componentsError || packageServiceIds.length < 2 || packageServiceIds.length > 20 ||
+        !packageServiceIds.every((id) => components.some((item) => item.serviceId === id)))) {
+      setErrorMsg('Selecciona entre 2 y 20 servicios activos diferentes para el paquete.');
       return;
     }
 
@@ -247,10 +277,11 @@ function ServiceFormModal({ service, onClose, onSaved }) {
         descripcion: descripcion.trim() || null,
         duracionMinutos: Math.round(duration),
         precio: price,
-        precioVariable,
-        variablePrice: precioVariable,
-        isVariablePrice: precioVariable,
-        allowPriceOverride: precioVariable,
+        precioVariable: isPackage ? false : precioVariable,
+        variablePrice: isPackage ? false : precioVariable,
+        isVariablePrice: isPackage ? false : precioVariable,
+        allowPriceOverride: isPackage ? false : precioVariable,
+        packageServiceIds: isPackage ? packageServiceIds : [],
         categoria: categoria.trim() || null,
         activo,
       };
@@ -283,12 +314,52 @@ function ServiceFormModal({ service, onClose, onSaved }) {
 
   return (
     <ModalShell
-      title={isEdit ? 'Editar servicio' : 'Nuevo servicio'}
+      title={isEdit ? 'Editar servicio o paquete' : 'Nuevo servicio o paquete'}
       subtitle="Catálogo"
       onClose={onClose}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <ErrorBox message={errorMsg} />
+        <fieldset disabled={saving} className="rounded-2xl border border-amber-200 bg-amber-50 p-5 space-y-3">
+          <legend className="px-2 font-black">Tipo de venta</legend>
+          <label className="flex items-center gap-3 font-bold">
+            <input type="checkbox" checked={isPackage} onChange={(event) => {
+              setIsPackage(event.target.checked);
+              if (event.target.checked) setPrecioVariable(false);
+            }} />
+            Paquete de servicios
+          </label>
+          <p className="text-sm text-neutral-600">Agrupa servicios con un precio fijo para una misma atención y un profesional responsable.</p>
+          {isPackage && <>
+            <p className="text-sm font-bold">Selecciona entre 2 y 20 servicios. Seleccionados: {packageServiceIds.length}</p>
+            {componentsLoading && <p role="status">Cargando servicios...</p>}
+            {componentsError && <div role="alert">
+              <p>{componentsError}</p>
+              <button type="button" className="font-bold underline" onClick={() => {
+                setComponentsLoading(true);
+                setComponentsError('');
+                setCatalogAttempt((value) => value + 1);
+              }}>Reintentar</button>
+            </div>}
+            {!componentsLoading && !componentsError && components.length < 2 &&
+              <p>Primero crea al menos dos servicios individuales activos.</p>}
+            <div className="max-h-60 overflow-auto grid gap-2 sm:grid-cols-2">
+              {components.map((item) => <label key={item.serviceId} className="flex items-center gap-3 rounded-xl border border-amber-200 bg-white p-3">
+                <input type="checkbox" checked={packageServiceIds.includes(item.serviceId)}
+                  disabled={!packageServiceIds.includes(item.serviceId) && packageServiceIds.length >= 20}
+                  onChange={(event) => setPackageServiceIds((ids) => event.target.checked
+                    ? [...ids, item.serviceId] : ids.filter((id) => id !== item.serviceId))} />
+                <span><span className="block font-bold">{item.nombre}</span>
+                  <span className="text-sm text-neutral-500">Individual: {formatMoney(item.precio)}</span></span>
+              </label>)}
+            </div>
+            {packageServiceIds.some((id) => !components.some((item) => item.serviceId === id)) && !componentsLoading && !componentsError &&
+              <p role="alert" className="text-sm text-red-700">Hay servicios que ya no están disponibles.
+                <button type="button" className="ml-2 underline" onClick={() => setPackageServiceIds((ids) => ids.filter((id) => components.some((item) => item.serviceId === id)))}>Quitar no disponibles</button>
+              </p>}
+            <p className="text-sm text-neutral-600">Configura abajo el precio y la duración total del paquete. La comisión usa la regla del profesional o la excepción configurada para este paquete; no suma comisiones de los componentes.</p>
+          </>}
+        </fieldset>
 
         <div className="rounded-[28px] border border-neutral-200 bg-neutral-50 p-5">
           <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
@@ -381,7 +452,7 @@ function ServiceFormModal({ service, onClose, onSaved }) {
                 />
               </div>
 
-              <button
+              {!isPackage && <button
                 type="button"
                 onClick={() => setPrecioVariable((value) => !value)}
                 className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${
@@ -405,7 +476,7 @@ function ServiceFormModal({ service, onClose, onSaved }) {
                     precioVariable ? 'translate-x-5' : ''
                   }`} />
                 </span>
-              </button>
+              </button>}
 
               <InputField
                 label="Categoría"
@@ -468,7 +539,7 @@ function ServiceFormModal({ service, onClose, onSaved }) {
             ? 'Guardando...'
             : isEdit
               ? 'Guardar cambios'
-              : 'Crear servicio'}
+              : isPackage ? 'Crear paquete' : 'Crear servicio'}
         </button>
       </form>
     </ModalShell>
@@ -562,6 +633,9 @@ function ServiceCard({ service, onEdit, onToggle, onDelete }) {
             <h3 className="text-lg font-black text-neutral-950">
               {service.nombre}
             </h3>
+            {service.packageServiceIds?.length > 0 && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">
+              Paquete · {service.packageServiceIds.length} servicios
+            </span>}
 
             <span className={`rounded-full px-3 py-1 text-[11px] font-black ${
               active
@@ -761,11 +835,11 @@ export default function OwnerServicesPage() {
         <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-amber-300">
-              Catálogo de servicios
+              Catálogo de servicios y paquetes
             </div>
 
             <h2 className="mt-5 text-4xl font-black tracking-tight">
-              Servicios de tu {labels.businessSingular}
+              Servicios y paquetes de tu {labels.businessSingular}
             </h2>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65">
@@ -779,7 +853,7 @@ export default function OwnerServicesPage() {
             onClick={() => setShowCreate(true)}
             className="rounded-2xl bg-amber-400 px-5 py-4 text-sm font-black text-neutral-950 transition hover:scale-[1.01]"
           >
-            Nuevo servicio
+            Nuevo servicio o paquete
           </button>
         </div>
       </section>
