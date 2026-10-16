@@ -152,6 +152,7 @@ export const ADMIN_PERMISSION_GROUPS = [
       ['Registrar gastos', 'CASH_REGISTER_EXPENSE'],
       ['Gestionar fondo acumulado', 'CASH_FUND_MANAGE'],
       ['Cerrar caja', 'CASH_CLOSE'],
+      ['Aprobar o rechazar pagos de ventas', 'CASH_APPROVE_SALES'],
       ['Eliminar ventas', 'CASH_DELETE_SALES'],
       ['Eliminar pagos y movimientos', 'CASH_DELETE_MOVEMENTS'],
       ['Editar ventas de cajas pasadas', 'CASH_EDIT_PAST_SALES'],

@@ -117,6 +117,7 @@ function normalizeBarber(raw) {
 function normalizeService(raw) {
   return {
     id: asNumber(raw.serviceId ?? raw.id),
+    isPackage: (raw.packageServiceIds || []).length > 0,
     name: firstText(raw.serviceName, raw.nombre, raw.name, 'Servicio'),
     description: firstText(raw.description, raw.descripcion, raw.detail),
     price: asNumber(raw.price ?? raw.precio ?? raw.amount),
@@ -222,11 +223,12 @@ export default function PublicBookingPage() {
 
   const stepsRef = useRef(null);
 
-  function advanceBookingStep() {
+  function advanceBookingStep(completedStep) {
     requestAnimationFrame(() => {
-      const container = stepsRef.current;
-      if (!container || window.innerWidth < 1024) return;
-      container.scrollBy({ left: container.clientWidth, behavior: 'smooth' });
+      const sections = [...(stepsRef.current?.querySelectorAll(':scope > section') || [])];
+      const next = sections.find((section) => Number(section.dataset.step) > completedStep);
+      if (next) next.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+      else document.getElementById('booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
@@ -234,6 +236,7 @@ export default function PublicBookingPage() {
   const [selectedBarberId, setSelectedBarberId] = useState(barberIdFromUrl || '');
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [selectedServiceIds, setSelectedServiceIds] = useState([]);
+  const [catalogKind, setCatalogKind] = useState('services');
   const [serviceSearch, setServiceSearch] = useState('');
   const [serviceLimit, setServiceLimit] = useState(12);
   const [selectedServiceCategory, setSelectedServiceCategory] = useState('');
@@ -351,6 +354,7 @@ export default function PublicBookingPage() {
     const categoryFilter = normalizeSearchText(selectedServiceCategory);
 
     return services.filter((service) => {
+      if (service.isPackage !== (catalogKind === 'packages')) return false;
       const category = normalizeSearchText(service.category);
       if (categoryFilter && category !== categoryFilter) return false;
 
@@ -368,7 +372,7 @@ export default function PublicBookingPage() {
 
       return queryWords.every((word) => haystack.includes(word));
     });
-  }, [services, serviceSearch, selectedServiceCategory]);
+  }, [services, serviceSearch, selectedServiceCategory, catalogKind]);
 
   const allBarbers = useMemo(
     () => asArray(bootstrap?.barbers).map(normalizeBarber),
@@ -593,6 +597,7 @@ export default function PublicBookingPage() {
       return;
     }
     const id = String(serviceId);
+    if (!selectedServiceIds.includes(id)) advanceBookingStep(3);
     setSelectedTime('');
     setSelectedServiceIds((prev) => {
       const exists = prev.includes(id);
@@ -841,7 +846,7 @@ export default function PublicBookingPage() {
         <div className="mt-6 hidden items-center justify-between rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm lg:flex">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Reserva paso a paso</p>
-            <p className="mt-1 text-sm font-bold text-slate-500">Avanza de izquierda a derecha sin recorrer toda la página.</p>
+            <p className="mt-1 text-sm font-bold text-slate-500">Elige una opción y avanzaremos automáticamente. Puedes volver para modificarla.</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -852,14 +857,7 @@ export default function PublicBookingPage() {
             >
               <ChevronLeft size={20} />
             </button>
-            <button
-              type="button"
-              onClick={() => stepsRef.current?.scrollBy({ left: stepsRef.current.clientWidth, behavior: 'smooth' })}
-              className="flex h-11 items-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black text-white transition hover:bg-blue-900"
-            >
-              {t('nextStep')} <ChevronRight size={18} />
-            </button>
-          </div>
+       </div>
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -887,7 +885,7 @@ export default function PublicBookingPage() {
                       setSelectedServiceIds([]);
                       setSelectedDate('');
                       setSelectedTime('');
-                      advanceBookingStep();
+                      advanceBookingStep(1);
                     }}
                   >
                     <ImageThumb src={branch.imageUrl} fallbackIcon={Store} />
@@ -916,7 +914,7 @@ export default function PublicBookingPage() {
                     onClick={() => {
                       if (!selectedBranchId) return;
                       setSelectedBarberId('');
-                      advanceBookingStep();
+                      advanceBookingStep(2);
                     }}
                   >
                     <ImageThumb fallbackIcon={Sparkles} />
@@ -935,7 +933,7 @@ export default function PublicBookingPage() {
                     onClick={() => {
                       if (!selectedBranchId || forcedBarber) return;
                       setSelectedBarberId(String(barber.id));
-                      advanceBookingStep();
+                      advanceBookingStep(2);
                     }}
                   >
                     <ImageThumb src={barber.photoUrl} fallbackIcon={UserRound} roundedFull />
@@ -954,6 +952,9 @@ export default function PublicBookingPage() {
               subtitle={isWalkInMode ? 'Puedes seleccionar uno o varios servicios, o continuar solo con productos.' : 'Selecciona uno o varios servicios para calcular duración y precio.'}
               icon={Scissors}
             >
+              <div className="mb-4 flex gap-2" role="group" aria-label="Tipo de atención">
+                {['services', 'packages'].map((kind) => <button key={kind} type="button" aria-pressed={catalogKind === kind} onClick={() => { setCatalogKind(kind); setSelectedServiceCategory(''); setServiceLimit(12); }} className={catalogKind === kind ? 'flex-1 rounded-xl bg-slate-950 px-4 py-3 font-bold text-white' : 'flex-1 rounded-xl border border-slate-300 px-4 py-3 font-bold text-slate-950'}>{kind === 'packages' ? 'Paquetes' : 'Servicios'}</button>)}
+              </div>
               <div className="mb-4 space-y-3">
                 <label className="block rounded-2xl border-2 border-amber-400 bg-amber-50 p-4">
                   <span className="mb-3 flex items-center gap-2 text-base font-black text-slate-950">
@@ -1016,6 +1017,7 @@ export default function PublicBookingPage() {
                       setSelectedServiceId('');
                       setSelectedServiceIds([]);
                       setSelectedTime('');
+                      advanceBookingStep(4);
                     }}
                     large
                   >
@@ -1054,7 +1056,7 @@ export default function PublicBookingPage() {
                         </p>
                       </div>
                       <p className={`mt-1 line-clamp-2 text-xs font-semibold ${selectedServiceIds.includes(String(service.id)) ? 'text-slate-200' : 'text-slate-600'}`}>
-                        {service.description || 'Servicio disponible para reserva online.'}
+                        {service.isPackage ? 'Paquete de servicios · precio fijo' : (service.description || 'Servicio disponible para reserva online.')}
                       </p>
                       <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
                         <Clock3 size={14} />
@@ -1130,7 +1132,7 @@ export default function PublicBookingPage() {
                           key={slot}
                           type="button"
                           aria-pressed={String(selectedTime) === String(slot)}
-                          onClick={() => setSelectedTime(slot)}
+                          onClick={() => { setSelectedTime(slot); advanceBookingStep(4); }}
                           className={
                             String(selectedTime) === String(slot)
                               ? 'flex min-h-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-slate-950 bg-slate-950 px-3 py-3 text-white shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
@@ -1152,6 +1154,7 @@ export default function PublicBookingPage() {
                         <input type="time" step="60" value={selectedTime}
                           disabled={availabilityLoading || !selectedBranchId || !selectedDate || selectedServiceIds.length === 0}
                           onChange={(event) => setSelectedTime(event.target.value)}
+                          onBlur={(event) => { if (/^([01]\d|2[0-3]):[0-5]\d$/.test(event.target.value)) advanceBookingStep(4); }}
                           className="mt-2 block min-h-12 w-full max-w-xs rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 disabled:opacity-50" />
                       </label>
                       <p className="text-sm leading-relaxed text-slate-600">Puedes escribir una hora que no aparezca en las sugerencias. Al confirmar comprobaremos que esté dentro del horario de trabajo y libre durante toda la atención.</p>
@@ -1172,7 +1175,9 @@ export default function PublicBookingPage() {
               subtitle={t('yourDataDescription')}
               icon={Phone}
             >
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2" onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget) && customer.customerName.trim() && customer.customerPhone.replace(/\D/g, '').length >= 9) advanceBookingStep(5);
+              }}>
                 <PremiumInput
                   label={t('name')}
                   value={customer.customerName}
@@ -1207,6 +1212,7 @@ export default function PublicBookingPage() {
                 subtitle="Puedes separar productos disponibles y pagarlos o recogerlos en caja."
                 icon={Package}
               >
+                <button type="button" onClick={() => advanceBookingStep(6)} className="mb-4 rounded-xl bg-slate-950 px-4 py-3 font-bold text-white">{selectedProductLines.length ? 'Conservar estos productos' : 'No necesito productos'}</button>
                 {productsLoading ? (
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-black text-slate-500">
                     Cargando productos...
@@ -1426,7 +1432,7 @@ export default function PublicBookingPage() {
             ) : null}
           </main>
 
-          <aside className="lg:sticky lg:top-6 lg:h-fit">
+          <aside id="booking-summary" className="lg:sticky lg:top-6 lg:h-fit">
             <div className="rounded-[34px] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
               <div className="mb-4 inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white">
                 Resumen
@@ -1511,7 +1517,7 @@ export default function PublicBookingPage() {
 
 function PremiumSection({ number, title, subtitle, icon, children }) {
   return (
-    <section className="min-w-0 rounded-[34px] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.06)] md:p-6">
+    <section data-step={number} className="min-w-0 rounded-[34px] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.06)] md:p-6">
       <div className="mb-5 flex items-start gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white">
           {createElement(icon, { size: 22 })}
