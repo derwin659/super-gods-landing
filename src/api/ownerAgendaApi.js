@@ -292,6 +292,7 @@ export async function getAgendaServices() {
   return extractList(data)
     .map((item) => ({
       id: toNumber(item.id ?? item.serviceId),
+        isPackage: (item.packageServiceIds || []).length > 0,
       name: String(item.nombre ?? item.name ?? item.serviceName ?? 'Servicio'),
       price: toNumber(item.precio ?? item.price ?? item.amount),
       variablePrice: Boolean(

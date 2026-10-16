@@ -3410,6 +3410,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
   const [products, setProducts] = useState([]);
   const [items, setItems] = useState([]);
   const [selectedServiceId, setSelectedServiceId] = useState('');
+  const [packagesOnly, setPackagesOnly] = useState(false);
   const [selectedBarberId, setSelectedBarberId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState('1');
@@ -3830,17 +3831,20 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
           <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
             <div className="rounded-[26px] border border-neutral-200 bg-white p-5">
               <div className="text-xs font-black uppercase tracking-[0.20em] text-amber-600">
-                Servicios adicionales
+                Servicios o paquetes adicionales
               </div>
 
+<div className="my-3 flex gap-2" role="group" aria-label="Tipo de atención">
+  {[false, true].map((packages) => <button key={String(packages)} type="button" aria-pressed={packagesOnly === packages} onClick={() => { setPackagesOnly(packages); setSelectedServiceId(''); }} className={packagesOnly === packages ? 'flex-1 rounded-xl bg-neutral-950 px-4 py-3 font-bold text-white' : 'flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-3 font-bold text-neutral-950'}>{packages ? 'Paquetes' : 'Servicios'}</button>)}
+</div>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 <SelectField
-                  label="Servicio"
+                  label={packagesOnly ? "Paquete" : "Servicio"}
                   value={selectedServiceId}
                   onChange={setSelectedServiceId}
                   options={[
-                    { value: '', label: 'Selecciona servicio' },
-                    ...availableServices.map((service) => ({
+                    { value: '', label: packagesOnly ? 'Selecciona paquete' : 'Selecciona servicio' },
+                    ...availableServices.filter((service) => service.isPackage === packagesOnly).map((service) => ({
                       value: String(service.id),
                       label: `${service.name} · ${service.durationMinutes} min · ${servicePriceLabel(service)}`,
                     })),
@@ -3868,7 +3872,7 @@ function AppointmentSaleModal({ branch, cashRegister, appointment, paymentMethod
                   onClick={addServiceItem}
                   className="self-end rounded-2xl bg-neutral-950 px-5 py-4 text-sm font-black text-white transition hover:scale-[1.01]"
                 >
-                  Agregar servicio
+                  {packagesOnly ? 'Agregar paquete' : 'Agregar servicio'}
                 </button>
               </div>
 
@@ -4138,6 +4142,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
   const [items, setItems] = useState([]);
 
   const [selectedServiceId, setSelectedServiceId] = useState('');
+  const [packagesOnly, setPackagesOnly] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedBarberId, setSelectedBarberId] = useState('');
   const [selectedHelperBarberIds, setSelectedHelperBarberIds] = useState([]);
@@ -4946,15 +4951,18 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
               )}
 
               <div className="mt-5 rounded-[24px] border border-neutral-200 bg-neutral-50 p-4">
-                <div className="text-sm font-black text-neutral-950">Agregar servicio</div>
+                <div className="text-sm font-black text-neutral-950">Agregar servicios o paquetes</div>
+<div className="my-3 flex gap-2" role="group" aria-label="Tipo de atención">
+  {[false, true].map((packages) => <button key={String(packages)} type="button" aria-pressed={packagesOnly === packages} onClick={() => { setPackagesOnly(packages); setSelectedServiceId(''); }} className={packagesOnly === packages ? 'flex-1 rounded-xl bg-neutral-950 px-4 py-3 font-bold text-white' : 'flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-3 font-bold text-neutral-950'}>{packages ? 'Paquetes' : 'Servicios'}</button>)}
+</div>
                 <div className="mt-3 grid gap-3 md:grid-cols-[1fr_120px_170px]">
                   <SelectField
-                    label="Servicio"
+                    label={packagesOnly ? "Paquete" : "Servicio"}
                     value={selectedServiceId}
                     onChange={setSelectedServiceId}
                     options={[
-                      { value: '', label: 'Selecciona servicio' },
-                      ...availableServices.map((service) => ({
+                      { value: '', label: packagesOnly ? 'Selecciona paquete' : 'Selecciona servicio' },
+                      ...availableServices.filter((service) => service.isPackage === packagesOnly).map((service) => ({
                         value: String(service.id),
                         label: `${service.name} · ${service.durationMinutes} min · ${servicePriceLabel(service)}`,
                       })),
@@ -4968,7 +4976,7 @@ function SaleModal({ branch, cashRegister, paymentMethods = DEFAULT_PAYMENT_METH
                     onClick={addServiceItem}
                     className="self-end rounded-2xl bg-neutral-950 px-5 py-4 text-sm font-black text-white transition hover:scale-[1.01]"
                   >
-                    Agregar servicio
+                    {packagesOnly ? 'Agregar paquete' : 'Agregar servicio'}
                   </button>
                 </div>
               </div>

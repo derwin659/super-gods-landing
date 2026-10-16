@@ -677,6 +677,7 @@ function AppointmentFormModal({
 
   const [barbers, setBarbers] = useState([]);
   const [services, setServices] = useState([]);
+  const [packagesOnly, setPackagesOnly] = useState(false);
   const [serviceIdsByBarber, setServiceIdsByBarber] = useState({});
   const [customers, setCustomers] = useState([]);
   const [slots, setSlots] = useState([]);
@@ -780,6 +781,7 @@ function AppointmentFormModal({
 
       setBarbers(barberData);
       setServices(serviceData);
+      setPackagesOnly(serviceData.some((item) => String(item.id) === String(serviceId) && item.isPackage));
     } catch (error) {
       setErrorMsg(error.message || 'No se pudieron cargar los catálogos.');
     } finally {
@@ -1242,16 +1244,19 @@ function AppointmentFormModal({
               <div className="mt-4 grid gap-4">
                 <div>
                   <div className="mb-3 text-sm font-black text-neutral-700">
-                    Servicio
+                    {packagesOnly ? "Paquetes" : "Servicios"}
                   </div>
+<div className="my-3 flex gap-2" role="group" aria-label="Tipo de atención">
+  {[false, true].map((packages) => <button key={String(packages)} type="button" aria-pressed={packagesOnly === packages} onClick={() => { setPackagesOnly(packages); setServiceId(''); setSelectedSlot(null); }} className={packagesOnly === packages ? 'flex-1 rounded-xl bg-neutral-950 px-4 py-3 font-bold text-white' : 'flex-1 rounded-xl border border-neutral-300 bg-white px-4 py-3 font-bold text-neutral-950'}>{packages ? 'Paquetes' : 'Servicios'}</button>)}
+</div>
 
-                  {visibleServices.length === 0 ? (
+                  {visibleServices.filter((service) => service.isPackage === packagesOnly).length === 0 ? (
                     <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm font-black text-neutral-500">
-                      No hay servicios disponibles.
+                      {packagesOnly ? "No hay paquetes disponibles." : "No hay servicios disponibles."}
                     </div>
                   ) : (
                     <div className="grid gap-3">
-                      {visibleServices.map((service) => (
+                      {visibleServices.filter((service) => service.isPackage === packagesOnly).map((service) => (
                         <OptionCard
                           key={service.id}
                           selected={String(service.id) === String(serviceId)}
