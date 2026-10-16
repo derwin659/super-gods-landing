@@ -31,7 +31,7 @@ import {
 } from '../../api/publicBookingApi';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { useI18n } from '../../i18n/I18nProvider';
-import { bookingEndTime, bookingIntervalLabel, validDuration } from '../../utils/bookingTime';
+import { bookingEndTime, validDuration } from '../../utils/bookingTime';
 
 const DEFAULT_LOGO = '/logo-super-gods.png';
 
@@ -609,7 +609,9 @@ export default function PublicBookingPage() {
 
     if (needsAppointment && selectedServiceIds.length === 0) return 'Selecciona un servicio.';
     if (needsAppointment && !selectedDate) return 'Selecciona una fecha.';
-    if (needsAppointment && !selectedTime) return 'Selecciona una hora disponible.';
+    if (needsAppointment && !selectedTime) return 'Selecciona o escribe una hora de inicio.';
+    if (needsAppointment && !/^([01]\d|2[0-3]):[0-5]\d$/.test(selectedTime)) return 'Ingresa una hora válida.';
+    if (needsAppointment && bookingEndTime(selectedTime, selectedServicesDuration) <= selectedTime) return 'La atención debe terminar en el mismo día. Elige una hora más temprana.';
     if (!customer.customerName.trim()) return 'Ingresa tu nombre.';
     if (!customer.customerPhone.trim()) return 'Ingresa tu teléfono.';
 
@@ -1093,7 +1095,7 @@ export default function PublicBookingPage() {
               subtitle={isWalkInMode ? 'Elige una hora para que el negocio te ubique en agenda.' : t('availableTimes')}
               icon={CalendarDays}
             >
-              <div className="grid gap-4 md:grid-cols-[260px_1fr]">
+              <div className="grid min-w-0 gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
                 <label className="block">
                   <span className="mb-2 block text-xs font-black uppercase tracking-[0.22em] text-slate-500">
                     {t('date')}
@@ -1122,23 +1124,43 @@ export default function PublicBookingPage() {
                       {t('noTimes')}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3">
                       {slots.map((slot) => (
                         <button
                           key={slot}
                           type="button"
+                          aria-pressed={String(selectedTime) === String(slot)}
                           onClick={() => setSelectedTime(slot)}
                           className={
                             String(selectedTime) === String(slot)
-                              ? 'h-13 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-lg'
-                              : 'h-13 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:border-slate-950'
+                              ? 'flex min-h-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-slate-950 bg-slate-950 px-3 py-3 text-white shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                              : 'flex min-h-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-slate-200 bg-white px-3 py-3 text-slate-700 transition hover:border-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
                           }
                         >
-                          {bookingIntervalLabel(slot, selectedServicesDuration)}
+                          <span className="whitespace-nowrap text-lg font-black leading-tight">{slot}</span>
+                          <span className="whitespace-nowrap text-xs font-semibold leading-normal">Hasta {bookingEndTime(slot, selectedServicesDuration)}</span>
                         </button>
                       ))}
                     </div>
                   )}
+                  <p className="mt-3 text-sm text-slate-600">Duración total de la atención: <strong>{selectedServicesDuration} min</strong>.</p>
+                  <details className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <summary className="cursor-pointer font-bold text-slate-950">Elegir otra hora</summary>
+                    <div className="mt-3 space-y-3">
+                      <label className="block text-sm font-bold text-slate-700">
+                        Hora de inicio personalizada
+                        <input type="time" step="60" value={selectedTime}
+                          disabled={availabilityLoading || !selectedBranchId || !selectedDate || selectedServiceIds.length === 0}
+                          onChange={(event) => setSelectedTime(event.target.value)}
+                          className="mt-2 block min-h-12 w-full max-w-xs rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 disabled:opacity-50" />
+                      </label>
+                      <p className="text-sm leading-relaxed text-slate-600">Puedes escribir una hora que no aparezca en las sugerencias. Al confirmar comprobaremos que esté dentro del horario de trabajo y libre durante toda la atención.</p>
+                    </div>
+                  </details>
+                  {selectedTime && <div role="status" className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">
+                    <strong>Hora elegida: {selectedTime} – {bookingEndTime(selectedTime, selectedServicesDuration)}</strong>
+                    {!slots.includes(selectedTime) && <p className="mt-1">Hora personalizada: disponibilidad pendiente de comprobar al confirmar.</p>}
+                  </div>}
                 </div>
               </div>
             </PremiumSection>
