@@ -971,10 +971,11 @@ function BarberCard({ barber, onEdit, onToggle, onDeletePhoto, onServices, onCom
   );
 }
 
-function BarberServicesModal({ barber, branches, services, onClose }) {
+function BarberServicesModal({ barber, branches, onClose }) {
   const assignedBranches = barberBranchIds(barber).map(String);
   const availableBranches = branches.filter((branch) => assignedBranches.includes(String(branch.id ?? branch.branchId)));
   const [branchId, setBranchId] = useState(String(availableBranches[0]?.id ?? availableBranches[0]?.branchId ?? ''));
+  const [availableServices, setAvailableServices] = useState([]);
   const [selected, setSelected] = useState([]);
   const [configured, setConfigured] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -983,15 +984,42 @@ function BarberServicesModal({ barber, branches, services, onClose }) {
   useEffect(() => {
     if (!branchId) return;
     setLoading(true); setError('');
-    getBarberServiceAssignment({ barberId: getBarberId(barber), branchId: Number(branchId) })
-      .then((data) => { setConfigured(data?.configured === true); setSelected((data?.serviceIds || []).map(String)); })
-      .catch((e) => setError(e.message || 'No se pudieron cargar los servicios.'))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    setSelected([]); setAvailableServices([]);
+    Promise.all([
+      getBarberServiceAssignment({ barberId: getBarberId(barber), branchId: Number(branchId) }),
+      getOwnerServices({ onlyActive: true }),
+    ])
+      .then(([data, catalog]) => {
+        if (cancelled) return;
+        const activeServices = (Array.isArray(catalog) ? catalog : []).filter((service) => service.activo === true);
+        const activeIds = new Set(activeServices.map((service) => String(service.id ?? service.serviceId)));
+        setAvailableServices(activeServices);
+        setConfigured(data?.configured === true);
+        setSelected((data?.serviceIds || []).map(String).filter((id) => activeIds.has(id)));
+      })
+      .catch((e) => { if (!cancelled) setError(e.message || 'No se pudieron cargar los servicios.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [branchId]);
   async function save() {
+    if (loading || saving || !branchId) return;
     if (selected.length === 0) { setError('Selecciona al menos un servicio o usa Restablecer todos.'); return; }
     setSaving(true); setError('');
-    try { await updateBarberServiceAssignment({ barberId: getBarberId(barber), branchId: Number(branchId), serviceIds: selected.map(Number) }); onClose(); }
+    try {
+      const catalog = await getOwnerServices({ onlyActive: true });
+      const activeServices = (Array.isArray(catalog) ? catalog : []).filter((service) => service.activo === true);
+      const activeIds = new Set(activeServices.map((service) => String(service.id ?? service.serviceId)));
+      const validSelected = selected.filter((id) => activeIds.has(id));
+      setAvailableServices(activeServices);
+      setSelected(validSelected);
+      if (validSelected.length !== selected.length) {
+        setError('Algunos servicios ya no están disponibles y se quitaron de la selección. Revisa la lista antes de guardar.');
+        return;
+      }
+      await updateBarberServiceAssignment({ barberId: getBarberId(barber), branchId: Number(branchId), serviceIds: validSelected.map(Number) });
+      onClose();
+    }
     catch (e) { setError(e.message || 'No se pudo guardar.'); } finally { setSaving(false); }
   }
   async function reset() {
@@ -1001,11 +1029,11 @@ function BarberServicesModal({ barber, branches, services, onClose }) {
   }
   return <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-6"><div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-[32px] bg-white p-6 shadow-2xl sm:rounded-[32px]">
     <div className="flex items-start justify-between gap-4"><div className="flex min-w-0 items-center gap-4"><div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-amber-300 bg-neutral-100 shadow-lg">{barber.photoUrl ? <img src={barber.photoUrl} alt={fullName(barber)} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center bg-[linear-gradient(135deg,#17131E,#3B2E49)] text-lg font-black text-amber-300">{initials(barber)}</div>}</div><div className="min-w-0"><div className="text-xs font-black uppercase tracking-[0.2em] text-amber-600">Servicios por sede</div><h3 className="mt-2 truncate text-2xl font-black">{fullName(barber)}</h3><p className="mt-1 text-sm font-semibold text-neutral-500">Define qué servicios puede realizar en cada sede.</p></div></div><button onClick={onClose} className="rounded-full bg-neutral-100 px-4 py-3 font-black">×</button></div>
-    <label className="mt-6 block text-sm font-black">Sede<select value={branchId} onChange={(e) => setBranchId(e.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 p-4 font-bold">{availableBranches.map((branch) => <option key={branch.id ?? branch.branchId} value={branch.id ?? branch.branchId}>{branch.name || branch.nombre || branch.branchName}</option>)}</select></label>
+    <label className="mt-6 block text-sm font-black">Sede<select value={branchId} disabled={saving} onChange={(e) => setBranchId(e.target.value)} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 p-4 font-bold">{availableBranches.map((branch) => <option key={branch.id ?? branch.branchId} value={branch.id ?? branch.branchId}>{branch.name || branch.nombre || branch.branchName}</option>)}</select></label>
     <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">{configured ? selected.length + ' servicios configurados para esta sede.' : 'Sin configuración: puede realizar todos los servicios activos.'}</div>
     {error && <div className="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
-    {loading ? <div className="p-10 text-center font-bold">Cargando...</div> : <div className="mt-5 grid gap-3 sm:grid-cols-2">{services.map((service) => { const id=String(service.id ?? service.serviceId); const checked=selected.includes(id); return <button type="button" key={id} onClick={() => setSelected((prev) => checked ? prev.filter((x) => x!==id) : [...prev,id])} className={'group flex items-center gap-3 rounded-2xl border p-3 text-left font-black transition ' + (checked ? 'border-amber-400 bg-amber-50 text-neutral-950 shadow-sm' : 'border-neutral-200 bg-white text-neutral-600 hover:border-amber-200')}><div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-neutral-100">{service.imageUrl ? <img src={service.imageUrl} alt={service.nombre || service.name} className="h-full w-full object-cover transition group-hover:scale-105" /> : <div className="grid h-full w-full place-items-center bg-[linear-gradient(135deg,#FFF7E0,#F5E6B8)] text-xl">✂</div>}<span className={'absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full text-[11px] ' + (checked ? 'bg-amber-400 text-neutral-950' : 'bg-white/90 text-transparent')}>{checked ? '✓' : '·'}</span></div><span className="leading-tight">{service.nombre || service.name}</span></button>; })}</div>}
-    <div className="mt-6 flex flex-col gap-3 sm:flex-row"><button disabled={saving} onClick={save} className="flex-1 rounded-2xl bg-neutral-950 px-5 py-4 font-black text-white disabled:opacity-50">Guardar servicios</button><button disabled={saving} onClick={reset} className="rounded-2xl border border-neutral-200 px-5 py-4 font-black text-neutral-700 disabled:opacity-50">Restablecer todos</button></div>
+    {loading ? <div className="p-10 text-center font-bold">Cargando...</div> : <div className="mt-5 grid gap-3 sm:grid-cols-2">{availableServices.map((service) => { const id=String(service.id ?? service.serviceId); const checked=selected.includes(id); return <button type="button" key={id} onClick={() => setSelected((prev) => checked ? prev.filter((x) => x!==id) : [...prev,id])} className={'group flex items-center gap-3 rounded-2xl border p-3 text-left font-black transition ' + (checked ? 'border-amber-400 bg-amber-50 text-neutral-950 shadow-sm' : 'border-neutral-200 bg-white text-neutral-600 hover:border-amber-200')}><div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-neutral-100">{service.imageUrl ? <img src={service.imageUrl} alt={service.nombre || service.name} className="h-full w-full object-cover transition group-hover:scale-105" /> : <div className="grid h-full w-full place-items-center bg-[linear-gradient(135deg,#FFF7E0,#F5E6B8)] text-xl">✂</div>}<span className={'absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full text-[11px] ' + (checked ? 'bg-amber-400 text-neutral-950' : 'bg-white/90 text-transparent')}>{checked ? '✓' : '·'}</span></div><span className="leading-tight">{service.nombre || service.name}</span></button>; })}</div>}
+    <div className="mt-6 flex flex-col gap-3 sm:flex-row"><button disabled={saving || loading || !branchId} onClick={save} className="flex-1 rounded-2xl bg-neutral-950 px-5 py-4 font-black text-white disabled:opacity-50">Guardar servicios</button><button disabled={saving || loading || !branchId} onClick={reset} className="rounded-2xl border border-neutral-200 px-5 py-4 font-black text-neutral-700 disabled:opacity-50">Restablecer todos</button></div>
   </div></div>;
 }
 
