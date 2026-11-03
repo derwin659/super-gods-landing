@@ -410,34 +410,34 @@ export default function OwnerWhatsappSettingsPage() {
                   </div>
                 </div>
               </div>
-              <div className="overflow-hidden rounded-[26px] border border-violet-200 bg-[linear-gradient(135deg,#FAF7FF_0%,#FFFFFF_55%,#FFF8E7_100%)] p-5 shadow-[0_12px_28px_rgba(76,29,149,0.06)]">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 ring-1 ring-violet-200">
-                      <Smartphone size={23} strokeWidth={2.4} />
-                    </div>
-                    <div>
-                      <div className="text-xs font-black uppercase tracking-[0.18em] text-violet-600">
-                        Proxima mejora Growth / VIP
-                      </div>
-                      <h2 className="mt-1 text-2xl font-black text-neutral-950">
-                        Conecta el WhatsApp de tu negocio
-                      </h2>
-                      <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-neutral-500">
-                        Cada negocio podra usar su propio remitente con una conexion guiada y segura. Mientras tanto, las reservas salen desde GODS Notificaciones.
-                      </p>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-violet-100 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-violet-700 ring-1 ring-violet-200">
-                    Proximamente
-                  </span>
+              <section className="rounded-[26px] border border-violet-200 bg-white p-5 shadow-sm">
+                <h2 className="text-2xl font-black text-neutral-950">Número para reservas automáticas</h2>
+                <p className="mt-2 text-sm font-semibold leading-6 text-neutral-500">Elige el WhatsApp al que escribirán tus clientes para conversar con el asistente y reservar.</p>
+                <fieldset disabled={saving} className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <legend className="sr-only">Modalidad de WhatsApp</legend>
+                  {[['SHARED', 'Número de SuperGods', 'Usa el asistente compartido e identifica tu negocio mediante su enlace o código.'], ['BUSINESS', 'Número de mi negocio', 'Tus clientes escriben al WhatsApp de tu negocio. Requiere conexión y aprobación.']].map(([value, title, description]) => (
+                    <label key={value} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-200 p-4 has-checked:border-violet-500 has-checked:bg-violet-50">
+                      <input type="radio" name="senderMode" value={value} checked={settings?.senderMode === value} onChange={() => updateField('senderMode', value)} className="mt-1" />
+                      <span><span className="block font-black text-neutral-950">{title}</span><span className="mt-1 block text-sm text-neutral-500">{description}</span></span>
+                    </label>
+                  ))}
+                </fieldset>
+                {settings?.senderMode === 'BUSINESS' && (
+                  <label className="mt-4 block text-sm font-bold text-neutral-700">
+                    WhatsApp del negocio con código de país
+                    <input type="tel" required value={settings.businessPhone} onChange={(event) => updateField('businessPhone', event.target.value)} placeholder="+51987654321" disabled={saving} className="mt-2 w-full rounded-2xl border border-neutral-200 px-4 py-3 outline-none focus:border-violet-500" />
+                    <span className="mt-2 block text-xs font-semibold text-neutral-500">Guarda para solicitar la conexión. El equipo de SuperGods coordinará la activación del número; escribirlo aquí no lo conecta automáticamente.</span>
+                  </label>
+                )}
+                <div role="status" className="mt-4 rounded-2xl bg-neutral-50 p-4 text-sm font-semibold text-neutral-700">
+                  {settings?.businessConnectionStatus === 'CONNECTED' && settings?.effectiveSenderMode === 'BUSINESS' && settings.businessPhone === settings.effectiveSenderPhone
+                    ? 'Conexión propia activa. Tus clientes pueden reservar en ' + settings.effectiveSenderPhone + '.'
+                    : settings?.senderMode === 'BUSINESS'
+                      ? 'La activación del número propio requiere revisión. Mientras tanto, conserva el enlace de reservas de SuperGods.'
+                      : 'Reservas con el número compartido de SuperGods.'}
+                  <p className="mt-2 text-xs text-neutral-500">Las alertas internas de nuevas reservas siguen llegando desde GODS Notificaciones al receptor verificado.</p>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-neutral-600">
-                  <span className="rounded-full bg-white px-3 py-2 ring-1 ring-neutral-200">Remitente propio</span>
-                  <span className="rounded-full bg-white px-3 py-2 ring-1 ring-neutral-200">Plantillas del negocio</span>
-                  <span className="rounded-full bg-white px-3 py-2 ring-1 ring-neutral-200">Fallback GODS</span>
-                </div>
-              </div>
+              </section>
               <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/60 p-5 shadow-[0_12px_28px_rgba(16,185,129,0.08)]">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
                   Alertas operativas de reservas
