@@ -228,6 +228,7 @@ function salePaymentSummary(sale) {
 }
 
 function customerWhatsappUrlOf(sale) {
+  if (sale?.customerWhatsappAutomatic === true) return '';
   const provided = String(
     sale?.customerWhatsappUrl ??
       sale?.whatsappUrl ??

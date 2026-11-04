@@ -1,3 +1,4 @@
+import WhatsappConnectPage from './pages/public/WhatsappConnectPage';
 import SuperAdminAcademyPage from './pages/super-admin/SuperAdminAcademyPage';
 import AcademyPage from './pages/AcademyPage';
 import { useEffect, useMemo, useState } from 'react';
@@ -2145,6 +2146,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/whatsapp/connect" element={<WhatsappConnectPage />} />
         <Route path="/academy" element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}><AcademyPage /></ProtectedRoute>} />
         <Route path="/" element={<PublicHomePage />} />
         <Route path="/registro-negocio" element={<PublicBusinessSignupPage />} />

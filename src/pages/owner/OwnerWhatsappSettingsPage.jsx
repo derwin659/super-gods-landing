@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { getWhatsappOnboarding, startWhatsappOnboarding, refreshWhatsappOnboarding } from '../../api/whatsappOnboardingApi';
 import OwnerCampaignOperationsPanel from './OwnerCampaignOperationsPanel';
 import {
   BellRing,
@@ -82,6 +83,10 @@ function ErrorBox({ message }) {
 
 export default function OwnerWhatsappSettingsPage() {
   const [settings, setSettings] = useState(null);
+  const [onboarding, setOnboarding] = useState(null);
+  const [connecting, setConnecting] = useState(false);
+  const [checkingConnection, setCheckingConnection] = useState(false);
+  const onboardingWindow = useRef(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -120,6 +125,46 @@ export default function OwnerWhatsappSettingsPage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    getWhatsappOnboarding().then((data) => { if (active) setOnboarding(data); })
+      .catch(() => { if (active) setOnboarding({ available: false, availabilityMessage: 'La conexión guiada aún no está habilitada. Contacta a soporte de SuperGods.' }); });
+    const onFocus = () => {
+      if (!onboardingWindow.current) return;
+      handleRefreshConnection();
+      if (onboardingWindow.current.closed) onboardingWindow.current = null;
+    };
+    window.addEventListener('focus', onFocus);
+    return () => { active = false; window.removeEventListener('focus', onFocus); };
+  }, []);
+
+  async function handleConnectBusiness() {
+    if (!settings?.businessPhone?.trim()) { setErrorMsg('Ingresa el WhatsApp del negocio con código de país.'); return; }
+    const popup = window.open('about:blank', '_blank');
+    if (!popup) { setErrorMsg('Permite las ventanas emergentes para conectar tu WhatsApp.'); return; }
+    popup.opener = null;
+    setConnecting(true); setErrorMsg(''); setSuccessMsg('');
+    try {
+      const data = await startWhatsappOnboarding(settings.businessPhone.trim());
+      const url = new URL(data.launchUrl);
+      if (url.protocol !== 'https:' || url.pathname !== '/whatsapp/connect') throw new Error('El enlace de conexión no es válido. Contacta a soporte.');
+      onboardingWindow.current = popup;
+      popup.location.replace(url.href);
+      setSuccessMsg('Continúa en la ventana de Meta. Al terminar vuelve y comprueba la conexión.');
+    } catch (error) { popup.close(); setErrorMsg(error.message || 'No se pudo abrir la conexión.'); }
+    finally { setConnecting(false); }
+  }
+  async function handleRefreshConnection() {
+    setCheckingConnection(true);
+    try {
+      const state = await refreshWhatsappOnboarding();
+      const currentSettings = await getOwnerWhatsappSettings();
+      setOnboarding((current) => ({ ...current, ...state }));
+      setSettings(currentSettings);
+    } catch (error) { setErrorMsg(error.message || 'No se pudo comprobar la conexión.'); }
+    finally { setCheckingConnection(false); }
+  }
 
   function updateField(field, value) {
     setSettings((current) => ({
@@ -217,6 +262,7 @@ export default function OwnerWhatsappSettingsPage() {
     const lines = [
       'Hola Nicolas, gracias por tu visita a nuestro negocio.',
       '',
+      'Puntos antes de esta compra: 270.',
       'Ganaste +150 puntos por tu compra.',
       'Ahora tienes 420 puntos disponibles.',
     ];
@@ -426,14 +472,22 @@ export default function OwnerWhatsappSettingsPage() {
                   <label className="mt-4 block text-sm font-bold text-neutral-700">
                     WhatsApp del negocio con código de país
                     <input type="tel" required value={settings.businessPhone} onChange={(event) => updateField('businessPhone', event.target.value)} placeholder="+51987654321" disabled={saving} className="mt-2 w-full rounded-2xl border border-neutral-200 px-4 py-3 outline-none focus:border-violet-500" />
-                    <span className="mt-2 block text-xs font-semibold text-neutral-500">Guarda para solicitar la conexión. El equipo de SuperGods coordinará la activación del número; escribirlo aquí no lo conecta automáticamente.</span>
+                    <span className="mt-2 block text-xs font-semibold text-neutral-500">Conecta directamente en la ventana oficial de Meta, sin compartir tu contraseña con SuperGods.</span>
                   </label>
                 )}
+                {settings?.senderMode === 'BUSINESS' && <div className="mt-4 space-y-3">
+                  <div className="flex flex-wrap gap-3">
+                    <button type="button" disabled={!onboarding?.available || connecting || saving || settings?.businessConnectionStatus === 'CONNECTED' || ['PROVISIONING', 'REGISTERING', 'REVIEW_REQUIRED', 'PENDING', 'OFFLINE', 'ONLINE'].includes(onboarding?.state)} onClick={handleConnectBusiness} className="rounded-xl bg-blue-600 px-5 py-3 font-bold text-white disabled:opacity-50">{connecting ? 'Preparando…' : 'Conectar con Meta'}</button>
+                    <button type="button" disabled={checkingConnection || connecting} onClick={handleRefreshConnection} className="rounded-xl border border-neutral-200 px-5 py-3 font-bold text-neutral-700 disabled:opacity-50">{checkingConnection ? 'Comprobando…' : 'Comprobar conexión'}</button>
+                  </div>
+                  <p className="text-sm text-neutral-600">{onboarding?.available ? onboarding.message : onboarding?.availabilityMessage || 'Comprobando disponibilidad de conexión…'}</p>
+                  <p className="text-xs text-neutral-500">El bot se activa solo con RESERVAR, MENÚ o tu enlace/QR. Los mensajes normales no lo inician. Escribe SALIR para terminar la conversación.</p>
+                </div>}
                 <div role="status" className="mt-4 rounded-2xl bg-neutral-50 p-4 text-sm font-semibold text-neutral-700">
                   {settings?.businessConnectionStatus === 'CONNECTED' && settings?.effectiveSenderMode === 'BUSINESS' && settings.businessPhone === settings.effectiveSenderPhone
                     ? 'Conexión propia activa. Tus clientes pueden reservar en ' + settings.effectiveSenderPhone + '.'
                     : settings?.senderMode === 'BUSINESS'
-                      ? 'La activación del número propio requiere revisión. Mientras tanto, conserva el enlace de reservas de SuperGods.'
+                      ? 'Conecta con Meta y comprueba el estado. Mientras se completa el alta, conserva el enlace de reservas de SuperGods.'
                       : 'Reservas con el número compartido de SuperGods.'}
                   <p className="mt-2 text-xs text-neutral-500">Las alertas internas de nuevas reservas siguen llegando desde GODS Notificaciones al receptor verificado.</p>
                 </div>
@@ -482,8 +536,8 @@ export default function OwnerWhatsappSettingsPage() {
               />
               <ToggleRow
                 icon={MessageCircle}
-                title="Mensaje al finalizar una venta"
-                text="Con un proveedor conectado, el backend envia el mensaje al cliente desde el numero central del negocio."
+                title="Mensaje al aprobar una venta"
+                text="Al aprobar el dueño o administrador, envia desde el numero conectado del negocio. Requiere consentimiento y una plantilla aprobada."
                 checked={!!settings?.postSaleMessageEnabled}
                 onChange={(value) => updateField('postSaleMessageEnabled', value)}
                 badge="Recomendado"
@@ -492,7 +546,7 @@ export default function OwnerWhatsappSettingsPage() {
               <ToggleRow
                 icon={Smartphone}
                 title="Incluir link de descarga de la app"
-                text="Invita al cliente a entrar como cliente, usar el codigo del negocio y ver sus puntos y premios."
+                text="Incluye el enlace en ambos modos. El automatico requiere una plantilla aprobada con este contenido."
                 checked={!!settings?.includeAppDownloadLink}
                 onChange={(value) => updateField('includeAppDownloadLink', value)}
               />
@@ -500,7 +554,7 @@ export default function OwnerWhatsappSettingsPage() {
               <ToggleRow
                 icon={CalendarCheck}
                 title="Incluir link de reserva"
-                text="Agrega el link publico del negocio para que el cliente reserve otra cita y siga acumulando puntos."
+                text="Incluye el enlace de reserva en ambos modos y el asistente si esta habilitado. El automatico requiere la plantilla correspondiente."
                 checked={!!settings?.includeBookingLink}
                 onChange={(value) => updateField('includeBookingLink', value)}
               />
@@ -508,10 +562,10 @@ export default function OwnerWhatsappSettingsPage() {
               <ToggleRow
                 icon={BellRing}
                 title="Recordatorio 60 minutos antes"
-                text="Preparado para recordatorios automaticos antes de la cita cuando activemos el envio conectado."
+                text="Envia desde el numero conectado del negocio una hora antes. Requiere plantilla aprobada; omite citas canceladas y actualiza los cambios de horario."
                 checked={!!settings?.appointmentReminder60Enabled}
                 onChange={(value) => updateField('appointmentReminder60Enabled', value)}
-                badge="Siguiente"
+
               />
 
               <ToggleRow
