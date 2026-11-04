@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { googleReviewLink } from '../../utils/googleReviewLinks';
 import { premiumConfirm } from '../../components/PremiumUi';
 import { readBusinessLabels } from '../../utils/businessLabels';
 import {
@@ -134,6 +135,8 @@ function BranchFormModal({ branch, onClose, onSaved }) {
   const [latitude, setLatitude] = useState(branch?.latitude ?? '');
   const [longitude, setLongitude] = useState(branch?.longitude ?? '');
   const [publicDescription, setPublicDescription] = useState(branch?.publicDescription || '');
+  const [googleReviewUrl, setGoogleReviewUrl] = useState(branch?.googleReviewUrl || '');
+  const [googleReviewWhatsappEnabled, setGoogleReviewWhatsappEnabled] = useState(!!branch?.googleReviewWhatsappEnabled);
   const [publicVisible, setPublicVisible] = useState(branch?.publicVisible === true);
   const [directoryEnabled, setDirectoryEnabled] = useState(branch?.directoryEnabled === true);
   const [walkInEnabled, setWalkInEnabled] = useState(branch?.walkInEnabled === true);
@@ -197,6 +200,12 @@ function BranchFormModal({ branch, onClose, onSaved }) {
       return;
     }
 
+    if (googleReviewUrl.trim() && !googleReviewLink(googleReviewUrl)) {
+      setErrorMsg('Pega el enlace oficial de reseñas de Google o Google Maps de esta sede.'); return;
+    }
+    if (googleReviewWhatsappEnabled && !googleReviewLink(googleReviewUrl)) {
+      setErrorMsg('Configura el enlace de Google antes de activar la invitación por WhatsApp.'); return;
+    }
     setSaving(true);
 
     try {
@@ -211,6 +220,8 @@ function BranchFormModal({ branch, onClose, onSaved }) {
         publicVisible,
         directoryEnabled,
         publicDescription: publicDescription.trim() || null,
+        googleReviewUrl: googleReviewUrl.trim(),
+        googleReviewWhatsappEnabled,
         walkInEnabled,
         walkInPaused: walkInEnabled && walkInPaused,
         walkInEstimatedWaitMinutes: walkInEstimatedWaitMinutes === '' ? null : Number(walkInEstimatedWaitMinutes),
@@ -363,6 +374,15 @@ function BranchFormModal({ branch, onClose, onSaved }) {
                 </div>
               </div>
 
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <h3 className="font-black text-neutral-950">Reseñas en Google</h3>
+                <p className="mt-1 text-sm text-neutral-600">Pega el enlace de Google de esta sede. El cliente publica su opinión con su propia cuenta.</p>
+                <div className="mt-3"><InputField label="Enlace de reseñas de Google" value={googleReviewUrl} onChange={(value) => { setGoogleReviewUrl(value); if (!value.trim()) setGoogleReviewWhatsappEnabled(false); }} placeholder="https://g.page/r/.../review" /></div>
+                <label className="mt-4 flex items-start gap-3 text-sm font-bold text-neutral-800"><input type="checkbox" checked={googleReviewWhatsappEnabled} onChange={(e) => setGoogleReviewWhatsappEnabled(e.target.checked)} className="mt-1" /><span>Incluir invitación en el WhatsApp postventa</span></label>
+                <p className="mt-2 text-xs text-neutral-600">Para el envío automático, activa esta opción cuando tu plantilla de WhatsApp incluya la invitación a Google. Se ofrece sin depender de la calificación y sin premios por reseñar.</p>
+                {googleReviewLink(googleReviewUrl) && <a href={googleReviewLink(googleReviewUrl)} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex rounded-xl bg-white px-4 py-2 text-sm font-black text-neutral-900">Comprobar enlace en Google ↗</a>}
+                {isEdit && branch?.googleReviewUrl && <a href={'/opinar/'+getBranchId(branch)} target="_blank" rel="noopener noreferrer" className="ml-3 inline-flex text-sm font-black text-neutral-700">Ver invitación del cliente ↗</a>}
+              </div>
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div><div className="text-sm font-black text-neutral-950">Clientes sin reserva</div><div className="mt-1 text-xs font-bold text-neutral-600">Publica si esta sede acepta personas por orden de llegada.</div></div>

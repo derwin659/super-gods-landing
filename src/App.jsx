@@ -43,6 +43,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import PublicBookingPage from './pages/public/PublicBookingPage';
 import SoftwareDevelopmentPage from './pages/public/SoftwareDevelopmentPage';
 import PublicShowcaseDetailPage from './pages/public/PublicShowcaseDetailPage';
+import GoogleReviewPage from './pages/public/GoogleReviewPage';
 import OwnerPermissionRoute from './routes/OwnerPermissionRoute';
 import OwnerAdjustPointsPage from './pages/owner/OwnerAdjustPointsPage';
 import LoginPage from './pages/auth/LoginPage';
@@ -2163,6 +2164,7 @@ export default function App() {
         <Route path="/app" element={<PublicAppDownloadPage />} />
 
         <Route path="/reservar/:codigoNegocio" element={<PublicBookingPage />} />
+        <Route path="/opinar/:branchId" element={<GoogleReviewPage />} />
         <Route path="/inspiracion/:id" element={<PublicShowcaseDetailPage />} />
 
         <Route path="/login" element={<LoginPage />} />
