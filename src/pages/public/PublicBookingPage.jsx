@@ -30,6 +30,8 @@ import {
   getPublicBookingProducts,
 } from '../../api/publicBookingApi';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
+import InternationalPhoneField from '../../components/InternationalPhoneField';
+import { parsePhoneValue } from '../../utils/internationalPhone';
 import { useI18n } from '../../i18n/I18nProvider';
 import { bookingEndTime, validDuration } from '../../utils/bookingTime';
 
@@ -257,6 +259,7 @@ export default function PublicBookingPage() {
     customerEmail: '',
   });
 
+  const [evidenceReading, setEvidenceReading] = useState(false);
   const [deposit, setDeposit] = useState({
     depositPaymentMethodId: '',
     depositAmount: '',
@@ -573,11 +576,12 @@ export default function PublicBookingPage() {
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
-      setError('Sube una imagen válida del comprobante.');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('Sube el comprobante en JPG, PNG o WEBP.');
       return;
     }
 
+    setEvidenceReading(true);
     const reader = new FileReader();
     reader.onload = () => {
       setDeposit((prev) => ({
@@ -586,8 +590,9 @@ export default function PublicBookingPage() {
         depositEvidenceFileName: file.name,
       }));
       setError('');
+      setEvidenceReading(false);
     };
-    reader.onerror = () => setError('No se pudo leer la imagen del comprobante.');
+    reader.onerror = () => { setEvidenceReading(false); setError('No se pudo leer la imagen del comprobante.'); };
     reader.readAsDataURL(file);
   }
 
@@ -619,6 +624,8 @@ export default function PublicBookingPage() {
     if (needsAppointment && bookingEndTime(selectedTime, selectedServicesDuration) <= selectedTime) return 'La atención debe terminar en el mismo día. Elige una hora más temprana.';
     if (!customer.customerName.trim()) return 'Ingresa tu nombre.';
     if (!customer.customerPhone.trim()) return 'Ingresa tu teléfono.';
+    if (!customer.customerPhone.startsWith('+') || !parsePhoneValue(customer.customerPhone).isValid) return 'Selecciona el país e ingresa un celular válido.';
+    if (evidenceReading) return 'Espera a que termine de cargar el comprobante.';
 
     if (appointmentDepositEnabled) {
       if (!deposit.depositPaymentMethodId) return 'Selecciona el método del adelanto.';
@@ -670,11 +677,11 @@ export default function PublicBookingPage() {
           depositPaymentMethodId: appointmentDepositEnabled ? Number(deposit.depositPaymentMethodId) : null,
           depositAmount: appointmentDepositEnabled ? Number(deposit.depositAmount) : null,
           depositOperationCode:
-            appointmentDepositEnabled && selectedMethod?.requiresOperationCode
+            appointmentDepositEnabled
               ? deposit.depositOperationCode.trim() || null
               : null,
           depositEvidenceUrl:
-            appointmentDepositEnabled && selectedMethod?.requiresEvidence
+            appointmentDepositEnabled
               ? deposit.depositEvidenceUrl.trim() || null
               : null,
           depositNote: appointmentDepositEnabled ? deposit.depositNote.trim() || null : null,
@@ -1190,11 +1197,12 @@ export default function PublicBookingPage() {
                   onChange={(value) => updateCustomer('customerLastName', value)}
                   placeholder="Opcional"
                 />
-                <PremiumInput
+                <InternationalPhoneField
+                  key={bootstrap?.countryCode || 'PE'}
                   label={t('phone')}
                   value={customer.customerPhone}
+                  defaultCountry={bootstrap?.countryCode || 'PE'}
                   onChange={(value) => updateCustomer('customerPhone', value)}
-                  placeholder="Ej. 958000000"
                 />
                 <PremiumInput
                   label="Correo"
@@ -1372,24 +1380,24 @@ export default function PublicBookingPage() {
                     type="number"
                   />
 
-                  {selectedMethod?.requiresOperationCode ? (
+                  {selectedMethod ? (
                   <PremiumInput
                     label="N° operación"
                     value={deposit.depositOperationCode}
                     onChange={(value) => updateDeposit('depositOperationCode', value)}
-                    placeholder="Obligatorio"
+                    placeholder={selectedMethod?.requiresOperationCode ? "Obligatorio" : "Opcional"}
                   />
                   ) : null}
 
-                  {selectedMethod?.requiresEvidence ? (
+                  {selectedMethod ? (
                   <label className="block">
                     <span className="mb-2 block text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                      Captura del comprobante
+                      Captura del comprobante {selectedMethod?.requiresEvidence ? "(obligatorio)" : "(opcional)"}
                     </span>
                     <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp"
                         onChange={(event) => handleDepositEvidenceFile(event.target.files?.[0])}
                         className="block w-full text-sm font-bold text-slate-600 file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-3 file:text-sm file:font-black file:text-white"
                       />
@@ -1399,14 +1407,14 @@ export default function PublicBookingPage() {
                         </p>
                       ) : (
                         <p className="mt-3 text-xs font-bold text-slate-500">
-                          Sube una captura en JPG, PNG o imagen. Máximo 3 MB.
+                          Sube una captura en JPG, PNG o WEBP. Máximo 3 MB.
                         </p>
                       )}
                     </div>
                   </label>
                   ) : null}
 
-                  {selectedMethod?.requiresEvidence && deposit.depositEvidenceUrl ? (
+                  {deposit.depositEvidenceUrl ? (
                     <div className="md:col-span-2">
                       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-3">
                         <p className="mb-2 text-xs font-black uppercase tracking-[0.22em] text-slate-500">Vista previa</p>
@@ -1480,8 +1488,8 @@ export default function PublicBookingPage() {
                   {selectedMethod?.accountValue ? (
                     <SummaryLine label={selectedMethod.accountLabel || 'Cuenta'} value={selectedMethod.accountValue} />
                   ) : null}
-                  {selectedMethod?.requiresEvidence ? (
-                    <SummaryLine label="Comprobante" value={deposit.depositEvidenceFileName || 'Pendiente'} />
+                  {selectedMethod ? (
+                    <SummaryLine label="Comprobante" value={deposit.depositEvidenceFileName || (selectedMethod?.requiresEvidence ? 'Pendiente' : 'No adjuntado (opcional)')} />
                   ) : null}
                 </>
               ) : null}
@@ -1489,7 +1497,7 @@ export default function PublicBookingPage() {
               <button
                 type="button"
                 onClick={submit}
-                disabled={submitting}
+                disabled={submitting || evidenceReading}
                 className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#0F2A5F] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#123A84] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting

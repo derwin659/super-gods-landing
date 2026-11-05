@@ -62,7 +62,7 @@ export default function InternationalPhoneField({
     return PHONE_COUNTRIES.filter((item) => (
       normalizeSearch(item.name).includes(term)
       || item.iso2.toLowerCase().includes(term)
-      || item.dial.includes(term.replace(/\D/g, ''))
+      || (term.replace(/\D/g, '') && item.dial.includes(term.replace(/\D/g, '')))
     ));
   }, [query]);
 
@@ -78,6 +78,13 @@ export default function InternationalPhoneField({
   }
 
   function handleNumberChange(event) {
+    const raw = event.target.value.trim();
+    if (raw.startsWith('+') || raw.startsWith('00')) {
+      const parsed = parsePhoneValue(raw, country.iso2);
+      setCountryIso(parsed.country.iso2);
+      emit(parsed.country, parsed.national);
+      return;
+    }
     const nextNational = digitsOnly(event.target.value).slice(0, country.max);
     emit(country, nextNational);
   }
