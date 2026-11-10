@@ -30,6 +30,7 @@ import {
   getPublicBookingProducts,
 } from '../../api/publicBookingApi';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
+import PublicWaitlistPanel from '../../components/PublicWaitlistPanel';
 import InternationalPhoneField from '../../components/InternationalPhoneField';
 import { parsePhoneValue } from '../../utils/internationalPhone';
 import { useI18n } from '../../i18n/I18nProvider';
@@ -1152,6 +1153,12 @@ export default function PublicBookingPage() {
                       ))}
                     </div>
                   )}
+                  {!isWalkInMode && selectedBranchId && selectedServiceIds.length > 0 && <PublicWaitlistPanel
+                    key={codigoNegocio} businessCode={codigoNegocio} branchId={selectedBranchId}
+                    serviceIds={selectedServiceIds} barberId={selectedBarberId} date={selectedDate}
+                    country={bootstrap?.countryCode || 'PE'} onChoose={row => {
+                      setSelectedTime(String(row.offeredTime).slice(0, 5)); advanceBookingStep(4);
+                    }} />}
                   <p className="mt-3 text-sm text-slate-600">Duración total de la atención: <strong>{selectedServicesDuration} min</strong>.</p>
                   <details className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <summary className="cursor-pointer font-bold text-slate-950">Elegir otra hora</summary>
