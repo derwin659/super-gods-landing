@@ -1,3 +1,4 @@
+import OwnerWaitlistPanel from '../../components/OwnerWaitlistPanel';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PremiumButton, PremiumEmptyState, PremiumErrorState, premiumConfirm, premiumPrompt } from '../../components/PremiumUi';
 import InternationalPhoneField from '../../components/InternationalPhoneField';
@@ -1883,6 +1884,8 @@ export default function OwnerAgendaPage() {
           ); })}
         </div>
       </section>
+
+      <OwnerWaitlistPanel branchId={selectedBranchId} />
 
       {!loadingAgenda && !errorMsg && (
         <section className="rounded-[26px] border border-neutral-200 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
